@@ -1,5 +1,5 @@
 from optparse import OptionParser
-import time, sys, socket, threading, random
+import time, sys, socket, threading, random, urllib.request
 
 
 def user_agent():
@@ -40,7 +40,7 @@ def down_it():
         s.sendto(packet, (host, int(port)))
         s.close()
         print('Packet was sent')
-        # time.sleep(.01)
+        time.sleep(.01)
 
 
 def usage():
