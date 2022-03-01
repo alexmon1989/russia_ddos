@@ -1,7 +1,6 @@
 from optparse import OptionParser
 import time, sys, socket, threading, random, os
 
-os.system("cls")
 
 def user_agent():
     global uagent
