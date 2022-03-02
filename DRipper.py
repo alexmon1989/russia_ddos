@@ -16,9 +16,6 @@ EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
 
 
-lock = threading.Lock()
-
-
 @dataclass
 class Context:
     """Class for passing a context to a parallel processes."""
