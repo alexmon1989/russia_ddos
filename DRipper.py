@@ -15,6 +15,8 @@ USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
 
+lock = threading.Lock()
+
 
 @dataclass
 class Context:
@@ -280,7 +282,9 @@ def main():
     create_thread_pool(_ctx)
 
     while True:
+        lock.acquire()
         show_statistics(_ctx)
+        lock.release()
         time.sleep(3)
 
 
