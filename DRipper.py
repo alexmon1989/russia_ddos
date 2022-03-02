@@ -64,10 +64,11 @@ def set_headers_dict():
 
 
 def get_random_string(len_from, len_to):
-    # Random string with different length
+    """Random string with different length"""
     length = random.randint(len_from, len_to)
     letters = string.ascii_lowercase
     result_str = ''.join(random.choice(letters) for i in range(length))
+
     return result_str
 
 
