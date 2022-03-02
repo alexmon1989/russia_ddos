@@ -6,24 +6,49 @@ import sys
 import threading
 import time
 import urllib.request
+from dataclasses import dataclass
 from optparse import OptionParser
+
+USAGE = 'Usage: python %prog [options] arg'
+EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
+
+
+@dataclass
+class Context:
+    """Class for passing a context to a parallel processes."""
+    host: str = ''
+    port: int = 80
+    threads: int = 100
+
+    user_agents: list[str] = ''
+    headers = ''
+
+
+def init_context(_ctx, args):
+    """Initialize Context from Input args."""
+    _ctx.host = args[0].host
+    _ctx.port = args[0].port
+    _ctx.threads = args[0].threads
+    _ctx.user_agents = user_agent()
+    _ctx.headers = headers()
 
 
 def user_agent():
-    global uagent
-
+    """Read User-Agent string from file."""
     uagents = open("useragents.txt", "r")
     uagent = uagents.readlines()
     uagents.close()
+
     return uagent
 
 
 def headers():
-    # reading headers
-    global data
+    """Reading headers from file."""
     headers = open("headers.txt", "r")
     data = headers.read()
     headers.close()
+
+    return data
 
 
 def set_headers_dict():
