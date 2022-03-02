@@ -19,6 +19,8 @@ class Context:
     host: str = ''
     port: int = 80
     threads: int = 100
+    random_packet_len: int = 0
+    attack_method: str = ''
 
     user_agents: list[str] = ''
     headers = ''
@@ -29,6 +31,8 @@ def init_context(_ctx, args):
     _ctx.host = args[0].host
     _ctx.port = args[0].port
     _ctx.threads = args[0].threads
+    _ctx.attack_method = args[0].attack_method
+    _ctx.random_packet_len = args[0].random_packet_len
     _ctx.user_agents = user_agent()
     _ctx.headers = headers()
 
