@@ -1,6 +1,12 @@
-from optparse import OptionParser
-import time, sys, socket, threading, random, string
+import random
+import socket
+import string
+import signal
+import sys
+import threading
+import time
 import urllib.request
+from optparse import OptionParser
 
 
 def user_agent():
@@ -10,13 +16,6 @@ def user_agent():
     uagent = uagents.readlines()
     uagents.close()
     return uagent
-
-#
-# def user_agent():
-#     global uagent
-#     uagent = []
-#     uagent.append("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36")
-#     return (uagent
 
 
 def headers():
@@ -109,7 +108,7 @@ def down_it_http():
 
 
 def usage():
-    print(''' \033[0;95mDDos Ripper 
+    print(''' \033[0;95mDDos Ripper
 
 	It is the end user's responsibility to obey all applicable laws.
 	It is just like a server testing script and Your ip is visible. Please, make sure you are anonymous! \n
@@ -186,7 +185,8 @@ def connect_host():
               " Program will continue send UDP-packets to the destination.\033[0m")
 
 
-if __name__ == '__main__':
+def main():
+    """The main function to run the script from the command line."""
     if len(sys.argv) < 2:
         usage()
     get_parameters()
@@ -217,3 +217,18 @@ if __name__ == '__main__':
 
     while True:
         time.sleep(.1)
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:  # The user hit Control-C
+        sys.stderr.write('\n\nReceived keyboard interrupt, terminating.\n\n')
+        sys.stderr.flush()
+        # Control-C is fatal error signal 2, for more see
+        # https://tldp.org/LDP/abs/html/exitcodes.html
+        sys.exit(128 + signal.SIGINT)
+    except RuntimeError as exc:
+        sys.stderr.write(f'\n{exc}\n\n')
+        sys.stderr.flush()
+        sys.exit(1)
