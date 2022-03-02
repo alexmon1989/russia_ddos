@@ -11,13 +11,6 @@ def user_agent():
     uagents.close()
     return uagent
 
-#
-# def user_agent():
-#     global uagent
-#     uagent = []
-#     uagent.append("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36")
-#     return (uagent
-
 
 def headers():
     # reading headers
@@ -113,12 +106,13 @@ def usage():
 
 	It is the end user's responsibility to obey all applicable laws.
 	It is just like a server testing script and Your ip is visible. Please, make sure you are anonymous! \n
-	Usage : python3 dripper.py [-s] [-p] [-t] [-pr]
+	Usage : python3 dripper.py [-s] [-p] [-t] [-pr] [-m] [--resource]
 	-h : -help
 	-s : -server ip
 	-p : -port default 80
-	-t : -threads default 100\033[0m ''')
-
+	-t : -threads default 100
+	-m : -method default udp (udp/http)
+    --resource : -api-host under attack\033[0m ''')
     sys.exit()
 
 
@@ -129,6 +123,7 @@ def get_parameters():
     global item
     global random_packet_len
     global attack_method
+    global resource
     global headers_dict
     optp = OptionParser(add_help_option=False, epilog="Rippers")
     optp.add_option("-s", "--server", dest="host", help="attack to server ip -s ip")
@@ -139,6 +134,7 @@ def get_parameters():
                     help="Send random packets with random length")
     optp.add_option("-m", "--method", type="str", dest="attack_method",
                     help="Attack method: udp (default), http")
+    optp.add_option('--resource', type='str', dest='resource', help='It shows the resource under attack.', default=True)
     opts, args = optp.parse_args()
     if opts.help:
         usage()
@@ -165,6 +161,9 @@ def get_parameters():
         attack_method = opts.attack_method
     else:
         attack_method = 'udp'
+
+    if opts.resource is not None:
+        resource = opts.resource
 
 
 def check_host():
@@ -199,7 +198,7 @@ if __name__ == '__main__':
         connect_host()
 
     p = str(port) if port else '(22, 53, 80, 443)'
-    print("\033[92m", host, " port: ", p, " threads: ", str(thr), "\033[0m")
+    print("\033[92m", host, " port: ", p, " threads: ", thr, " resources: ", resource, "\033[0m")
     print("\033[94mPlease wait...\033[0m")
     user_agent()
     headers()
