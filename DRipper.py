@@ -108,15 +108,24 @@ def down_it_http():
 
 
 def usage():
-    print(''' \033[0;95mDDos Ripper
+    print(''' \033[0;95m
 
-	It is the end user's responsibility to obey all applicable laws.
-	It is just like a server testing script and Your ip is visible. Please, make sure you are anonymous! \n
-	Usage : python3 dripper.py [-s] [-p] [-t] [-pr]
-	-h : -help
-	-s : -server ip
-	-p : -port default 80
-	-t : -threads default 100\033[0m ''')
+██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
+██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
+██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
+██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
+
+It is the end user's responsibility to obey all applicable laws.
+It is just like a server testing script and Your IP is visible. Please, make sure you are anonymous!
+
+Usage : python3 DRipper.py [-s] [-p] [-t] [-pr]
+    -h : -help
+    -s : -server ip
+    -p : -port (default 80)
+    -t : -threads (default 100)
+\033[0m ''')
 
     sys.exit()
 
