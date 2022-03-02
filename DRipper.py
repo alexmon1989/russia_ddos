@@ -132,7 +132,7 @@ def down_it_http():
         time.sleep(.01)
 
 
-def usage():
+def logo():
     print(''' \033[0;95m
 
 ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
@@ -144,15 +144,40 @@ def usage():
 
 It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible. Please, make sure you are anonymous!
+    \033[0m ''')
 
-Usage : python3 DRipper.py [-s] [-p] [-t] [-pr]
-    -h : -help
-    -s : -server ip
-    -p : -port (default 80)
-    -t : -threads (default 100)
-\033[0m ''')
 
+def usage(parser):
+    """Wrapper for Logo with help."""
+    logo()
+    parser.print_help()
     sys.exit()
+
+
+def parse_args(parser):
+    """Initialize command line arguments parser and parse CLI arguments."""
+    parser_add_options(parser)
+
+    return parser.parse_args()
+
+
+def parser_add_options(parser):
+    """Add options to a parser."""
+    parser.add_option('-p', '--port',
+                      dest='port', type='int', default=80,
+                      help='port (default: 80)')
+    parser.add_option('-t', '--threads',
+                      dest='threads', type='int', default=100,
+                      help='threads (default: 100)')
+    parser.add_option('-r', '--random_len',
+                      dest='random_packet__len', type='int',
+                      help='Send random packets with random length')
+    parser.add_option('-m', '--method',
+                      dest='attack_method', type='str', default='udp',
+                      help='Attack method: UDP (default), HTTP')
+    parser.add_option('-s', '--server',
+                      dest='host',
+                      help='Attack to server IP')
 
 
 def get_parameters():
@@ -221,6 +246,9 @@ def connect_host():
 
 def main():
     """The main function to run the script from the command line."""
+    parser = OptionParser(usage=USAGE, epilog=EPILOG)
+    args = parse_args(parser)
+
     if len(sys.argv) < 2:
         usage()
     get_parameters()
