@@ -225,16 +225,21 @@ def get_parameters():
         attack_method = 'udp'
 
 
-def check_host():
+def check_host(host):
+    """Check Server IP."""
+    error_msg = "\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m"
+    if not host:
+        print(error_msg)
+        exit(1)
+
     try:
         socket.gethostbyname(host)
     except:
-        return False
-    else:
-        return True
+        print(error_msg)
+        exit(1)
 
 
-def connect_host():
+def connect_host(host, port):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(5)
