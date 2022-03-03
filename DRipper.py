@@ -243,10 +243,10 @@ def show_info(_ctx: Context):
     m = f"Your current IP: \033[94m{_ctx.external_ip}\033[0m\n"
     m += f"Host, port: \033[94m{_ctx.host}:{_ctx.port}\033[0m\n"
     m += f"Attack method: \033[94m{_ctx.attack_method}\033[0m\n"
-    m += f"Threads: \033[94m{_ctx.threads}\033[0m\n\n"
-
+    m += f"Threads: \033[94m{_ctx.threads}\033[0m\n"
     if _ctx.attack_method == 'udp' and _ctx.random_packet_len:
         m += f"Random packet length: yes\n"
+    m += '\n'
     sys.stdout.write(m)
     sys.stdout.flush()
 
