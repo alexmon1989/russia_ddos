@@ -216,7 +216,7 @@ def parser_add_options(parser):
                       help='Send random packets with random length')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
-                      help='Attack method: UDP (default), HTTP')
+                      help='Attack method: udp (default), http')
     parser.add_option('-s', '--server',
                       dest='host',
                       help='Attack to server IP')
@@ -356,12 +356,29 @@ def check_successful_connections(_ctx: Context):
             _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
 
 
+def validate_input(args):
+    """Validates input params."""
+    if int(args.port) < 0:
+        print("\033[91mWrong port number.\033[0m")
+        return False
+
+    if int(args.threads) < 1:
+        print("\033[91mWrong threads number.\033[0m\n")
+        return False
+
+    if args.attack_method not in ('udp', 'http'):
+        print("\033[91mWrong attack type. Possible options: udp, http.\033[0m\n")
+        return False
+
+    return True
+
+
 def main():
     """The main function to run the script from the command line."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
     args = parse_args(parser)
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or not validate_input(args[0]):
         usage(parser)
 
     init_context(_ctx, args)
