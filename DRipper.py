@@ -243,10 +243,11 @@ def connect_host(_ctx: Context):
 
 
 def get_first_ip_part(ip: str) -> str:
-    try:
-        return f"{ip.split('.')[0]}*"
-    except:
-        return 'No info'
+    parts = ip.split('.')
+    if len(parts) > 1:
+        return f"{parts[0]}.*"
+    else:
+        return parts[0]
 
 
 def show_info(_ctx: Context):
