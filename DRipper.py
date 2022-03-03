@@ -8,6 +8,7 @@ import threading
 import time
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import datetime
 from optparse import OptionParser
 
 
@@ -29,7 +30,7 @@ class Context:
     host: str = ''
     port: int = 80
     threads: int = 100
-    max_random_packet_len: int = 5000
+    max_random_packet_len: int = 0
     random_packet_len: bool = False
     attack_method: str = None
     protocol: str = 'http://'
@@ -41,6 +42,7 @@ class Context:
     headers = None
 
     # Statistic
+    start_time: datetime = None
     start_ip: str = ''
     packets_sent: int = 0
     connections_success: int = 0
@@ -72,6 +74,7 @@ def init_context(_ctx, args):
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
     _ctx.headers = set_headers_dict(_ctx.base_headers)
+    _ctx.start_time = datetime.now()
 
 
 def readfile(filename: str):
@@ -270,6 +273,7 @@ def show_info(_ctx: Context):
     max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if is_random_packet_len else f'\033[94mNOT REQUIRED\033[0m'
 
     print('------------------------------------------------------')
+    print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Your IP:                    {your_ip} {check_vpn}')
     print(f'Host:                       {target_host}')
     print(f'Load Method:                {load_method}')
@@ -301,7 +305,9 @@ def show_statistics(_ctx: Context):
     connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
     load1, load5, load15 = os.getloadavg()
     cpu_usage = (load15 / os.cpu_count()) * 100
+    curr_time = datetime.now() - _ctx.start_time
 
+    print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
     print(f'CPU usage:                  {cpu_usage:.2f}%')
     print(f'Packets Sent:               {_ctx.packets_sent}')
     print(f'Connection Success:         {connections_success}')
