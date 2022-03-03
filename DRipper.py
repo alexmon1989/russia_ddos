@@ -8,7 +8,8 @@ import time
 import urllib.request
 from dataclasses import dataclass, field
 from optparse import OptionParser
-from os import cpu_count
+import psutil
+
 
 # Constants
 USAGE = 'Usage: python %prog [options] arg'
@@ -66,7 +67,7 @@ def init_context(_ctx, args):
     _ctx.attack_method = str(args[0].attack_method).lower()
     _ctx.random_packet_len = bool(args[0].random_packet_len)
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
-    _ctx.cpu_count = max(cpu_count() - 1, 1)
+    _ctx.cpu_count = max(psutil.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
@@ -207,10 +208,10 @@ def parser_add_options(parser):
                       help='threads (default: 100)')
     parser.add_option('-r', '--random_len',
                       dest='random_packet_len', type='int', default=1,
-                      help='Send random packets with random length')
+                      help='Send random packets with random length (default: 1')
     parser.add_option('-l', '--max_random_packet_len',
-                      dest='max_random_packet_len', type='int', default=5000,
-                      help='Send random packets with random length')
+                      dest='max_random_packet_len', type='int', default=48,
+                      help='Max random packets length (default: 48)')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
                       help='Attack method: udp (default), http')
@@ -265,8 +266,8 @@ def show_info(_ctx: Context):
     load_method = f'\033[94m{str(_ctx.attack_method).upper()}\033[0m'
     thread_pool = f'\033[94m{_ctx.threads}\033[0m'
     available_cpu = f'\033[94m{_ctx.cpu_count}\033[0m'
-    rnd_packet_len = f'\033[94mYES\033[0m' if (is_random_packet_len) else f'\033[94mNO\033[0m'
-    max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if (is_random_packet_len) else f'\033[94mNOT REQUIRED\033[0m'
+    rnd_packet_len = f'\033[94mYES\033[0m' if is_random_packet_len else f'\033[94mNO\033[0m'
+    max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if is_random_packet_len else f'\033[94mNOT REQUIRED\033[0m'
 
     print('------------------------------------------------------')
     print(f'Your IP:                    {your_ip} {check_vpn}')
@@ -296,11 +297,13 @@ def show_statistics(_ctx: Context):
     print("\033c")
     show_info(_ctx)
 
-    packets_sent = f'\033[94m{_ctx.packets_sent}\033[0;0m'
     connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
     connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
+    load1, load5, load15 = psutil.getloadavg()
+    cpu_usage = (load15 / psutil.cpu_count()) * 100
 
-    print(f'Packets Sent:               {packets_sent}')
+    print(f'CPU usage:                  {cpu_usage:.2f}%')
+    print(f'Packets Sent:               {_ctx.packets_sent}')
     print(f'Connection Success:         {connections_success}')
     print(f'Connection Failed:          {connections_failed}')
     print('------------------------------------------------------')
