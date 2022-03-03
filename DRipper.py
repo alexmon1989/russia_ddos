@@ -35,13 +35,15 @@ class Context:
     headers = None
 
     # Statistic
-    external_ip: str = ''
+    start_ip: str = ''
     packets_sent: int = 0
     connections_success: int = 0
     connections_failed: int = 0
     errors: list[str] = field(default_factory=list)
 
-    show_statistics = False
+    show_statistics: bool = False
+    current_ip = None
+    getting_ip: bool = False
 
 
 def init_context(_ctx, args):
@@ -59,8 +61,6 @@ def init_context(_ctx, args):
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
     _ctx.headers = set_headers_dict(_ctx.base_headers)
-
-    _ctx.external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
 
 
 def readfile(filename: str):
@@ -240,7 +240,11 @@ def connect_host(_ctx: Context):
 def show_info(_ctx: Context):
     """Prints attack info to console."""
     logo()
-    m = f"Your current IP: \033[94m{_ctx.external_ip}\033[0m\n"
+    m = f"Your IP: \033[94m{_ctx.start_ip}\033[0m"
+    if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip:
+        m += f" \033[91mIP was changed, check VPN (current IP: {_ctx.current_ip})\033[0m\n"
+    else:
+        m += "\n"
     m += f"Host, port: \033[94m{_ctx.host}:{_ctx.port}\033[0m\n"
     m += f"Attack method: \033[94m{_ctx.attack_method}\033[0m\n"
     m += f"Threads: \033[94m{_ctx.threads}\033[0m\n"
@@ -254,6 +258,13 @@ def show_info(_ctx: Context):
 def show_statistics(_ctx: Context):
     """Prints statistics to console."""
     _ctx.show_statistics = True
+
+    lock.acquire()
+    if not _ctx.getting_ip:
+        t = threading.Thread(target=set_current_ip, args=[_ctx])
+        t.start()
+    lock.release()
+
     print("\033c")
     show_info(_ctx)
     packets_sent = str(_ctx.packets_sent)
@@ -285,6 +296,24 @@ def create_thread_pool(_ctx: Context) -> list:
     return thread_pool
 
 
+def get_current_ip():
+    """Gets user IP."""
+    current_ip = "No info"
+    try:
+        current_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+    except:
+        pass
+
+    return current_ip
+
+
+def set_current_ip(_ctx: Context):
+    """Sets current IP."""
+    _ctx.getting_ip = True
+    _ctx.current_ip = get_current_ip()
+    _ctx.getting_ip = False
+
+
 def main():
     """The main function to run the script from the command line."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
@@ -294,7 +323,13 @@ def main():
         usage(parser)
 
     _ctx = Context()
+
     init_context(_ctx, args)
+    current_ip = get_current_ip()
+    if current_ip:
+        _ctx.start_ip = current_ip
+    else:
+        _ctx.start_ip = "\033[91mCan't get your IP. Check internet connection.\033[0m"
 
     check_host(_ctx.host)
     connect_host(_ctx)
