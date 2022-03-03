@@ -5,7 +5,6 @@ import signal
 import sys
 import threading
 import time
-import subprocess
 import urllib.request
 from dataclasses import dataclass, field
 from optparse import OptionParser
@@ -41,6 +40,8 @@ class Context:
     connections_success: int = 0
     connections_failed: int = 0
     errors: list[str] = field(default_factory=list)
+
+    show_statistics = False
 
 
 def init_context(_ctx, args):
@@ -129,7 +130,14 @@ def down_it_udp(_ctx: Context):
                 thread = threading.Thread(target=connect_host, args=[_ctx])
                 thread.daemon = True
                 thread.start()
-        time.sleep(_ctx.threads*0.0001)
+
+        lock.acquire()
+        if not _ctx.show_statistics:
+            thread = threading.Thread(target=show_statistics, args=[_ctx])
+            thread.daemon = True
+            thread.start()
+        lock.release()
+        time.sleep(.01)
 
 
 def down_it_http(_ctx: Context):
@@ -147,7 +155,13 @@ def down_it_http(_ctx: Context):
             # print('\033[92m HTTP-Request was done \033[0;0m')
 
         _ctx.packets_sent += 1
-        time.sleep(_ctx.threads*0.0001)
+
+        if not _ctx.show_statistics:
+            _ctx.show_statistics = True
+            show_statistics(_ctx)
+            _ctx.show_statistics = False
+
+        time.sleep(.01)
 
 
 def logo():
@@ -223,11 +237,8 @@ def connect_host(_ctx: Context):
         _ctx.connections_success += 1
 
 
-def show_statistics(_ctx: Context):
-    """Prints statistics to console."""
-    subprocess.call('clear')
-    subprocess.call('clear')  # Hack for docker
-
+def show_info(_ctx: Context):
+    """Prints attack info to console."""
     logo()
     m = f"Your current IP: \033[94m{_ctx.external_ip}\033[0m\n"
     m += f"Host, port: \033[94m{_ctx.host}:{_ctx.port}\033[0m\n"
@@ -236,16 +247,28 @@ def show_statistics(_ctx: Context):
 
     if _ctx.attack_method == 'udp' and _ctx.random_packet_len:
         m += f"Random packet length: yes\n"
-    if _ctx.attack_method == 'udp':
-        m += f"UDP packets sent: \033[92m{_ctx.packets_sent}\033[0;0m\n"
-    elif _ctx.attack_method == 'http':
-        m += f"HTTP requests sent: \033[92m{_ctx.packets_sent}\033[0;0m\n"
-
-    m += f"Connections: successful - \033[92m{_ctx.connections_success}\033[0;0m, failed - \033[91m{_ctx.connections_failed}\033[0m\n"
-    for error in _ctx.errors:
-        m += error + '\n'
     sys.stdout.write(m)
     sys.stdout.flush()
+
+
+def show_statistics(_ctx: Context):
+    """Prints statistics to console."""
+    _ctx.show_statistics = True
+    packets_sent = str(_ctx.packets_sent)
+    connections_success = str(_ctx.connections_success)
+    connections_failed = str(_ctx.connections_failed)
+
+    m = ''
+    if _ctx.attack_method == 'udp':
+        m = f"UDP packets sent: \033[92m{packets_sent}\033[0;0m; "
+    elif _ctx.attack_method == 'http':
+        m = f"HTTP requests sent: \033[92m{packets_sent}\033[0;0m. "
+
+    m += f"Connections: successful - \033[92m{connections_success}\033[0;0m, failed - \033[91m{connections_failed}\033[0m\r"
+    sys.stdout.write(m)
+    sys.stdout.flush()
+    time.sleep(3)
+    _ctx.show_statistics = False
 
 
 def create_thread_pool(_ctx: Context) -> list:
@@ -278,14 +301,12 @@ def main():
     print("\033[92m", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "\033[0m")
     print("\033[94mPlease wait...\033[0m")
 
-    time.sleep(3)
+    time.sleep(1)
+    show_info(_ctx)
     create_thread_pool(_ctx)
 
     while True:
-        lock.acquire()
-        show_statistics(_ctx)
-        lock.release()
-        time.sleep(3)
+        time.sleep(1)
 
 
 if __name__ == '__main__':
