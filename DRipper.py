@@ -242,12 +242,19 @@ def connect_host(_ctx: Context):
         _ctx.connections_success += 1
 
 
+def get_first_ip_part(ip: str) -> str:
+    try:
+        return f"{ip.split('.')[0]}*"
+    except:
+        return 'No info'
+
+
 def show_info(_ctx: Context):
     """Prints attack info to console."""
     logo()
-    m = f"Your IP: \033[94m{_ctx.start_ip}\033[0m"
+    m = f"Your IP: \033[94m{get_first_ip_part(_ctx.start_ip)}\033[0m"
     if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip:
-        m += f" \033[91mIP was changed, check VPN (current IP: {_ctx.current_ip})\033[0m\n"
+        m += f" \033[91mIP was changed, check VPN (current IP: {get_first_ip_part(_ctx.current_ip)})\033[0m\n"
     else:
         m += "\n"
     m += f"Host, port: \033[94m{_ctx.host}:{_ctx.port}\033[0m\n"
