@@ -306,12 +306,14 @@ def show_statistics(_ctx: Context):
 def create_thread_pool(_ctx: Context) -> list:
     thread_pool = []
     for i in range(int(_ctx.threads)):
-        if _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
-        elif _ctx.attack_method == 'http':
+        if _ctx.attack_method == 'http':
             thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+        else:  # _ctx.attack_method == 'udp':
+            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
+
         thread_pool[i].daemon = True  # if thread is exist, it dies
         thread_pool[i].start()
+
     return thread_pool
 
 
