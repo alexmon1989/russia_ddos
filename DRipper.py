@@ -13,6 +13,9 @@ from optparse import OptionParser
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
+SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
+NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = f"\033[91mThere are no successful connections more than 2 min. " \
+                                      f"Check your VPN or change host/port.\033[0m"
 
 lock = threading.Lock()
 
@@ -38,7 +41,9 @@ class Context:
     start_ip: str = ''
     packets_sent: int = 0
     connections_success: int = 0
+    connections_success_prev: int = 0
     connections_failed: int = 0
+    connections_check_time: int = 0
     errors: list[str] = field(default_factory=list)
 
     show_statistics: bool = False
@@ -265,6 +270,8 @@ def show_statistics(_ctx: Context):
         t.start()
     lock.release()
 
+    check_successful_connections(_ctx)
+
     print("\033c")
     show_info(_ctx)
     packets_sent = str(_ctx.packets_sent)
@@ -278,6 +285,10 @@ def show_statistics(_ctx: Context):
         m = f"HTTP requests sent: \033[92m{packets_sent}\033[0;0m. "
 
     m += f"\nConnections: successful - \033[92m{connections_success}\033[0;0m, failed - \033[91m{connections_failed}\033[0m"
+
+    for error in _ctx.errors:
+        m += f"\n{error}"
+
     sys.stdout.write(m)
     sys.stdout.flush()
     time.sleep(3)
@@ -314,6 +325,20 @@ def set_current_ip(_ctx: Context):
     _ctx.getting_ip = False
 
 
+def check_successful_connections(_ctx: Context):
+    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
+    curr_ms = time.time_ns()
+    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
+    if _ctx.connections_success == _ctx.connections_success_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG not in _ctx.errors:
+                _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+    else:
+        _ctx.connections_check_time = curr_ms
+        if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
+            _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+
+
 def main():
     """The main function to run the script from the command line."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
@@ -340,6 +365,9 @@ def main():
 
     time.sleep(1)
     show_info(_ctx)
+
+    _ctx.connections_check_time = time.time_ns()
+
     create_thread_pool(_ctx)
 
     while True:
