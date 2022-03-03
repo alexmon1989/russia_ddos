@@ -254,6 +254,8 @@ def show_info(_ctx: Context):
 def show_statistics(_ctx: Context):
     """Prints statistics to console."""
     _ctx.show_statistics = True
+    print("\033c")
+    show_info(_ctx)
     packets_sent = str(_ctx.packets_sent)
     connections_success = str(_ctx.connections_success)
     connections_failed = str(_ctx.connections_failed)
@@ -264,7 +266,7 @@ def show_statistics(_ctx: Context):
     elif _ctx.attack_method == 'http':
         m = f"HTTP requests sent: \033[92m{packets_sent}\033[0;0m. "
 
-    m += f"Connections: successful - \033[92m{connections_success}\033[0;0m, failed - \033[91m{connections_failed}\033[0m\r"
+    m += f"\nConnections: successful - \033[92m{connections_success}\033[0;0m, failed - \033[91m{connections_failed}\033[0m"
     sys.stdout.write(m)
     sys.stdout.flush()
     time.sleep(3)
