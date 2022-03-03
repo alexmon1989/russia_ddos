@@ -34,7 +34,7 @@ jobs:
           if test "$(git describe --abbrev=0 --tags 2>/dev/null)"; then
             VERSION=${GITHUB_REF#refs/tags/}
           else
-            VERSION=$(git branch --show-current)
+            VERSION=master
           fi
           echo ::set-output name=VERSION::$VERSION
 
