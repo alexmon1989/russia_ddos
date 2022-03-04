@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import urllib.request
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
 from optparse import OptionParser
@@ -297,18 +298,18 @@ def show_statistics(_ctx: Context):
     lock.release()
 
     check_successful_connections(_ctx)
+    cpu_load = get_cpu_load()
 
     print("\033c")
     show_info(_ctx)
 
     connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
     connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
-    load1, load5, load15 = os.getloadavg()
-    cpu_usage = (load15 / os.cpu_count()) * 100
+
     curr_time = datetime.now() - _ctx.start_time
 
     print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
-    print(f'CPU usage:                  {cpu_usage:.2f}%')
+    print(f'CPU usage:                  {cpu_load}')
     print(f'Packets Sent:               {_ctx.packets_sent}')
     print(f'Connection Success:         {connections_success}')
     print(f'Connection Failed:          {connections_failed}')
@@ -317,6 +318,18 @@ def show_statistics(_ctx: Context):
     sys.stdout.flush()
     time.sleep(3)
     _ctx.show_statistics = False
+
+
+def get_cpu_load():
+    if os.name == 'nt':
+        pipe = subprocess.Popen("wmic cpu get loadpercentage", stdout=subprocess.PIPE)
+        out = pipe.communicate()[0].decode('utf-8')
+        out = out.replace('LoadPercentage', '').strip()
+        return f"{out}%"
+    else:
+        load1, load5, load15 = os.getloadavg()
+        cpu_usage = (load15 / os.cpu_count()) * 100
+        return f"{cpu_usage:.2f}%"
 
 
 def create_thread_pool(_ctx: Context) -> list:
