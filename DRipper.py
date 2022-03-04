@@ -1,4 +1,5 @@
 import os
+import json
 import random
 import socket
 import string
@@ -228,18 +229,16 @@ def parser_add_options(parser):
                       help='Attack to server IP')
 
 
-def check_host(host):
-    """Check Server IP."""
-    error_msg = "\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m"
-    if not host:
-        print(error_msg)
-        exit(1)
+def get_ip_by_host(host):
+    """Gets target's IP by host"""
+    host_ip = ''
 
     try:
-        socket.gethostbyname(host)
+        host_ip = socket.gethostbyname(host)
     except:
-        print(error_msg)
-        exit(1)
+        pass
+
+    return host_ip
 
 
 def connect_host(_ctx: Context):
@@ -367,6 +366,19 @@ def get_current_ip():
     return current_ip
 
 
+def get_host_country(host_ip):
+    """Gets country of the target's IP"""
+    country = "NOT DEFINED"
+    try:
+        response_body = urllib.request.urlopen(f"https://ipinfo.io/{host_ip}").read().decode('utf8')
+        response_data = json.loads(response_body)
+        country = response_data['country']
+    except:
+        pass
+
+    return country
+
+
 def set_current_ip(_ctx: Context):
     """Sets current IP."""
     _ctx.getting_ip = True
@@ -402,6 +414,20 @@ def validate_input(args):
         print("\033[91mWrong attack type. Possible options: udp, http.\033[0m\n")
         return False
 
+    if not args.host:
+        print("\033[91mHost wasn't detected\033[0m\n")
+        return False
+
+    host_ip = get_ip_by_host(args.host)
+    if host_ip == '':
+        print("\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m\n")
+        return False
+
+    host_country = get_host_country(host_ip)
+    if host_country not in ('RU', 'BY'):
+        print(f"\033[91mHost's location ({host_country}) is not allowed.\033[0m\n")
+        return False
+
     return True
 
 
@@ -420,7 +446,6 @@ def main():
     else:
         _ctx.start_ip = "\033[91mCan't get your IP. Check internet connection.\033[0m"
 
-    check_host(_ctx.host)
     connect_host(_ctx)
 
     print("\033[92m", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "\033[0m")
