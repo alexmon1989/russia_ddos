@@ -279,7 +279,7 @@ def show_info(_ctx: Context):
     print(f'Host:                       {target_host}')
     print(f'Load Method:                {load_method}')
     print(f'Threads:                    {thread_pool}')
-    print(f'CPU count:                  {available_cpu}')
+    print(f'vCPU count:                 {available_cpu}')
     print(f'Random Packet Length:       {rnd_packet_len}')
     print(f'Max Random Packet Length:   {max_rnd_packet_len}')
     print('------------------------------------------------------')
@@ -298,7 +298,7 @@ def show_statistics(_ctx: Context):
     lock.release()
 
     check_successful_connections(_ctx)
-    cpu_load = get_cpu_load()
+    # cpu_load = get_cpu_load()
 
     print("\033c")
     show_info(_ctx)
@@ -309,7 +309,7 @@ def show_statistics(_ctx: Context):
     curr_time = datetime.now() - _ctx.start_time
 
     print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
-    print(f'CPU usage:                  {cpu_load}')
+    # print(f'CPU Load Average:           {cpu_load}')
     print(f'Packets Sent:               {_ctx.packets_sent}')
     print(f'Connection Success:         {connections_success}')
     print(f'Connection Failed:          {connections_failed}')
