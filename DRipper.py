@@ -17,7 +17,7 @@ from optparse import OptionParser
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
-SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
+SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 5
 NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = f"\033[91mThere are no successful connections more than 2 min. " \
                                       f"Check your VPN or change host/port.\033[0m"
 
@@ -384,6 +384,7 @@ def check_successful_connections(_ctx: Context):
                 _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
     else:
         _ctx.connections_check_time = curr_ms
+        _ctx.connections_success_prev = _ctx.connections_success
         if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
             _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
 
