@@ -9,11 +9,9 @@ import signal
 import threading
 import subprocess
 import math
-from dataclasses import dataclass, field
-from datetime import datetime
-from optparse import OptionParser
-from os import urandom as randbytes
+from typing import List
 import urllib.request
+from os import urandom as randbytes
 from base64 import b64decode
 from datetime import datetime
 from optparse import OptionParser
@@ -24,25 +22,30 @@ def color_txt(color_code, *texts):
     joined_text = ''.join(str(x) for x in texts)
     return f'\033[{color_code}m{joined_text}\033[0;0m'
 
+
 def red_txt(*texts):
     return color_txt('91', *texts)
+
 
 def blue_txt(*texts):
     return color_txt('94', *texts)
 
+
 def green_txt(*texts):
     return color_txt('92', *texts)
 
+
 def pink_txt(*texts):
     return color_txt('95', *texts)
+
 
 # Constants
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
-NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. ' \
-                                      'Check your VPN or change host/port.')
+NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. '
+                                              'Check your VPN or change host/port.')
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 
 lock = threading.Lock()
@@ -51,8 +54,11 @@ lock = threading.Lock()
 @dataclass
 class Context:
     """Class for passing a context to a parallel processes."""
+    version: str = ''
+
     # Input params
     host: str = ''
+    host_ip: str = ''
     port: int = 80
     threads: int = 100
     max_random_packet_len: int = 0
@@ -77,12 +83,21 @@ class Context:
     packets_sent_prev: int = 0
     connections_failed: int = 0
     connections_check_time: int = 0
-    errors: list[str] = field(default_factory=list)
+    errors: List[str] = field(default_factory=list)
 
     cpu_count: int = 1
     show_statistics: bool = False
     current_ip = None
     getting_ip_in_progress: bool = False
+
+
+def get_app_version():
+    if not _ctx.version:
+        url = 'https://api.github.com/repos/alexmon1989/russia_ddos/releases'
+        response = urllib.request.urlopen(url).read()
+        response = json.loads(response)
+        _ctx.version = response[0]['tag_name']
+    return _ctx.version
 
 
 def update_url(_ctx: Context):
@@ -120,7 +135,7 @@ def readfile(filename: str):
     return content
 
 
-def set_headers_dict(base_headers: list[str]):
+def set_headers_dict(base_headers: List[str]):
     """Set headers for the request"""
     headers_dict = {}
     for line in base_headers:
@@ -227,15 +242,14 @@ def down_it_tcp(_ctx: Context):
 
 
 def logo():
-    print(pink_txt('''
+    print(pink_txt(f'''
 
 ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
 ██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
 ██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
 ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
 ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
-╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝ ver.: {get_app_version()}
 It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
@@ -522,7 +536,7 @@ def validate_input(args):
 def validate_context(_ctx: Context):
     """Validates context"""
     if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
-        print(red_txt('Count not connect to the host'))
+        print(red_txt('Could not connect to the host'))
         return False
 
     return True
@@ -531,7 +545,7 @@ def validate_context(_ctx: Context):
 def go_home(_ctx: Context):
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
-    if _ctx.host.endswith('.'+home_code.lower()) or get_host_country(_ctx.host_ip) in (home_code.upper()):
+    if _ctx.host.endswith('.' + home_code.lower()) or get_host_country(_ctx.host_ip) in home_code.upper():
         _ctx.host_ip = _ctx.host = 'localhost'
         _ctx.original_host += '*'
         update_url(_ctx)
