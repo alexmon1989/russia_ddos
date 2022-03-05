@@ -402,20 +402,20 @@ def show_statistics(_ctx: Context):
 def convert_size(size_bytes: int) -> str:
     """Converts size in bytes to human format."""
     if size_bytes == 0:
-        return "0B"
-    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+        return '0B'
+    size_name = ('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
-    return "%s %s" % (s, size_name[i])
+    return '%s %s' % (s, size_name[i])
 
 
 def get_cpu_load():
     if os.name == 'nt':
-        pipe = subprocess.Popen("wmic cpu get loadpercentage", stdout=subprocess.PIPE)
+        pipe = subprocess.Popen('wmic cpu get loadpercentage', stdout=subprocess.PIPE)
         out = pipe.communicate()[0].decode('utf-8')
         out = out.replace('LoadPercentage', '').strip()
-        return f"{out}%"
+        return f'{out}%'
     else:
         load1, load5, load15 = os.getloadavg()
         cpu_usage = (load15 / os.cpu_count()) * 100
@@ -522,7 +522,7 @@ def validate_input(args):
 
 def validate_context(_ctx: Context):
     """Validates context"""
-    if len(_ctx.host_ip) < 1:
+    if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
         print(red_txt('Count not connect to the host'))
         return False
 
@@ -532,10 +532,8 @@ def validate_context(_ctx: Context):
 def go_home(_ctx: Context):
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
-    print(_ctx.host_ip, get_host_country(_ctx.host_ip))
     if _ctx.host.endswith('.'+home_code.lower()) or get_host_country(_ctx.host_ip) in (home_code.upper()):
-        _ctx.host = 'localhost'
-        _ctx.host_ip = 'localhost'
+        _ctx.host_ip = _ctx.host = 'localhost'
         _ctx.original_host += '*'
         update_url(_ctx)
 
