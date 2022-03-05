@@ -93,10 +93,13 @@ class Context:
 
 def get_app_version():
     if not _ctx.version:
-        url = 'https://api.github.com/repos/alexmon1989/russia_ddos/releases'
-        response = urllib.request.urlopen(url).read()
-        response = json.loads(response)
-        _ctx.version = response[0]['tag_name']
+        try:
+            url = 'https://api.github.com/repos/alexmon1989/russia_ddos/releases'
+            response = urllib.request.urlopen(url).read()
+            response = json.loads(response)
+            _ctx.version = response[0]['tag_name']
+        except:
+            _ctx.version = 'unknown'
     return _ctx.version
 
 
