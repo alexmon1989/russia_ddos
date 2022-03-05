@@ -43,6 +43,7 @@ GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending fail
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
 NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. ' \
                                       'Check your VPN or change host/port.')
+DEFAULT_CURRENT_IP_VALUE = '...detecting'
 
 lock = threading.Lock()
 
@@ -81,7 +82,7 @@ class Context:
     cpu_count: int = 1
     show_statistics: bool = False
     current_ip = None
-    getting_ip: bool = False
+    getting_ip_in_progress: bool = False
 
 
 def update_url(_ctx: Context):
@@ -286,11 +287,13 @@ def update_host_ip(_ctx: Context):
         pass
 
 
-def update_start_ip(_ctx: Context):
-    """Updates start ip"""
-    current_ip = get_current_ip()
-    if current_ip:
-        _ctx.start_ip = current_ip
+def update_current_ip(_ctx: Context):
+    """Updates current ip"""
+    _ctx.getting_ip_in_progress = True
+    _ctx.current_ip = get_current_ip()
+    _ctx.getting_ip_in_progress = False
+    if _ctx.start_ip == '':
+        _ctx.start_ip = _ctx.current_ip
 
 
 def connect_host(_ctx: Context):
@@ -316,14 +319,17 @@ def show_info(_ctx: Context):
     """Prints attack info to console."""
     logo()
 
-    my_ip_masked = get_first_ip_part(_ctx.start_ip)
+    my_ip_masked = get_first_ip_part(_ctx.current_ip) if _ctx.current_ip != DEFAULT_CURRENT_IP_VALUE else DEFAULT_CURRENT_IP_VALUE
     is_random_packet_len = _ctx.attack_method in ('tcp', 'udp') and _ctx.random_packet_len
 
-    if len(_ctx.start_ip) > 0:
-        your_ip = blue_txt(my_ip_masked)
+    if _ctx.current_ip:
+        if _ctx.current_ip == _ctx.start_ip:
+            your_ip = blue_txt(my_ip_masked)
+        else:
+            your_ip = red_txt(f'IP was changed, check VPN (current IP: {my_ip_masked})')
     else:
         your_ip = red_txt('Can\'t get your IP. Check internet connection.')
-    check_vpn = red_txt('IP was changed, check VPN (current IP: {my_ip_masked})') if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
+
     target_host = blue_txt(f'{_ctx.original_host}:{_ctx.port}')
     load_method = blue_txt(f'{str(_ctx.attack_method).upper()}')
     thread_pool = blue_txt(f'{_ctx.threads}')
@@ -333,7 +339,7 @@ def show_info(_ctx: Context):
 
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'Your IP:                    {your_ip} {check_vpn}')
+    print(f'Your IP:                    {your_ip}')
     print(f'Host:                       {target_host}')
     print(f'Load Method:                {load_method}')
     print(f'Threads:                    {thread_pool}')
@@ -351,8 +357,8 @@ def show_statistics(_ctx: Context):
         _ctx.show_statistics = True
 
         lock.acquire()
-        if not _ctx.getting_ip:
-            t = threading.Thread(target=set_current_ip, args=[_ctx])
+        if not _ctx.getting_ip_in_progress:
+            t = threading.Thread(target=update_current_ip, args=[_ctx])
             t.start()
         lock.release()
 
@@ -440,7 +446,7 @@ def create_thread_pool(_ctx: Context) -> list:
 
 def get_current_ip():
     """Gets user IP."""
-    current_ip = 'No info'
+    current_ip = DEFAULT_CURRENT_IP_VALUE
     try:
         current_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
     except:
@@ -460,13 +466,6 @@ def get_host_country(host_ip):
         pass
 
     return country
-
-
-def set_current_ip(_ctx: Context):
-    """Sets current IP."""
-    _ctx.getting_ip = True
-    _ctx.current_ip = get_current_ip()
-    _ctx.getting_ip = False
 
 
 def check_successful_connections(_ctx: Context):
@@ -548,7 +547,7 @@ def main():
 
     init_context(_ctx, args)
     update_host_ip(_ctx)
-    update_start_ip(_ctx)
+    update_current_ip(_ctx)
     go_home(_ctx)
 
     if not validate_context(_ctx):
