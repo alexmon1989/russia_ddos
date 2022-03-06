@@ -1,3 +1,4 @@
+import ipaddress
 import os
 import sys
 import json
@@ -9,38 +10,16 @@ import string
 import signal
 import threading
 import subprocess
+import http.client
 import urllib.request
 from typing import List
 from base64 import b64decode
+from colorama import Fore
+from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import datetime
 from optparse import OptionParser
-from collections import defaultdict
 from os import urandom as randbytes
-from dataclasses import dataclass, field
-
-
-###############################################
-#  Wrappers to print colorful messages
-###############################################
-def color_txt(color_code, *texts):
-    joined_text = ''.join(str(x) for x in texts)
-    return f'\033[{color_code}m{joined_text}\033[0;0m'
-
-
-def red_txt(*texts):
-    return color_txt('91', *texts)
-
-
-def blue_txt(*texts):
-    return color_txt('94', *texts)
-
-
-def green_txt(*texts):
-    return color_txt('92', *texts)
-
-
-def pink_txt(*texts):
-    return color_txt('95', *texts)
 
 
 ###############################################
@@ -49,10 +28,10 @@ def pink_txt(*texts):
 VERSION = 'v1.3.7'
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
-GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
+GETTING_SERVER_IP_ERROR_MSG = Fore.RED + 'Can\'t get server IP. Packet sending failed. Check your VPN.' + Fore.RESET
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
-NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. '
-                                              'Check your VPN or change host/port.')
+NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = Fore.RED + 'There are no successful connections more than 2 min. ' + \
+                                              'Check your VPN or change host/port.' + Fore.RESET
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 
 
@@ -105,6 +84,9 @@ class Context:
     # Method-related stats
     http_codes_counter = defaultdict(int)
 
+    # External API and services info
+    isCloudflareProtected: bool = False
+
 
 def update_url(_ctx: Context):
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
@@ -129,6 +111,8 @@ def init_context(_ctx: Context, args):
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
     _ctx.headers = set_headers_dict(_ctx.base_headers)
+
+    _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
     _ctx.start_time = datetime.now()
 
 
@@ -204,19 +188,19 @@ def get_first_ip_part(ip: str) -> str:
 def validate_input(args):
     """Validates input params."""
     if int(args.port) < 0:
-        print(red_txt('Wrong port number.'))
+        print(Fore.RED + 'Wrong port number.' + Fore.RESET)
         return False
 
     if int(args.threads) < 1:
-        print(red_txt('Wrong threads number.'))
+        print(Fore.RED + 'Wrong threads number.' + Fore.RESET)
         return False
 
     if not args.host:
-        print(red_txt('Host wasn\'t detected'))
+        print(Fore.RED + 'Host wasn\'t detected' + Fore.RESET)
         return False
 
     if args.attack_method not in ('udp', 'tcp', 'http'):
-        print(red_txt('Wrong attack type. Possible options: udp, tcp, http.'))
+        print(Fore.RED + 'Wrong attack type. Possible options: udp, tcp, http.' + Fore.RESET)
         return False
 
     return True
@@ -225,7 +209,7 @@ def validate_input(args):
 def validate_context(_ctx: Context):
     """Validates context"""
     if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
-        print(red_txt('Could not connect to the host'))
+        print(Fore.RED + 'Could not connect to the host' + Fore.RESET)
         return False
 
     return True
@@ -238,7 +222,6 @@ def go_home(_ctx: Context):
         _ctx.host_ip = _ctx.host = 'localhost'
         _ctx.original_host += '*'
         update_url(_ctx)
-
 
 
 def create_thread_pool(_ctx: Context) -> list:
@@ -279,6 +262,30 @@ def get_host_country(host_ip):
         pass
 
     return country
+
+
+def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
+    """Check if the site is under CloudFlare protection."""
+
+    parsed_uri = urllib.request.urlparse(link)
+    domain = "{uri.netloc}".format(uri=parsed_uri)
+    try:
+        origin = socket.gethostbyname(domain)
+        conn = http.client.HTTPSConnection('www.cloudflare.com')
+        headers = {
+            'Cookie': '__cf_bm=OnRKNQTGoxsvaPnhUpTwRi4UGosW61HHYDZ0KratigY-1646567348-0-AXoOT+WpLyPZuVwGPE2Zb1FxFR2oB18wPkJE1UUXfAEbJDKtsZB0X3O8ED29koUfldx63GwHg/sm4TtEkk4hBL3ET83DUUTWCKrb6Z0ZSlcP',
+            'User-Agent': str(random.choice(user_agents)).strip('\n')
+        }
+        conn.request('GET', '/ips-v4', '', headers)
+        iprange = conn.getresponse().read().decode('utf-8')
+        ipv4 = [row.rstrip() for row in iprange.splitlines()]
+        for i in range(len(ipv4)):
+            if ipaddress.ip_address(origin) in ipaddress.ip_network(ipv4[i]):
+                return True
+    except socket.gaierror:
+        return False
+
+    return False
 
 
 def check_successful_connections(_ctx: Context):
@@ -334,7 +341,6 @@ def down_it_udp(_ctx: Context):
             if GETTING_SERVER_IP_ERROR_MSG in _ctx.errors:
                 _ctx.errors.remove(GETTING_SERVER_IP_ERROR_MSG)
             _ctx.packets_sent += 1
-            # print(green_txt('Packet was sent'))
         sock.close()
 
         if _ctx.port:
@@ -366,7 +372,6 @@ def down_it_http(_ctx: Context):
             _ctx.connections_failed += 1
         else:
             _ctx.connections_success += 1
-            # print(green_txt('HTTP-Request was done')))
 
         _ctx.packets_sent += 1
         show_statistics(_ctx)
@@ -405,21 +410,21 @@ def down_it_tcp(_ctx: Context):
 # Input parser, Logo, Help messages
 ###############################################
 def logo():
-    print(pink_txt(f'''
+    print(Fore.CYAN + f'''
 
 ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
 ██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
-██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝ {Fore.YELLOW + ''}
 ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
 ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-                                            {green_txt(VERSION)}
+                                            {Fore.GREEN + VERSION + Fore.RESET}
 
 It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
 Please, make sure you are ANONYMOUS!
-    '''))
+    ''')
 
 
 def usage(parser):
@@ -467,28 +472,30 @@ def show_info(_ctx: Context):
 
     if _ctx.current_ip:
         if _ctx.current_ip == _ctx.start_ip:
-            your_ip = blue_txt(my_ip_masked)
+            your_ip = Fore.BLUE + my_ip_masked
         else:
-            your_ip = red_txt(f'IP was changed, check VPN (current IP: {my_ip_masked})')
+            your_ip = Fore.RED + f'IP was changed, check VPN (current IP: {my_ip_masked})'
     else:
-        your_ip = red_txt('Can\'t get your IP. Check internet connection.')
+        your_ip = Fore.RED + 'Can\'t get your IP. Check internet connection.'
 
-    target_host = blue_txt(f'{_ctx.original_host}:{_ctx.port}')
-    load_method = blue_txt(f'{str(_ctx.attack_method).upper()}')
-    thread_pool = blue_txt(f'{_ctx.threads}')
-    available_cpu = blue_txt(f'{_ctx.cpu_count}')
-    rnd_packet_len = blue_txt('YES' if is_random_packet_len else 'NO')
-    max_rnd_packet_len = blue_txt(_ctx.max_random_packet_len if is_random_packet_len else 'NOT REQUIRED')
+    target_host = f'{_ctx.original_host}:{_ctx.port}'
+    load_method = f'{str(_ctx.attack_method).upper()}'
+    thread_pool = f'{_ctx.threads}'
+    available_cpu = f'{_ctx.cpu_count}'
+    rnd_packet_len = Fore.BLUE + 'YES' if is_random_packet_len else 'NO'
+    max_rnd_packet_len = f'{Fore.BLUE}{_ctx.max_random_packet_len}' if is_random_packet_len else 'NOT REQUIRED'
+    ddos_protection = Fore.RED + 'Protected' if _ctx.isCloudflareProtected else Fore.GREEN + 'Not protected'
 
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'Your IP:                    {your_ip}')
-    print(f'Host:                       {target_host}')
-    print(f'Load Method:                {load_method}')
-    print(f'Threads:                    {thread_pool}')
-    print(f'vCPU count:                 {available_cpu}')
-    print(f'Random Packet Length:       {rnd_packet_len}')
-    print(f'Max Random Packet Length:   {max_rnd_packet_len}')
+    print(f'Your public IP:             {your_ip}{Fore.RESET}')
+    print(f'Host:                       {Fore.BLUE}{target_host}{Fore.RESET}')
+    print(f'CloudFlare Protection:      {ddos_protection}{Fore.RESET}')
+    print(f'Load Method:                {Fore.BLUE}{load_method}{Fore.RESET}')
+    print(f'Threads:                    {Fore.BLUE}{thread_pool}{Fore.RESET}')
+    print(f'vCPU count:                 {Fore.BLUE}{available_cpu}{Fore.RESET}')
+    print(f'Random Packet Length:       {rnd_packet_len}{Fore.RESET}')
+    print(f'Max Random Packet Length:   {max_rnd_packet_len}{Fore.RESET}')
     print('------------------------------------------------------')
 
     sys.stdout.flush()
@@ -524,11 +531,10 @@ def show_statistics(_ctx: Context):
             check_successful_connections(_ctx)
         # cpu_load = get_cpu_load()
 
-        print("\033c")
         show_info(_ctx)
 
-        connections_success = green_txt(_ctx.connections_success)
-        connections_failed = red_txt(_ctx.connections_failed)
+        connections_success = Fore.GREEN + str(_ctx.connections_success)
+        connections_failed = Fore.RED + str(_ctx.connections_failed)
 
         curr_time = datetime.now() - _ctx.start_time
 
@@ -541,21 +547,21 @@ def show_statistics(_ctx: Context):
         elif _ctx.attack_method == 'tcp':
             size_sent = convert_size(_ctx.packets_sent)
             if _ctx.packets_sent == 0:
-                size_sent = red_txt(size_sent)
+                size_sent = Fore.RED + str(size_sent) + Fore.RESET
             else:
-                size_sent = blue_txt(size_sent)
+                size_sent = Fore.BLUE + str(size_sent) + Fore.RESET
 
-            print(f'Total Packets Sent Size:    {size_sent}')
+            print(f'Total Packets Sent Size:    {size_sent}{Fore.RESET}')
         else:  # udp
-            print(f'Packets Sent:               {_ctx.packets_sent}')
-        print(f'Connection Success:         {connections_success}')
-        print(f'Connection Failed:          {connections_failed}')
+            print(f'Packets Sent:               {_ctx.packets_sent}{Fore.RESET}')
+        print(f'Connection Success:         {connections_success}{Fore.RESET}')
+        print(f'Connection Failed:          {connections_failed}{Fore.RESET}')
         print('------------------------------------------------------')
 
         if _ctx.errors:
             print('\n\n')
         for error in _ctx.errors:
-            print(red_txt(error))
+            print(Fore.RED + error + Fore.RESET)
             print('\007')
 
         sys.stdout.flush()
@@ -606,9 +612,6 @@ def main():
         sys.exit()
 
     connect_host(_ctx)
-
-    print(green_txt(_ctx.original_host, ' port: ', _ctx.port, ' threads: ', _ctx.threads))
-    print(blue_txt('please wait...'))
 
     time.sleep(1)
     show_info(_ctx)
