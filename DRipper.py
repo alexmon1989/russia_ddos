@@ -18,18 +18,6 @@ from collections import defaultdict
 from os import urandom as randbytes
 from dataclasses import dataclass, field
 
-###############################################
-# Constants
-###############################################
-VERSION = 'v1.3.7'
-USAGE = 'Usage: python %prog [options] arg'
-EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
-GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
-SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
-NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. '
-                                              'Check your VPN or change host/port.')
-DEFAULT_CURRENT_IP_VALUE = '...detecting'
-
 
 ###############################################
 #  Wrappers to print colorful messages
@@ -53,6 +41,19 @@ def green_txt(*texts):
 
 def pink_txt(*texts):
     return color_txt('95', *texts)
+
+
+###############################################
+# Constants
+###############################################
+VERSION = 'v1.3.7'
+USAGE = 'Usage: python %prog [options] arg'
+EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
+GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
+SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
+NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. '
+                                              'Check your VPN or change host/port.')
+DEFAULT_CURRENT_IP_VALUE = '...detecting'
 
 
 ###############################################
