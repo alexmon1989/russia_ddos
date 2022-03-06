@@ -1,3 +1,4 @@
+import ipaddress
 import os
 import sys
 import json
@@ -17,6 +18,7 @@ from optparse import OptionParser
 from collections import defaultdict
 from os import urandom as randbytes
 from dataclasses import dataclass, field
+import http.client
 
 
 ###############################################
@@ -105,6 +107,9 @@ class Context:
     # Method-related stats
     http_codes_counter = defaultdict(int)
 
+    # External API and services info
+    isCloudflareProtected: bool = False
+
 
 def update_url(_ctx: Context):
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
@@ -129,6 +134,8 @@ def init_context(_ctx: Context, args):
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
     _ctx.headers = set_headers_dict(_ctx.base_headers)
+
+    _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
     _ctx.start_time = datetime.now()
 
 
@@ -240,7 +247,6 @@ def go_home(_ctx: Context):
         update_url(_ctx)
 
 
-
 def create_thread_pool(_ctx: Context) -> list:
     thread_pool = []
     for i in range(int(_ctx.threads)):
@@ -279,6 +285,30 @@ def get_host_country(host_ip):
         pass
 
     return country
+
+
+def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
+    """Check if the site is under CloudFlare protection."""
+
+    parsed_uri = urllib.request.urlparse(link)
+    domain = "{uri.netloc}".format(uri=parsed_uri)
+    try:
+        origin = socket.gethostbyname(domain)
+        conn = http.client.HTTPSConnection('www.cloudflare.com')
+        headers = {
+        'Cookie': '__cf_bm=OnRKNQTGoxsvaPnhUpTwRi4UGosW61HHYDZ0KratigY-1646567348-0-AXoOT+WpLyPZuVwGPE2Zb1FxFR2oB18wPkJE1UUXfAEbJDKtsZB0X3O8ED29koUfldx63GwHg/sm4TtEkk4hBL3ET83DUUTWCKrb6Z0ZSlcP',
+        'User-Agent': str(random.choice(user_agents)).strip('\n')
+        }
+        conn.request('GET', '/ips-v4', '', headers)
+        iprange = conn.getresponse().read().decode('utf-8')
+        ipv4 = [row.rstrip() for row in iprange.splitlines()]
+        for i in range(len(ipv4)):
+            if ipaddress.ip_address(origin) in ipaddress.ip_network(ipv4[i]):
+                return True
+    except socket.gaierror:
+        return False
+
+    return False
 
 
 def check_successful_connections(_ctx: Context):
@@ -479,11 +509,13 @@ def show_info(_ctx: Context):
     available_cpu = blue_txt(f'{_ctx.cpu_count}')
     rnd_packet_len = blue_txt('YES' if is_random_packet_len else 'NO')
     max_rnd_packet_len = blue_txt(_ctx.max_random_packet_len if is_random_packet_len else 'NOT REQUIRED')
+    ddos_protection = red_txt('Protected') if _ctx.isCloudflareProtected else green_txt('Not protected')
 
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'Your IP:                    {your_ip}')
+    print(f'Your public IP:             {your_ip}')
     print(f'Host:                       {target_host}')
+    print(f'CloudFlare Protection:      {ddos_protection}')
     print(f'Load Method:                {load_method}')
     print(f'Threads:                    {thread_pool}')
     print(f'vCPU count:                 {available_cpu}')
