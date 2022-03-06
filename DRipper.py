@@ -118,11 +118,8 @@ def init_context(_ctx: Context, args):
 
 def readfile(filename: str):
     """Read string from file"""
-    file = open(filename, 'r')
-    content = file.readlines()
-    file.close()
-
-    return content
+    with open(filename, 'r') as file:
+        return file.readlines()
 
 
 def set_headers_dict(base_headers: List[str]):
