@@ -64,10 +64,13 @@ Ensure you have Python 3 installed. Then clone this repo and run DRipper.py with
 git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
 
-# run
-python -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+# Install python dependencies:
+pip install colorama
+
+# Run script
+python DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 # OR
-python3 -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+python3 DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 ```
 
 # License

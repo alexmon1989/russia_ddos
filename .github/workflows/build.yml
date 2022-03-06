@@ -25,6 +25,9 @@ jobs:
         with:
           python-version: 3.x
 
+      - name: Setup Python packages
+        run: pip install colorama
+
       - name: Minimalistic CLI check
         run: python -u DRipper.py
 
