@@ -10,7 +10,7 @@ import signal
 import threading
 import subprocess
 import urllib.request
-from typing import Listq
+from typing import List
 from base64 import b64decode
 from datetime import datetime
 from optparse import OptionParser
