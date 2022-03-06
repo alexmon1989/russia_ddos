@@ -279,7 +279,7 @@ def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
         for i in range(len(ipv4)):
             if ipaddress.ip_address(origin) in ipaddress.ip_network(ipv4[i]):
                 return True
-    except socket.gaierror:
+    except:
         return False
 
     return False
