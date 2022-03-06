@@ -41,6 +41,7 @@ def pink_txt(*texts):
 
 
 # Constants
+VERSION = 'v1.3.7'
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
@@ -65,7 +66,7 @@ class Context:
     max_random_packet_len: int = 0
     random_packet_len: bool = False
     attack_method: str = None
-    
+
     protocol: str = 'http://'
     original_host: str = ''
     url: str = None
@@ -93,18 +94,6 @@ class Context:
 
     # Method-related stats
     http_codes_counter = defaultdict(int)
-
-
-def get_app_version():
-    if not _ctx.version:
-        try:
-            url = 'https://api.github.com/repos/alexmon1989/russia_ddos/releases'
-            response = urllib.request.urlopen(url).read()
-            response = json.loads(response)
-            _ctx.version = response[0]['tag_name']
-        except:
-            _ctx.version = 'unknown'
-    return _ctx.version
 
 
 def update_url(_ctx: Context):
@@ -261,7 +250,9 @@ def logo():
 ██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
 ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
 ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
-╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝ ver.: {get_app_version()}
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
+                                            {green_txt(VERSION)}
+
 It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
