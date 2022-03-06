@@ -1,3 +1,6 @@
+import http.client
+import ipaddress
+import socket
 import string
 import random
 import math
@@ -7,52 +10,26 @@ import json
 import sys
 import urllib.request
 from functools import lru_cache
+from colorama import Fore
+
 from constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG, DEFAULT_CURRENT_IP_VALUE,
                        VERSION)
 
 
-###############################################
-#  Wrappers to print colorful messages
-###############################################
-
-def color_txt(color_code, *texts):
-    joined_text = ''.join(str(x) for x in texts)
-    return f'\033[{color_code}m{joined_text}\033[0;0m'
-
-
-def red_txt(*texts):
-    return color_txt('91', *texts)
-
-
-def blue_txt(*texts):
-    return color_txt('94', *texts)
-
-
-def green_txt(*texts):
-    return color_txt('92', *texts)
-
-
-def pink_txt(*texts):
-    return color_txt('95', *texts)
-
-
 @lru_cache(maxsize=None)
 def get_server_ip_error_msg() -> str:
-    return red_txt(GETTING_SERVER_IP_ERROR_MSG)
+    return Fore.RED + GETTING_SERVER_IP_ERROR_MSG + Fore.RESET
 
 
 @lru_cache(maxsize=None)
 def get_no_successfull_connection_error_msg() -> str:
-    return red_txt(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+    return Fore.RED + NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG + Fore.RESET
 
 
 def readfile(filename: str):
-    """Read file into list."""
-    file = open(filename, 'r')
-    content = file.readlines()
-    file.close()
-
-    return content
+    """Read string from file"""
+    with open(filename, 'r') as file:
+        return file.readlines()
 
 
 def get_random_string(len_from, len_to):
@@ -101,6 +78,30 @@ def get_host_country(host_ip):
     return country
 
 
+def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
+    """Check if the site is under CloudFlare protection."""
+
+    parsed_uri = urllib.request.urlparse(link)
+    domain = "{uri.netloc}".format(uri=parsed_uri)
+    try:
+        origin = socket.gethostbyname(domain)
+        conn = http.client.HTTPSConnection('www.cloudflare.com')
+        headers = {
+            'Cookie': '__cf_bm=OnRKNQTGoxsvaPnhUpTwRi4UGosW61HHYDZ0KratigY-1646567348-0-AXoOT+WpLyPZuVwGPE2Zb1FxFR2oB18wPkJE1UUXfAEbJDKtsZB0X3O8ED29koUfldx63GwHg/sm4TtEkk4hBL3ET83DUUTWCKrb6Z0ZSlcP',
+            'User-Agent': str(random.choice(user_agents)).strip('\n')
+        }
+        conn.request('GET', '/ips-v4', '', headers)
+        iprange = conn.getresponse().read().decode('utf-8')
+        ipv4 = [row.rstrip() for row in iprange.splitlines()]
+        for i in range(len(ipv4)):
+            if ipaddress.ip_address(origin) in ipaddress.ip_network(ipv4[i]):
+                return True
+    except:
+        return False
+
+    return False
+
+
 def convert_size(size_bytes: int) -> str:
     """Converts size in bytes to human format."""
     if size_bytes == 0:
@@ -125,21 +126,21 @@ def get_cpu_load():
 
 
 def print_logo():
-    print(pink_txt(f'''
+    print(Fore.CYAN + f'''
 
 ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
 ██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
-██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝ {Fore.YELLOW + ''}
 ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
 ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-                                            {green_txt(VERSION)}
+                                            {Fore.GREEN + VERSION + Fore.RESET}
 
 It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
 Please, make sure you are ANONYMOUS!
-    '''))
+    ''')
 
 
 ###############################################

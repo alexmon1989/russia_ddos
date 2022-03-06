@@ -44,6 +44,9 @@ class Context:
     # Method-related stats
     http_codes_counter = defaultdict(int)
 
+    # External API and services info
+    isCloudflareProtected: bool = False
+
     def __new__(cls):
         """Singleton realization."""
         if not hasattr(cls, 'instance'):

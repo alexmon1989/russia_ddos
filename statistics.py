@@ -2,8 +2,9 @@ import threading
 import sys
 import time
 from datetime import datetime
+from colorama import Fore
 from context import Context
-from common import green_txt, red_txt, blue_txt, convert_size, print_logo, get_first_ip_part
+from common import convert_size, print_logo, get_first_ip_part
 from constants import DEFAULT_CURRENT_IP_VALUE
 import services
 
@@ -21,28 +22,30 @@ def show_info(_ctx: Context):
 
     if _ctx.current_ip:
         if _ctx.current_ip == _ctx.start_ip:
-            your_ip = blue_txt(my_ip_masked)
+            your_ip = Fore.CYAN + my_ip_masked
         else:
-            your_ip = red_txt(f'IP was changed, check VPN (current IP: {my_ip_masked})')
+            your_ip = f'{Fore.RED}IP was changed, check VPN (current IP: {my_ip_masked}){Fore.RESET}'
     else:
-        your_ip = red_txt('Can\'t get your IP. Check internet connection.')
+        your_ip = f'{Fore.RED}Can\'t get your IP. Check internet connection.{Fore.RESET}'
 
-    target_host = blue_txt(f'{_ctx.original_host}:{_ctx.port}')
-    load_method = blue_txt(f'{str(_ctx.attack_method).upper()}')
-    thread_pool = blue_txt(f'{_ctx.threads}')
-    available_cpu = blue_txt(f'{_ctx.cpu_count}')
-    rnd_packet_len = blue_txt('YES' if is_random_packet_len else 'NO')
-    max_rnd_packet_len = blue_txt(_ctx.max_random_packet_len if is_random_packet_len else 'NOT REQUIRED')
+    target_host = f'{_ctx.original_host}:{_ctx.port}'
+    load_method = f'{str(_ctx.attack_method).upper()}'
+    thread_pool = f'{_ctx.threads}'
+    available_cpu = f'{_ctx.cpu_count}'
+    rnd_packet_len = Fore.CYAN + 'YES' if is_random_packet_len else 'NO'
+    max_rnd_packet_len = f'{Fore.CYAN}{_ctx.max_random_packet_len}' if is_random_packet_len else 'NOT REQUIRED'
+    ddos_protection = Fore.RED + 'Protected' if _ctx.isCloudflareProtected else Fore.GREEN + 'Not protected'
 
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'Your IP:                    {your_ip}')
-    print(f'Host:                       {target_host}')
-    print(f'Load Method:                {load_method}')
-    print(f'Threads:                    {thread_pool}')
-    print(f'vCPU count:                 {available_cpu}')
-    print(f'Random Packet Length:       {rnd_packet_len}')
-    print(f'Max Random Packet Length:   {max_rnd_packet_len}')
+    print(f'Your public IP:             {your_ip}{Fore.RESET}')
+    print(f'Host:                       {Fore.CYAN}{target_host}{Fore.RESET}')
+    print(f'CloudFlare Protection:      {ddos_protection}{Fore.RESET}')
+    print(f'Load Method:                {Fore.CYAN}{load_method}{Fore.RESET}')
+    print(f'Threads:                    {Fore.CYAN}{thread_pool}{Fore.RESET}')
+    print(f'vCPU count:                 {Fore.CYAN}{available_cpu}{Fore.RESET}')
+    print(f'Random Packet Length:       {rnd_packet_len}{Fore.RESET}')
+    print(f'Max Random Packet Length:   {max_rnd_packet_len}{Fore.RESET}')
     print('------------------------------------------------------')
 
     sys.stdout.flush()
@@ -65,11 +68,10 @@ def show_statistics(_ctx: Context):
             services.check_successful_connections(_ctx)
         # cpu_load = get_cpu_load()
 
-        print("\033c")
         show_info(_ctx)
 
-        connections_success = green_txt(_ctx.connections_success)
-        connections_failed = red_txt(_ctx.connections_failed)
+        connections_success = f'{Fore.GREEN}{_ctx.connections_success}'
+        connections_failed = f'{Fore.RED}{_ctx.connections_failed}'
 
         curr_time = datetime.now() - _ctx.start_time
 
@@ -82,21 +84,21 @@ def show_statistics(_ctx: Context):
         elif _ctx.attack_method == 'tcp':
             size_sent = convert_size(_ctx.packets_sent)
             if _ctx.packets_sent == 0:
-                size_sent = red_txt(size_sent)
+                size_sent = f'{Fore.LIGHTRED_EX}{size_sent}{Fore.RESET}'
             else:
-                size_sent = blue_txt(size_sent)
+                size_sent = f'{Fore.LIGHTCYAN_EX}{size_sent}{Fore.RESET}'
 
-            print(f'Total Packets Sent Size:    {size_sent}')
+            print(f'Total Packets Sent Size:    {size_sent}{Fore.RESET}')
         else:  # udp
-            print(f'Packets Sent:               {_ctx.packets_sent}')
-        print(f'Connection Success:         {connections_success}')
-        print(f'Connection Failed:          {connections_failed}')
+            print(f'Packets Sent:               {_ctx.packets_sent}{Fore.RESET}')
+        print(f'Connection Success:         {connections_success}{Fore.RESET}')
+        print(f'Connection Failed:          {connections_failed}{Fore.RESET}')
         print('------------------------------------------------------')
 
         if _ctx.errors:
             print('\n\n')
         for error in _ctx.errors:
-            print(red_txt(error))
+            print(f'{Fore.RED}{error}{Fore.RESET}')
             print('\007')
 
         sys.stdout.flush()

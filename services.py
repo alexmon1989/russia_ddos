@@ -7,10 +7,11 @@ from optparse import OptionParser
 from base64 import b64decode
 from typing import List
 from datetime import datetime
+from colorama import Fore
 from context import Context
 from attacks import down_it_http, down_it_tcp, down_it_udp
-from common import (readfile, get_current_ip, get_no_successfull_connection_error_msg, get_host_country, red_txt,
-                    parse_args, print_usage, green_txt, blue_txt)
+from common import (readfile, get_current_ip, get_no_successfull_connection_error_msg, get_host_country,
+                    __isCloudFlareProtected, print_usage, parse_args)
 from constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
 from statistics import show_info
 
@@ -56,6 +57,8 @@ def init_context(_ctx: Context, args):
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
     _ctx.headers = get_headers_dict(_ctx.base_headers)
+
+    _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
     _ctx.start_time = datetime.now()
 
 
@@ -141,19 +144,19 @@ def go_home(_ctx: Context):
 def validate_input(args):
     """Validates input params."""
     if int(args.port) < 0:
-        print(red_txt('Wrong port number.'))
+        print(f'{Fore.RED}Wrong port number.{Fore.RESET}')
         return False
 
     if int(args.threads) < 1:
-        print(red_txt('Wrong threads number.'))
+        print(f'{Fore.RED}Wrong threads number.{Fore.RESET}')
         return False
 
     if not args.host:
-        print(red_txt('Host wasn\'t detected'))
+        print(f'{Fore.RED}Host wasn\'t detected{Fore.RESET}')
         return False
 
     if args.attack_method not in ('udp', 'tcp', 'http'):
-        print(red_txt('Wrong attack type. Possible options: udp, tcp, http.'))
+        print(f'{Fore.RED}Wrong attack type. Possible options: udp, tcp, http.{Fore.RESET}')
         return False
 
     return True
@@ -162,7 +165,7 @@ def validate_input(args):
 def validate_context(_ctx: Context):
     """Validates context"""
     if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
-        print(red_txt('Could not connect to the host'))
+        print(f'{Fore.RED}Could not connect to the host{Fore.RESET}')
         return False
 
     return True
@@ -185,9 +188,6 @@ def main():
         sys.exit()
 
     connect_host(_ctx)
-
-    print(green_txt(_ctx.original_host, ' port: ', _ctx.port, ' threads: ', _ctx.threads))
-    print(blue_txt('please wait...'))
 
     time.sleep(1)
     show_info(_ctx)

