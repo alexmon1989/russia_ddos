@@ -26,10 +26,15 @@ jobs:
           python-version: 3.x
 
       - name: Setup Python packages
-        run: pip install colorama
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
 
       - name: Minimalistic CLI check
         run: python -u DRipper.py
+
+      - name: Run Tests
+        run: python3 -m pytest tests/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -65,6 +70,9 @@ jobs:
           push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Minimal Docker Image test
+        run: docker run --rm alexmon1989/dripper
 
       - name: Update Docker Hub Description
         if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
