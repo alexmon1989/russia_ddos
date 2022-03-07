@@ -35,12 +35,50 @@ SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
 NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = Fore.RED + 'There are no successful connections more than 2 min. ' + \
                                               'Check your VPN or change host/port.' + Fore.RESET
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
+HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
+HOST_FAILED_STATUS = 'HOST_FAILED'
+HOST_SUCCESS_STATUS = 'HOST_SUCCESS'
 
 
 ###############################################
-# DTO, general methods
+# General methods
 ###############################################
+def readfile(filename: str):
+    """Read string from file"""
+    file = open(filename, 'r')
+    content = file.readlines()
+    file.close()
 
+    return content
+
+
+def set_headers_dict(base_headers: List[str]):
+    """Set headers for the request"""
+    headers_dict = {}
+    for line in base_headers:
+        parts = line.split(':')
+        headers_dict[parts[0]] = parts[1].strip()
+
+    return headers_dict
+
+
+def get_random_string(len_from, len_to):
+    """Random string with different length"""
+    length = random.randint(len_from, len_to)
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+
+    return result_str
+
+
+def get_random_port():
+    ports = [22, 53, 80, 443]
+    return random.choice(ports)
+
+
+###############################################
+# DTO declaration
+###############################################
 lock = threading.Lock()
 
 
@@ -88,6 +126,8 @@ class Context:
 
     # External API and services info
     isCloudflareProtected: bool = False
+    fetching_host_statuses_in_progress: bool = False
+    host_statuses = {}
 
 
 def update_url(_ctx: Context):
@@ -118,41 +158,81 @@ def init_context(_ctx: Context, args):
     _ctx.start_time = datetime.now()
 
 
-def readfile(filename: str):
-    """Read string from file"""
-    file = open(filename, 'r')
-    content = file.readlines()
-    file.close()
-
-    return content
-
-
-def set_headers_dict(base_headers: List[str]):
-    """Set headers for the request"""
-    headers_dict = {}
-    for line in base_headers:
-        parts = line.split(':')
-        headers_dict[parts[0]] = parts[1].strip()
-
-    return headers_dict
-
-
-def get_random_string(len_from, len_to):
-    """Random string with different length"""
-    length = random.randint(len_from, len_to)
-    letters = string.ascii_lowercase
-    result_str = ''.join(random.choice(letters) for i in range(length))
-
-    return result_str
+###############################################
+# Host's health check
+###############################################
+def classify_host_status(val):
+    """Classifies the status of the host based on the regional node information from check-host.net"""
+    if val is None:
+        return HOST_IN_PROGRESS_STATUS
+    try:
+        if isinstance(val, list) and len(val) > 0:
+            if 'error' in val[0]:
+                return HOST_FAILED_STATUS
+            if 'time' in val[0]:
+                return HOST_SUCCESS_STATUS
+    except:
+        pass
+    return None
 
 
-def get_random_port():
-    ports = [22, 53, 80, 443]
-    return random.choice(ports)
+def count_host_statuses(distribution):
+    """Counter of in progress / failed / successful statuses based on nodes from check-host.net"""
+    host_statuses = defaultdict(int)
+    for val in distribution.values():
+        status = classify_host_status(val)
+        host_statuses[status] += 1
+    return host_statuses
+
+
+def fetch_zipped_body(_ctx: Context, url: string):
+    """Fetches response body in text of the resource with gzip"""
+    http_headers = _ctx.headers
+    http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
+    compressed_resp = urllib.request.urlopen(
+        urllib.request.Request(url, headers=http_headers)).read()
+    return gzip.decompress(compressed_resp).decode('utf8')
+
+
+def fetch_host_statuses(_ctx: Context):
+    """Fetches regional availability statuses"""
+    statuses = {}
+    try:
+        # request_code is some sort of trace_id which is provided on every request to master node
+        request_code = re.search("get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, f'https://check-host.net/check-tcp?host={_ctx.host_ip}'))[1]
+        # it takes time to poll all information from slave nodes
+        time.sleep(5)
+        # to prevent loop, do not wait for more than 30 seconds
+        for i in range(0, 5):
+            time.sleep(5)
+            resp_data = json.loads(fetch_zipped_body(_ctx, f'https://check-host.net/check_result/{request_code}'))
+            statuses = count_host_statuses(resp_data)
+            if HOST_IN_PROGRESS_STATUS not in statuses:
+                return statuses
+    except Exception as e:
+        pass
+    return statuses
+
+
+###############################################
+# DTO methods
+###############################################
+def update_host_statuses(_ctx: Context):
+    """Updates host statuses based on check-host.net nodes"""
+    if _ctx.fetching_host_statuses_in_progress:
+        return
+    _ctx.fetching_host_statuses_in_progress = True
+    try:
+        if _ctx.host_ip:
+            _ctx.host_statuses = fetch_host_statuses(_ctx)
+    except:
+        pass
+    finally:
+        _ctx.fetching_host_statuses_in_progress = False
 
 
 def update_host_ip(_ctx: Context):
-    """Gets target's IP by host"""
+    """Updates target's IP by host"""
     try:
         _ctx.host_ip = socket.gethostbyname(_ctx.host)
     except:
@@ -492,6 +572,7 @@ def show_info(_ctx: Context):
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Your public IP:             {your_ip}{Fore.RESET}')
     print(f'Host:                       {Fore.BLUE}{target_host}{Fore.RESET}')
+    print(_ctx.host_statuses)
     print(f'CloudFlare Protection:      {ddos_protection}{Fore.RESET}')
     print(f'Load Method:                {Fore.BLUE}{load_method}{Fore.RESET}')
     print(f'Threads:                    {Fore.BLUE}{thread_pool}{Fore.RESET}')
@@ -523,9 +604,10 @@ def show_statistics(_ctx: Context):
 
         lock.acquire()
         if not _ctx.getting_ip_in_progress:
-            t = threading.Thread(target=update_current_ip, args=[_ctx])
-            t.start()
+            thread_update_current_ip = threading.Thread(target=update_current_ip, args=[_ctx])
+            thread_update_current_ip.start()
         lock.release()
+        threading.Thread(target=update_host_statuses, args=[_ctx]).start()
 
         if _ctx.attack_method == 'tcp':
             check_successful_tcp_attack(_ctx)
@@ -592,60 +674,6 @@ def get_cpu_load():
         load1, load5, load15 = os.getloadavg()
         cpu_usage = (load15 / os.cpu_count()) * 100
         return f"{cpu_usage:.2f}%"
-
-
-HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
-HOST_FAILED_STATUS = 'HOST_FAILED'
-HOST_SUCCESS_STATUS = 'HOST_SUCCESS'
-
-def classify_host_status(val):
-    """Classifies the status of the host based on the regional node information from check-host.net"""
-    if val is None:
-        return HOST_IN_PROGRESS_STATUS
-    try:
-        if isinstance(val, list) and len(val) > 0:
-            if 'error' in val[0]:
-                return HOST_FAILED_STATUS
-            if 'time' in val[0]:
-                return HOST_SUCCESS_STATUS
-    except:
-        pass
-    return None
-
-
-def count_host_statuses(distribution):
-    """Counter of in progress / failed / successful statuses based on nodes from check-host.net"""
-    host_statuses = defaultdict(int)
-    for val in distribution.values():
-        status = classify_host_status(val)
-        host_statuses[status] += 1
-    return host_statuses
-
-
-def fetch_zipped_body(_ctx: Context, url: string):
-    """Fetches response body in text of the resource with gzip"""
-    http_headers = _ctx.headers
-    http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
-    compressed_resp = urllib.request.urlopen(
-        urllib.request.Request(url, headers=http_headers)).read()
-    return gzip.decompress(compressed_resp).decode('utf8')
-
-
-def fetch_host_statuses(_ctx: Context):
-    """Fetches regional availability statuses"""
-    statuses = {}
-    try:
-        request_code = re.search("get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, f'https://check-host.net/check-tcp?host={_ctx.host_ip}'))[1]
-        time.sleep(10)
-        for i in range(0, 5):
-            resp_data = json.loads(fetch_zipped_body(_ctx, f'https://check-host.net/check_result/{request_code}'))
-            statuses = count_host_statuses(resp_data)
-            if HOST_IN_PROGRESS_STATUS not in statuses:
-                return statuses
-            time.sleep(5)
-    except Exception as e:
-        pass
-    return statuses
 
 
 ###############################################
