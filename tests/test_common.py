@@ -1,6 +1,5 @@
 import pytest as pytest
-
-from common import *
+from common import get_first_ip_part, convert_size
 
 
 @pytest.mark.parametrize('actual_ip, expected_result', [
