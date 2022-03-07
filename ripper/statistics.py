@@ -3,10 +3,10 @@ import sys
 import time
 from datetime import datetime
 from colorama import Fore
-from context import Context
-from common import convert_size, print_logo, get_first_ip_part
-from constants import DEFAULT_CURRENT_IP_VALUE
-import services
+from ripper.context import Context
+from ripper.common import convert_size, print_logo, get_first_ip_part
+from ripper.constants import DEFAULT_CURRENT_IP_VALUE
+import ripper.services
 
 lock = threading.Lock()
 
@@ -58,14 +58,14 @@ def show_statistics(_ctx: Context):
 
         lock.acquire()
         if not _ctx.getting_ip_in_progress:
-            t = threading.Thread(target=services.update_current_ip, args=[_ctx])
+            t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
             t.start()
         lock.release()
 
         if _ctx.attack_method == 'tcp':
-            services.check_successful_tcp_attack(_ctx)
+            ripper.services.check_successful_tcp_attack(_ctx)
         else:
-            services.check_successful_connections(_ctx)
+            ripper.services.check_successful_connections(_ctx)
         # cpu_load = get_cpu_load()
 
         show_info(_ctx)
@@ -94,6 +94,7 @@ def show_statistics(_ctx: Context):
         print(f'Connection Success:         {connections_success}{Fore.RESET}')
         print(f'Connection Failed:          {connections_failed}{Fore.RESET}')
         print('------------------------------------------------------')
+        print(f'{Fore.LIGHTBLACK_EX}Press CTRL+C to interrupt process.{Fore.RESET}')
 
         if _ctx.errors:
             print('\n\n')

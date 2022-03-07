@@ -1,6 +1,6 @@
 import sys
 import signal
-from services import main
+from ripper.services import main
 
 
 if __name__ == '__main__':

@@ -8,12 +8,12 @@ from base64 import b64decode
 from typing import List
 from datetime import datetime
 from colorama import Fore
-from context import Context
-from attacks import down_it_http, down_it_tcp, down_it_udp
-from common import (readfile, get_current_ip, get_no_successful_connection_error_msg, get_host_country,
-                    __isCloudFlareProtected, print_usage, parse_args)
-from constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
-from statistics import show_info
+from ripper.context import Context
+from ripper.attacks import down_it_http, down_it_tcp, down_it_udp
+from ripper.common import (readfile, get_current_ip, get_no_successful_connection_error_msg, get_host_country,
+                           __isCloudFlareProtected, print_usage, parse_args)
+from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
+from ripper.statistics import show_info
 
 _ctx = Context()
 
@@ -54,8 +54,8 @@ def init_context(_ctx: Context, args):
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
-    _ctx.user_agents = readfile('useragents.txt')
-    _ctx.base_headers = readfile('headers.txt')
+    _ctx.user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
+    _ctx.base_headers = readfile(os.path.dirname(__file__) + '/headers.txt')
     _ctx.headers = get_headers_dict(_ctx.base_headers)
 
     _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
