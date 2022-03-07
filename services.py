@@ -10,7 +10,7 @@ from datetime import datetime
 from colorama import Fore
 from context import Context
 from attacks import down_it_http, down_it_tcp, down_it_udp
-from common import (readfile, get_current_ip, get_no_successfull_connection_error_msg, get_host_country,
+from common import (readfile, get_current_ip, get_no_successful_connection_error_msg, get_host_country,
                     __isCloudFlareProtected, print_usage, parse_args)
 from constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
 from statistics import show_info
@@ -91,9 +91,9 @@ def update_current_ip(_ctx: Context):
 
 def connect_host(_ctx: Context):
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(5)
-        s.connect((_ctx.host, _ctx.port))
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        sock.connect((_ctx.host, _ctx.port))
     except:
         _ctx.connections_failed += 1
     else:
@@ -104,7 +104,7 @@ def check_successful_connections(_ctx: Context):
     """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
-    error_msg = get_no_successfull_connection_error_msg()
+    error_msg = get_no_successful_connection_error_msg()
     if _ctx.connections_success == _ctx.connections_success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
@@ -120,7 +120,7 @@ def check_successful_tcp_attack(_ctx: Context):
     """Checks if there are changes in sended bytes count."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
-    error_msg = get_no_successfull_connection_error_msg()
+    error_msg = get_no_successful_connection_error_msg()
     if _ctx.packets_sent == _ctx.packets_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:

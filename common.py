@@ -22,7 +22,7 @@ def get_server_ip_error_msg() -> str:
 
 
 @lru_cache(maxsize=None)
-def get_no_successfull_connection_error_msg() -> str:
+def get_no_successful_connection_error_msg() -> str:
     return Fore.RED + NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG + Fore.RESET
 
 
