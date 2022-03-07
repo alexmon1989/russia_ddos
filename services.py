@@ -91,13 +91,13 @@ def update_current_ip(_ctx: Context):
 
 def connect_host(_ctx: Context):
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
+        sock = _ctx.sock_manager.create_tcp_socket()
         sock.connect((_ctx.host, _ctx.port))
     except:
         _ctx.connections_failed += 1
     else:
         _ctx.connections_success += 1
+        sock.close()
 
 
 def check_successful_connections(_ctx: Context):

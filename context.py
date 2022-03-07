@@ -1,6 +1,7 @@
 from datetime import datetime
 from collections import defaultdict
 from typing import List
+from sockets import SocketManager
 
 
 class Context:
@@ -46,6 +47,7 @@ class Context:
 
     # External API and services info
     isCloudflareProtected: bool = False
+    sock_manager: SocketManager = SocketManager()
 
     def __new__(cls):
         """Singleton realization."""

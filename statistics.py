@@ -8,12 +8,12 @@ from common import convert_size, print_logo, get_first_ip_part
 from constants import DEFAULT_CURRENT_IP_VALUE
 import services
 
-_ctx = Context()
 lock = threading.Lock()
 
 
 def show_info(_ctx: Context):
     """Prints attack info to console."""
+    print("\033c")
     print_logo()
 
     my_ip_masked = get_first_ip_part(_ctx.current_ip) if _ctx.current_ip != DEFAULT_CURRENT_IP_VALUE \
