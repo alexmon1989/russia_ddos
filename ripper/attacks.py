@@ -4,10 +4,10 @@ import time
 import random
 import urllib.request
 from os import urandom as randbytes
-from context import Context
-from statistics import show_statistics
-from common import get_random_string, get_server_ip_error_msg
-import services
+from ripper.context import Context
+from ripper.statistics import show_statistics
+from ripper.common import get_random_string, get_server_ip_error_msg
+import ripper.services
 
 
 ###############################################
@@ -40,7 +40,7 @@ def down_it_udp(_ctx: Context):
             i += 1
             if i == 50:
                 i = 1
-                thread = threading.Thread(target=services.connect_host, args=[_ctx])
+                thread = threading.Thread(target=ripper.services.connect_host, args=[_ctx])
                 thread.daemon = True
                 thread.start()
 

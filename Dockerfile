@@ -1,7 +1,7 @@
 FROM python:3.10-alpine
 ENV PYTHONUNBUFFERED=1
 
-COPY * /app/
+COPY DRipper.py ./ripper/* requirements.txt /app/
 
 RUN pip install --upgrade pip && \
     pip install -r /app/requirements.txt && \

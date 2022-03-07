@@ -12,7 +12,7 @@ import urllib.request
 from functools import lru_cache
 from colorama import Fore
 
-from constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG, DEFAULT_CURRENT_IP_VALUE,
+from ripper.constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG, DEFAULT_CURRENT_IP_VALUE,
                        VERSION)
 
 

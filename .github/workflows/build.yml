@@ -26,10 +26,15 @@ jobs:
           python-version: 3.x
 
       - name: Setup Python packages
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
 
       - name: Minimalistic CLI check
         run: python -u DRipper.py
+
+      - name: Run Tests
+        run: python3 -m pytest tests/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
