@@ -1,4 +1,9 @@
 import random
+import re
+import json
+import urllib
+import gzip
+import time
 from collections import defaultdict
 from ripper.context import Context
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
@@ -52,5 +57,6 @@ def fetch_host_statuses(_ctx: Context):
             if HOST_IN_PROGRESS_STATUS not in statuses:
                 return statuses
     except Exception as e:
+        print(e)
         pass
     return statuses

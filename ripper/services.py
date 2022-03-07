@@ -52,24 +52,8 @@ def init_context(_ctx: Context, args):
     _ctx.attack_method = str(args[0].attack_method).lower()
     _ctx.random_packet_len = bool(args[0].random_packet_len)
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
-    _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
-
-    _ctx.user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
-    _ctx.base_headers = readfile(os.path.dirname(__file__) + '/headers.txt')
-    _ctx.headers = get_headers_dict(_ctx.base_headers)
 
     _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
-    _ctx.start_time = datetime.now()
-
-
-def get_headers_dict(base_headers: List[str]):
-    """Set headers for the request"""
-    headers_dict = {}
-    for line in base_headers:
-        parts = line.split(':')
-        headers_dict[parts[0]] = parts[1].strip()
-
-    return headers_dict
 
 
 def update_host_ip(_ctx: Context):

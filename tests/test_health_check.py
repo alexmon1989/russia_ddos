@@ -1,6 +1,9 @@
+import sys
 import pytest as pytest
-from ripper.health_check import classify_host_status, count_host_statuses
+from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
+from ripper.context import Context
+from ripper.services import update_host_ip
 
 
 @pytest.mark.parametrize('value, status', [
@@ -12,7 +15,7 @@ def test_classify_host_status(value, status):
     assert classify_host_status(value) == status
 
 
-@pytest.mark.parametrize('distribution, statuses_count', [
+@pytest.mark.parametrize('distribution, statuses_counter', [
     ({"at1.node.check-host.net": [{"address": "95.173.136.72","time": 0.067267}],
       "ch1.node.check-host.net": [{"address": "95.173.136.72","time": 0.080538}],
       "de4.node.check-host.net": [{"address": "95.173.136.72","time": 1.078855}],
@@ -29,8 +32,17 @@ def test_classify_host_status(value, status):
       }),
     ({}, {}),
 ])
-def test_count_host_statuses(distribution, statuses_count):
+def test_count_host_statuses(distribution, statuses_counter):
     actual = count_host_statuses(distribution)
-    assert len(actual) == len(statuses_count)
-    for (key, value) in statuses_count.items():
+    assert len(actual) == len(statuses_counter)
+    for (key, value) in statuses_counter.items():
         assert actual[key] == value
+
+def test_fetch_host_statuses():
+    _ctx = Context()
+    _ctx.host = 'google.com'
+    update_host_ip(_ctx)
+    assert len(_ctx.host_ip) > 0
+    distribution = fetch_host_statuses(_ctx)
+    # some nodes have issues with file descriptor or connection
+    assert distribution[HOST_SUCCESS_STATUS] > 17
