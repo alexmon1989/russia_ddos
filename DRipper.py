@@ -1,8 +1,10 @@
 import ipaddress
 import os
+import re
 import sys
 import json
 import time
+import gzip
 import math
 import random
 import socket
@@ -590,6 +592,60 @@ def get_cpu_load():
         load1, load5, load15 = os.getloadavg()
         cpu_usage = (load15 / os.cpu_count()) * 100
         return f"{cpu_usage:.2f}%"
+
+
+HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
+HOST_FAILED_STATUS = 'HOST_FAILED'
+HOST_SUCCESS_STATUS = 'HOST_SUCCESS'
+
+def classify_host_status(val):
+    """Classifies the status of the host based on the regional node information from check-host.net"""
+    if val is None:
+        return HOST_IN_PROGRESS_STATUS
+    try:
+        if isinstance(val, list) and len(val) > 0:
+            if 'error' in val[0]:
+                return HOST_FAILED_STATUS
+            if 'time' in val[0]:
+                return HOST_SUCCESS_STATUS
+    except:
+        pass
+    return None
+
+
+def count_host_statuses(distribution):
+    """Counter of in progress / failed / successful statuses based on nodes from check-host.net"""
+    host_statuses = defaultdict(int)
+    for val in distribution.values():
+        status = classify_host_status(val)
+        host_statuses[status] += 1
+    return host_statuses
+
+
+def fetch_zipped_body(_ctx: Context, url: string):
+    """Fetches response body in text of the resource with gzip"""
+    http_headers = _ctx.headers
+    http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
+    compressed_resp = urllib.request.urlopen(
+        urllib.request.Request(url, headers=http_headers)).read()
+    return gzip.decompress(compressed_resp).decode('utf8')
+
+
+def fetch_host_statuses(_ctx: Context):
+    """Fetches regional availability statuses"""
+    statuses = {}
+    try:
+        request_code = re.search("get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, f'https://check-host.net/check-tcp?host={_ctx.host_ip}'))[1]
+        time.sleep(10)
+        for i in range(0, 5):
+            resp_data = json.loads(fetch_zipped_body(_ctx, f'https://check-host.net/check_result/{request_code}'))
+            statuses = count_host_statuses(resp_data)
+            if HOST_IN_PROGRESS_STATUS not in statuses:
+                return statuses
+            time.sleep(5)
+    except Exception as e:
+        pass
+    return statuses
 
 
 ###############################################
