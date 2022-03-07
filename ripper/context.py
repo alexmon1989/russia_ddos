@@ -1,7 +1,7 @@
 from datetime import datetime
 from collections import defaultdict
 from typing import List
-from sockets import SocketManager
+from ripper.sockets import SocketManager
 
 
 class Context:
