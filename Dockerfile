@@ -1,8 +1,9 @@
 FROM python:3.10-alpine
 ENV PYTHONUNBUFFERED=1
 
+RUN mkdir -p /app/ripper
+COPY ./ripper/* /app/ripper/
 COPY DRipper.py requirements.txt /app/
-COPY ripper /app/ripper
 
 RUN pip install --upgrade pip && \
     pip install -r /app/requirements.txt && \
