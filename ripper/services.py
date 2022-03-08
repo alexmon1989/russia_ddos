@@ -78,9 +78,12 @@ def update_current_ip(_ctx: Context):
 def update_host_statuses(_ctx: Context):
     """Updates host statuses based on check-host.net nodes"""
     MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
-    
-    if _ctx.fetching_host_statuses_in_progress or \
-        time.time() - _ctx.last_host_statuses_update_time < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
+
+    diff = float('inf')
+    if _ctx.last_host_statuses_update is not None:
+        diff = time.time() - datetime.timestamp(_ctx.last_host_statuses_update)
+
+    if _ctx.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
         return
     _ctx.fetching_host_statuses_in_progress = True
     try:
@@ -89,7 +92,7 @@ def update_host_statuses(_ctx: Context):
             # API in some cases returns 403, so we can't update statuses
             if len(host_statuses.values()):
                 _ctx.host_statuses = host_statuses
-                _ctx.last_host_statuses_update_time = time.time()
+                _ctx.last_host_statuses_update = datetime.now()
     except:
         pass
     finally:

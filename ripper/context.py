@@ -68,7 +68,7 @@ class Context:
 
     # Health-check
     fetching_host_statuses_in_progress: bool = False
-    last_host_statuses_update_time: int = -1
+    last_host_statuses_update: datetime = None
     health_check_method: str = ''
     host_statuses = {}
 
