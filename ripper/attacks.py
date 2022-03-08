@@ -1,6 +1,7 @@
 import socket
 import random
 import urllib.request
+import threading
 from os import urandom as randbytes
 import ripper.services
 from ripper.context import Context
@@ -35,10 +36,11 @@ def down_it_udp(_ctx: Context):
             _ctx.packets_sent += 1
 
         i += 1
-        if i == 1000:
+        if i == 100:
             i = 1
             if not _ctx.connecting_host:
-                ripper.services.connect_host(_ctx)
+                threading.Thread(daemon=True, target=ripper.services.connect_host, args=[_ctx]).start()
+                # ripper.services.connect_host(_ctx)
 
         if not _ctx.show_statistics:
             show_statistics(_ctx)
