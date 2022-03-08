@@ -27,7 +27,7 @@ def get_no_successful_connection_error_msg() -> str:
 
 
 def get_no_successful_connection_die_msg() -> str:
-    return f"{Fore.LIGHTRED_EX}There was no successful connections for more " \
+    return f"{Fore.LIGHTRED_EX}There were no successful connections for more " \
            f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
            f"Your attack is ineffective.{Fore.RESET}"
 
