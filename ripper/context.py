@@ -51,6 +51,8 @@ class Context:
     isCloudflareProtected: bool = False
     sock_manager: SocketManager = SocketManager()
 
+    connecting_host: bool = False
+
     def __new__(cls):
         """Singleton realization."""
         if not hasattr(cls, 'instance'):
