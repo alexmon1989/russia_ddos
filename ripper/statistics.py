@@ -38,8 +38,8 @@ def show_info(_ctx: Context):
 
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'Your public IP:             {your_ip}{Fore.RESET}')
-    print(f'Host:                       {Fore.CYAN}{target_host}{Fore.RESET}')
+    print(f'Your public IP / Country:   {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET}')
+    print(f'Host IP / Country:          {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
     print(f'CloudFlare Protection:      {ddos_protection}{Fore.RESET}')
     print(f'Load Method:                {Fore.CYAN}{load_method}{Fore.RESET}')
     print(f'Threads:                    {Fore.CYAN}{thread_pool}{Fore.RESET}')

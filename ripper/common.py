@@ -58,7 +58,8 @@ def get_current_ip():
     """Gets user IP."""
     current_ip = DEFAULT_CURRENT_IP_VALUE
     try:
-        current_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+        current_ip = os.popen('curl -s ifconfig.me').readline() \
+            if os.name == 'posix' else urllib.request.urlopen('https://ifconfig.me').read().decode('utf8')
     except:
         pass
 
