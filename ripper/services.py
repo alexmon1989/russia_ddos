@@ -76,6 +76,7 @@ def update_host_ip(_ctx: Context):
     """Gets target's IP by host"""
     try:
         _ctx.host_ip = socket.gethostbyname(_ctx.host)
+        _ctx.target_country = get_host_country(_ctx.host_ip)
     except:
         pass
 
