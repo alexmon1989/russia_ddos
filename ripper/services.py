@@ -182,6 +182,7 @@ def main():
     init_context(_ctx, args)
     update_host_ip(_ctx)
     update_current_ip(_ctx)
+    _ctx.country = get_host_country(_ctx.current_ip)
     go_home(_ctx)
 
     if not validate_context(_ctx):

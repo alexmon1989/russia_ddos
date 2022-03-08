@@ -27,6 +27,7 @@ class Context:
     headers = None
 
     # Statistic
+    country: str = None
     start_time: datetime = None
     start_ip: str = ''
     packets_sent: int = 0

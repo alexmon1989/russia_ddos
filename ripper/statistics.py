@@ -39,6 +39,7 @@ def show_info(_ctx: Context):
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Your public IP:             {your_ip}{Fore.RESET}')
+    print(f'Your current location:      {Fore.YELLOW}{_ctx.country}{Fore.RESET}')
     print(f'Host:                       {Fore.CYAN}{target_host}{Fore.RESET}')
     print(f'CloudFlare Protection:      {ddos_protection}{Fore.RESET}')
     print(f'Load Method:                {Fore.CYAN}{load_method}{Fore.RESET}')
