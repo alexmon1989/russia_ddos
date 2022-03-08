@@ -8,7 +8,34 @@ from collections import defaultdict
 from ripper.context import Context
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 
-def classify_host_status(val):
+
+def classify_host_status(node_response):
+    """Classifies the status of the host based on the regional node information from check-host.net"""
+    if node_response is None:
+        return HOST_IN_PROGRESS_STATUS
+    try:
+        if not isinstance(node_response, list) or len(node_response) != 1:
+            return HOST_FAILED_STATUS
+        value = node_response[0]
+        # tcp, udp
+        if isinstance(value, dict):
+            if 'error' in value:
+                return HOST_FAILED_STATUS
+            else:
+                return HOST_SUCCESS_STATUS
+        # http
+        if isinstance(value, list) and len(value) == 5:
+            return HOST_SUCCESS_STATUS if value[0] == 1 else HOST_FAILED_STATUS
+        # ping
+        if isinstance(value, list) and len(value) == 4:
+            success_cnt = sum([1 if ping[0] == 'OK' else 0 for ping in value])
+            return HOST_SUCCESS_STATUS if success_cnt > 1 else HOST_FAILED_STATUS
+    except:
+        pass
+    return None
+
+
+def classify_host_status_http(val):
     """Classifies the status of the host based on the regional node information from check-host.net"""
     if val is None:
         return HOST_IN_PROGRESS_STATUS
@@ -16,11 +43,11 @@ def classify_host_status(val):
         if isinstance(val, list) and len(val) > 0:
             if 'error' in val[0]:
                 return HOST_FAILED_STATUS
-            if 'time' in val[0]:
+            else:
                 return HOST_SUCCESS_STATUS
     except:
         pass
-    return None
+    return None 
 
 
 def count_host_statuses(distribution):
@@ -41,12 +68,23 @@ def fetch_zipped_body(_ctx: Context, url: str):
     return gzip.decompress(compressed_resp).decode('utf8')
 
 
+def get_health_check_path(attack_method: str):
+    if attack_method == 'http':
+        return '/check-http'
+    elif attack_method == 'tcp':
+        return '/check-tcp'
+    elif attack_method == 'udp':
+        return '/check-udp'
+    return '/check-ping'
+
+
 def fetch_host_statuses(_ctx: Context):
     """Fetches regional availability statuses"""
     statuses = {}
     try:
+        request_url = f'https://check-host.net{get_health_check_path(_ctx.attack_method)}?host={_ctx.host_ip}:{_ctx.port}'
         # request_code is some sort of trace_id which is provided on every request to master node
-        request_code = re.search(r"get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, f'https://check-host.net/check-tcp?host={_ctx.host_ip}'))[1]
+        request_code = re.search(r"get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, request_url))[1]
         # it takes time to poll all information from slave nodes
         time.sleep(5)
         # to prevent loop, do not wait for more than 30 seconds
@@ -55,8 +93,8 @@ def fetch_host_statuses(_ctx: Context):
             resp_data = json.loads(fetch_zipped_body(_ctx, f'https://check-host.net/check_result/{request_code}'))
             statuses = count_host_statuses(resp_data)
             if HOST_IN_PROGRESS_STATUS not in statuses:
+                print(resp_data)
                 return statuses
-    except Exception as e:
-        print(e)
+    except:
         pass
     return statuses
