@@ -189,6 +189,7 @@ def main():
     if len(sys.argv) < 2 or not validate_input(args[0]):
         print_usage(parser)
 
+    # Init context
     init_context(_ctx, args)
     update_host_ip(_ctx)
     update_current_ip(_ctx)
@@ -198,9 +199,7 @@ def main():
     if not validate_context(_ctx):
         sys.exit()
 
-    connect_host(_ctx)
-
-    time.sleep(1)
+    time.sleep(.5)
     show_info(_ctx)
 
     _ctx.connections_check_time = time.time_ns()
