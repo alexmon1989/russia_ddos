@@ -14,7 +14,7 @@ from ripper.common import (readfile, get_current_ip, get_no_successful_connectio
                            __isCloudFlareProtected, print_usage, parse_args)
 from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
 from ripper.statistics import show_info
-from ripper.health_check import fetch_host_statuses
+from ripper.health_check import fetch_host_statuses, get_heath_check_method
 
 _ctx = Context()
 
@@ -55,6 +55,7 @@ def init_context(_ctx: Context, args):
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
 
     _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
+    _ctx.heath_check_method = get_heath_check_method(_ctx.attack_method)
 
 
 def update_host_ip(_ctx: Context):

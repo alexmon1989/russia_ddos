@@ -66,8 +66,10 @@ class Context:
     isCloudflareProtected: bool = False
     sock_manager: SocketManager = SocketManager()
 
+    # Health-check
     fetching_host_statuses_in_progress: bool = False
     last_host_statuses_update_time: int = -1
+    health_check_method: str = ''
     host_statuses = {}
 
     def __new__(cls):

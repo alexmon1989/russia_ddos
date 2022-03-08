@@ -82,7 +82,7 @@ pip install pytest
 
 #### Run
 ```bash
-python -m unittest discover ./tests 
+pytest
 ```
 
 # License

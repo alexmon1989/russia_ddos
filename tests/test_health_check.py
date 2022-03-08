@@ -1,6 +1,6 @@
 import sys
 import pytest as pytest
-from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses
+from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses, construct_request_url
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 from ripper.context import Context
 from ripper.services import update_host_ip
@@ -36,11 +36,33 @@ def test_count_host_statuses(distribution, statuses_counter):
         assert actual[key] == value
 
 
+# slow
 def test_fetch_host_statuses():
     _ctx = Context()
     _ctx.host = 'google.com'
+    _ctx.health_check_method = 'tcp'
     update_host_ip(_ctx)
     assert len(_ctx.host_ip) > 0
     distribution = fetch_host_statuses(_ctx)
     # some nodes have issues with file descriptor or connection
     assert distribution[HOST_SUCCESS_STATUS] > 17
+
+
+@pytest.mark.parametrize('context_data, url', [
+    ({'host': 'google.com', 'port': 443, 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com'),
+    ({'host': 'google.com', 'port': 92, 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com:92'),
+    ({'host': 'google.com', 'host_ip': '172.217.20.206', 'port': 443, 'health_check_method': 'tcp'}, 'https://check-host.net/check-tcp?host=172.217.20.206:443'),
+    ({'host': 'google.com', 'host_ip': '172.217.20.206', 'port': 443, 'health_check_method': 'ping'}, 'https://check-host.net/check-ping?host=172.217.20.206'),
+])
+def test_construct_request_url(context_data, url):
+    _ctx = Context()
+    for (key, value) in context_data.items():
+        if key == 'host':
+            _ctx.host = value
+        elif key == 'host_ip':
+            _ctx.host_ip = value
+        elif key == 'port':
+            _ctx.port = value
+        elif key == 'health_check_method':
+            _ctx.health_check_method = value
+    assert construct_request_url(_ctx) == url

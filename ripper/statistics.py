@@ -13,7 +13,7 @@ lock = threading.Lock()
 
 def get_health_status(_ctx: Context):
     if(_ctx.last_host_statuses_update_time < 0 or len(_ctx.host_statuses.values()) == 0):
-        return '...detecting'
+        return f'...detecting ({Fore.CYAN}{_ctx.heath_check_method}{Fore.RESET} health check method)'
 
     failed_cnt = 0
     succeeded_cnt = 0

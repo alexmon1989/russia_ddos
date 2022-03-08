@@ -68,22 +68,43 @@ def fetch_zipped_body(_ctx: Context, url: str):
     return gzip.decompress(compressed_resp).decode('utf8')
 
 
-def get_health_check_path(attack_method: str):
+def get_heath_check_method(attack_method: str):
     if attack_method == 'http':
-        return '/check-http'
+        return 'http'
     elif attack_method == 'tcp':
-        return '/check-tcp'
-    # udp check had false positives
+        return 'tcp'
+    # udp check had false positives, futher research is required
     # elif attack_method == 'udp':
-    #     return '/check-udp'
-    return '/check-ping'
+    #     return 'udp'
+    return 'ping'
+
+
+def get_health_check_path(health_check_method: str):
+    return f'/check-{health_check_method}'
+
+
+def construct_request_url(_ctx: Context):
+    host = f'{_ctx.host_ip}:{_ctx.port}'
+    if _ctx.health_check_method == 'http':
+        # https connection will not be established
+        # the plain http request will be sent to https port
+        # in some cases it will lead to false negative
+        if _ctx.port == 443:
+            host = f'{_ctx.host}'
+        else:
+            host = f'{_ctx.host}:{_ctx.port}'
+    elif _ctx.health_check_method == 'ping':
+        host = _ctx.host_ip
+
+    path = get_health_check_path(_ctx.health_check_method)
+    return f'https://check-host.net{path}?host={host}'
 
 
 def fetch_host_statuses(_ctx: Context):
     """Fetches regional availability statuses"""
     statuses = {}
     try:
-        request_url = f'https://check-host.net{get_health_check_path(_ctx.attack_method)}?host={_ctx.host_ip}:{_ctx.port}'
+        request_url = construct_request_url(_ctx)
         # request_code is some sort of trace_id which is provided on every request to master node
         request_code = re.search(r"get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, request_url))[1]
         # it takes time to poll all information from slave nodes
