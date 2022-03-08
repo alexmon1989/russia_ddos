@@ -12,8 +12,8 @@ import urllib.request
 from functools import lru_cache
 from colorama import Fore
 
-from ripper.constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG, DEFAULT_CURRENT_IP_VALUE,
-                       VERSION)
+from ripper.constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG,
+                              DEFAULT_CURRENT_IP_VALUE, VERSION, NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC)
 
 
 @lru_cache(maxsize=None)
@@ -24,6 +24,12 @@ def get_server_ip_error_msg() -> str:
 @lru_cache(maxsize=None)
 def get_no_successful_connection_error_msg() -> str:
     return Fore.RED + NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG + Fore.RESET
+
+
+def get_no_successful_connection_die_msg() -> str:
+    return f"{Fore.LIGHTRED_EX}There was no successful attacks for more " \
+           f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
+           f"Your attack is ineffective.{Fore.RESET}"
 
 
 def readfile(filename: str):
