@@ -91,6 +91,7 @@ def update_current_ip(_ctx: Context):
 
 
 def connect_host(_ctx: Context):
+    _ctx.connecting_host = True
     try:
         sock = _ctx.sock_manager.create_tcp_socket()
         sock.connect((_ctx.host, _ctx.port))
@@ -99,6 +100,7 @@ def connect_host(_ctx: Context):
     else:
         _ctx.connections_success += 1
         sock.close()
+    _ctx.connecting_host = False
 
 
 def check_successful_connections(_ctx: Context):

