@@ -5,7 +5,8 @@ RUN mkdir -p /app/ripper
 COPY ./ripper/* /app/ripper/
 COPY DRipper.py requirements.txt /app/
 
-RUN pip install --upgrade pip && \
+RUN apk add curl && \
+    pip install --upgrade pip && \
     pip install -r /app/requirements.txt && \
     rm -rf /app/requirements.txt
 
