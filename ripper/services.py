@@ -14,6 +14,7 @@ from ripper.common import (readfile, get_current_ip, get_no_successful_connectio
                            __isCloudFlareProtected, print_usage, parse_args)
 from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
 from ripper.statistics import show_info
+from ripper.health_check import fetch_host_statuses
 
 _ctx = Context()
 
@@ -71,6 +72,27 @@ def update_current_ip(_ctx: Context):
     _ctx.getting_ip_in_progress = False
     if _ctx.start_ip == '':
         _ctx.start_ip = _ctx.current_ip
+
+
+def update_host_statuses(_ctx: Context):
+    """Updates host statuses based on check-host.net nodes"""
+    MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
+    
+    if _ctx.fetching_host_statuses_in_progress or \
+        time.time() - _ctx.last_host_statuses_update_time < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
+        return
+    _ctx.fetching_host_statuses_in_progress = True
+    try:
+        if _ctx.host_ip:
+            host_statuses = fetch_host_statuses(_ctx)
+            # API in some cases returns 403, so we can't update statuses
+            if len(host_statuses.values()):
+                _ctx.host_statuses = host_statuses
+                _ctx.last_host_statuses_update_time = time.time()
+    except:
+        pass
+    finally:
+        _ctx.fetching_host_statuses_in_progress = False
 
 
 def connect_host(_ctx: Context):

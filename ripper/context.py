@@ -65,7 +65,9 @@ class Context:
     # External API and services info
     isCloudflareProtected: bool = False
     sock_manager: SocketManager = SocketManager()
+
     fetching_host_statuses_in_progress: bool = False
+    last_host_statuses_update_time: int = -1
     host_statuses = {}
 
     def __new__(cls):

@@ -5,10 +5,32 @@ from datetime import datetime
 from colorama import Fore
 from ripper.context import Context
 from ripper.common import convert_size, print_logo, get_first_ip_part
-from ripper.constants import DEFAULT_CURRENT_IP_VALUE
+from ripper.constants import DEFAULT_CURRENT_IP_VALUE, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 import ripper.services
 
 lock = threading.Lock()
+
+
+def get_health_status(_ctx: Context):
+    if(_ctx.last_host_statuses_update_time < 0 or len(_ctx.host_statuses.values()) == 0):
+        return '...detecting'
+
+    failed_cnt = 0
+    succeeded_cnt = 0
+    if HOST_FAILED_STATUS in _ctx.host_statuses:
+        failed_cnt = _ctx.host_statuses[HOST_FAILED_STATUS]
+    if HOST_SUCCESS_STATUS in _ctx.host_statuses:
+        succeeded_cnt = _ctx.host_statuses[HOST_SUCCESS_STATUS]
+
+    total_cnt = failed_cnt + succeeded_cnt
+    if total_cnt < 1:
+        return
+    
+    availability_percentage = round(100 * succeeded_cnt / total_cnt)
+    if(availability_percentage < 50):
+        return f'{Fore.RED}{availability_percentage}%. It should be dead. Consider another target!{Fore.RESET}'
+    else:
+        return f'{Fore.CYAN}{availability_percentage}%{Fore.RESET}'
 
 
 def show_info(_ctx: Context):
@@ -40,6 +62,7 @@ def show_info(_ctx: Context):
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Your public IP:             {your_ip}{Fore.RESET}')
     print(f'Host:                       {Fore.CYAN}{target_host}{Fore.RESET}')
+    print(f'Host availability:          {get_health_status(_ctx)}')
     print(f'CloudFlare Protection:      {ddos_protection}{Fore.RESET}')
     print(f'Load Method:                {Fore.CYAN}{load_method}{Fore.RESET}')
     print(f'Threads:                    {Fore.CYAN}{thread_pool}{Fore.RESET}')
@@ -59,6 +82,8 @@ def show_statistics(_ctx: Context):
         lock.acquire()
         if not _ctx.getting_ip_in_progress:
             t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
+            t.start()
+            t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
             t.start()
         lock.release()
 

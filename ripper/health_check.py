@@ -73,8 +73,9 @@ def get_health_check_path(attack_method: str):
         return '/check-http'
     elif attack_method == 'tcp':
         return '/check-tcp'
-    elif attack_method == 'udp':
-        return '/check-udp'
+    # udp check had false positives
+    # elif attack_method == 'udp':
+    #     return '/check-udp'
     return '/check-ping'
 
 
@@ -93,7 +94,6 @@ def fetch_host_statuses(_ctx: Context):
             resp_data = json.loads(fetch_zipped_body(_ctx, f'https://check-host.net/check_result/{request_code}'))
             statuses = count_host_statuses(resp_data)
             if HOST_IN_PROGRESS_STATUS not in statuses:
-                print(resp_data)
                 return statuses
     except:
         pass
