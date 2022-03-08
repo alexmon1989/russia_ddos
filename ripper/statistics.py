@@ -7,13 +7,14 @@ from ripper.context import Context
 from ripper.common import convert_size, print_logo, get_first_ip_part
 from ripper.constants import DEFAULT_CURRENT_IP_VALUE, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 import ripper.services
+from ripper.health_check import construct_request_url
 
 lock = threading.Lock()
 
 
 def get_health_status(_ctx: Context):
     if(_ctx.last_host_statuses_update_time < 0 or len(_ctx.host_statuses.values()) == 0):
-        return f'...detecting ({Fore.CYAN}{_ctx.heath_check_method}{Fore.RESET} health check method)'
+        return f'...detecting ({Fore.CYAN}{_ctx.health_check_method}{Fore.RESET} health check method)'
 
     failed_cnt = 0
     succeeded_cnt = 0
@@ -59,6 +60,7 @@ def show_info(_ctx: Context):
     ddos_protection = Fore.RED + 'Protected' if _ctx.isCloudflareProtected else Fore.GREEN + 'Not protected'
 
     print('------------------------------------------------------')
+    print(construct_request_url(_ctx))
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Your public IP:             {your_ip}{Fore.RESET}')
     print(f'Host:                       {Fore.CYAN}{target_host}{Fore.RESET}')

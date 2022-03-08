@@ -68,7 +68,7 @@ def fetch_zipped_body(_ctx: Context, url: str):
     return gzip.decompress(compressed_resp).decode('utf8')
 
 
-def get_heath_check_method(attack_method: str):
+def get_health_check_method(attack_method: str):
     if attack_method == 'http':
         return 'http'
     elif attack_method == 'tcp':
