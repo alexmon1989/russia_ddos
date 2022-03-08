@@ -12,7 +12,8 @@ from ripper.context import Context
 from ripper.attacks import down_it_http, down_it_tcp, down_it_udp
 from ripper.common import (readfile, get_current_ip, get_no_successful_connection_error_msg, get_host_country,
                            __isCloudFlareProtected, print_usage, parse_args)
-from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
+from ripper.constants import (SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG,
+                              NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC)
 from ripper.statistics import show_info
 
 _ctx = Context()
@@ -103,8 +104,9 @@ def connect_host(_ctx: Context):
     _ctx.connecting_host = False
 
 
-def check_successful_connections(_ctx: Context):
-    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
+def check_successful_connections(_ctx: Context) -> bool:
+    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
@@ -112,15 +114,18 @@ def check_successful_connections(_ctx: Context):
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
                 _ctx.errors.append(error_msg)
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.connections_check_time = curr_ms
         _ctx.connections_success_prev = _ctx.connections_success
         if error_msg in _ctx.errors:
             _ctx.errors.remove(error_msg)
+    return True
 
 
-def check_successful_tcp_attack(_ctx: Context):
-    """Checks if there are changes in sended bytes count."""
+def check_successful_tcp_attack(_ctx: Context) -> bool:
+    """Checks if there are changes in sended bytes count.
+    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
@@ -128,11 +133,13 @@ def check_successful_tcp_attack(_ctx: Context):
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
                 _ctx.errors.append(error_msg)
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.connections_check_time = curr_ms
         _ctx.packets_sent_prev = _ctx.packets_sent
         if error_msg in _ctx.errors:
             _ctx.errors.remove(error_msg)
+    return True
 
 
 def go_home(_ctx: Context):
