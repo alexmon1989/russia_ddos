@@ -35,9 +35,10 @@ def down_it_udp(_ctx: Context):
             _ctx.packets_sent += 1
 
         i += 1
-        if i == 1000 and not _ctx.connecting_host:
+        if i == 1000:
             i = 1
-            ripper.services.connect_host(_ctx)
+            if not _ctx.connecting_host:
+                ripper.services.connect_host(_ctx)
 
         if not _ctx.show_statistics:
             show_statistics(_ctx)
