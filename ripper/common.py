@@ -10,6 +10,7 @@ import json
 import sys
 import urllib.request
 from functools import lru_cache
+from datetime import datetime
 from colorama import Fore
 
 from ripper.constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG,
@@ -70,6 +71,12 @@ def get_current_ip():
         pass
 
     return current_ip
+
+
+def format_dt(dt: datetime):
+    if dt is None:
+        return ''
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_host_country(host_ip):
