@@ -5,7 +5,7 @@ import _thread
 from datetime import datetime
 from colorama import Fore
 from ripper.context import Context
-from ripper.common import convert_size, print_logo, get_first_ip_part, get_no_successful_connection_die_msg
+from ripper.common import convert_size, print_logo, get_first_ip_part, get_no_successful_connection_die_msg, format_dt
 from ripper.constants import DEFAULT_CURRENT_IP_VALUE, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 import ripper.services
 from ripper.health_check import construct_request_url
@@ -15,7 +15,7 @@ lock = threading.Lock()
 
 def get_health_status(_ctx: Context):
     if(_ctx.last_host_statuses_update is None or len(_ctx.host_statuses.values()) == 0):
-        return f'...detecting ({Fore.CYAN}{_ctx.health_check_method.upper()}{Fore.RESET} health check method)'
+        return f'...detecting ({Fore.CYAN}{_ctx.health_check_method.upper()}{Fore.RESET} health check method from {Fore.CYAN}check-host.net{Fore.RESET})'
 
     failed_cnt = 0
     succeeded_cnt = 0
@@ -33,12 +33,6 @@ def get_health_status(_ctx: Context):
         return f'{Fore.RED}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%). It should be dead. Consider another target!{Fore.RESET}'
     else:
         return f'{Fore.GREEN}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%){Fore.RESET}'
-
-
-def format_dt(dt: datetime):
-    if dt is None:
-        return ''
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def show_info(_ctx: Context):
