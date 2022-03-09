@@ -1,10 +1,11 @@
 import threading
 import sys
 import time
+import _thread
 from datetime import datetime
 from colorama import Fore
 from ripper.context import Context
-from ripper.common import convert_size, print_logo, get_first_ip_part
+from ripper.common import convert_size, print_logo, get_first_ip_part, get_no_successful_connection_die_msg
 from ripper.constants import DEFAULT_CURRENT_IP_VALUE, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 import ripper.services
 from ripper.health_check import construct_request_url
@@ -97,9 +98,14 @@ def show_statistics(_ctx: Context):
         lock.release()
 
         if _ctx.attack_method == 'tcp':
-            ripper.services.check_successful_tcp_attack(_ctx)
+            attack_successful = ripper.services.check_successful_tcp_attack(_ctx)
         else:
-            ripper.services.check_successful_connections(_ctx)
+            attack_successful = ripper.services.check_successful_connections(_ctx)
+        if not attack_successful:
+            print(f"\n\n\n{get_no_successful_connection_die_msg()}")
+            _thread.interrupt_main()
+            exit()
+
         # cpu_load = get_cpu_load()
 
         show_info(_ctx)
