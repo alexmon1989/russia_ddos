@@ -6,10 +6,39 @@ from datetime import datetime
 from colorama import Fore
 from ripper.context import Context
 from ripper.common import convert_size, print_logo, get_first_ip_part, get_no_successful_connection_die_msg
-from ripper.constants import DEFAULT_CURRENT_IP_VALUE
+from ripper.constants import DEFAULT_CURRENT_IP_VALUE, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 import ripper.services
+from ripper.health_check import construct_request_url
 
 lock = threading.Lock()
+
+
+def get_health_status(_ctx: Context):
+    if(_ctx.last_host_statuses_update is None or len(_ctx.host_statuses.values()) == 0):
+        return f'...detecting ({Fore.CYAN}{_ctx.health_check_method.upper()}{Fore.RESET} health check method)'
+
+    failed_cnt = 0
+    succeeded_cnt = 0
+    if HOST_FAILED_STATUS in _ctx.host_statuses:
+        failed_cnt = _ctx.host_statuses[HOST_FAILED_STATUS]
+    if HOST_SUCCESS_STATUS in _ctx.host_statuses:
+        succeeded_cnt = _ctx.host_statuses[HOST_SUCCESS_STATUS]
+
+    total_cnt = failed_cnt + succeeded_cnt
+    if total_cnt < 1:
+        return
+    
+    availability_percentage = round(100 * succeeded_cnt / total_cnt)
+    if(availability_percentage < 50):
+        return f'{Fore.RED}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%). It should be dead. Consider another target!{Fore.RESET}'
+    else:
+        return f'{Fore.GREEN}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%){Fore.RESET}'
+
+
+def format_dt(dt: datetime):
+    if dt is None:
+        return ''
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def show_info(_ctx: Context):
@@ -37,17 +66,20 @@ def show_info(_ctx: Context):
     max_rnd_packet_len = f'{Fore.CYAN}{_ctx.max_random_packet_len}' if is_random_packet_len else 'NOT REQUIRED'
     ddos_protection = Fore.RED + 'Protected' if _ctx.isCloudflareProtected else Fore.GREEN + 'Not protected'
 
-    print('------------------------------------------------------')
-    print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'Your public IP / Country:   {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET}')
-    print(f'Host IP / Country:          {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
-    print(f'CloudFlare Protection:      {ddos_protection}{Fore.RESET}')
-    print(f'Load Method:                {Fore.CYAN}{load_method}{Fore.RESET}')
-    print(f'Threads:                    {Fore.CYAN}{thread_pool}{Fore.RESET}')
-    print(f'vCPU count:                 {Fore.CYAN}{available_cpu}{Fore.RESET}')
-    print(f'Random Packet Length:       {rnd_packet_len}{Fore.RESET}')
-    print(f'Max Random Packet Length:   {max_rnd_packet_len}{Fore.RESET}')
-    print('------------------------------------------------------')
+    print('-----------------------------------------------------------')
+    print(f'Start time:                   {format_dt(_ctx.start_time)}')
+    print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET}')
+    print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
+    print(f'Host availability:            {get_health_status(_ctx)}')
+    if _ctx.last_host_statuses_update is not None:
+        print(f'Host availability updated at: {format_dt(_ctx.last_host_statuses_update)}')
+    print(f'CloudFlare Protection:        {ddos_protection}{Fore.RESET}')
+    print(f'Load Method:                  {Fore.CYAN}{load_method}{Fore.RESET}')
+    print(f'Threads:                      {Fore.CYAN}{thread_pool}{Fore.RESET}')
+    print(f'vCPU count:                   {Fore.CYAN}{available_cpu}{Fore.RESET}')
+    print(f'Random Packet Length:         {rnd_packet_len}{Fore.RESET}')
+    print(f'Max Random Packet Length:     {max_rnd_packet_len}{Fore.RESET}')
+    print('-----------------------------------------------------------')
 
     sys.stdout.flush()
 
@@ -60,6 +92,8 @@ def show_statistics(_ctx: Context):
         lock.acquire()
         if not _ctx.getting_ip_in_progress:
             t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
+            t.start()
+            t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
             t.start()
         lock.release()
 
@@ -81,12 +115,12 @@ def show_statistics(_ctx: Context):
 
         curr_time = datetime.now() - _ctx.start_time
 
-        print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
-        # print(f'CPU Load Average:           {cpu_load}')
+        print(f'Duration:                     {str(curr_time).split(".", 2)[0]}')
+        # print(f'CPU Load Average:             {cpu_load}')
         if _ctx.attack_method == 'http':
-            print(f'Requests sent:              {_ctx.packets_sent}')
+            print(f'Requests sent:                {_ctx.packets_sent}')
             if len(_ctx.http_codes_counter.keys()):
-                print(f'HTTP codes distribution:    {build_http_codes_distribution(_ctx.http_codes_counter)}')
+                print(f'HTTP codes distribution:      {build_http_codes_distribution(_ctx.http_codes_counter)}')
         elif _ctx.attack_method == 'tcp':
             size_sent = convert_size(_ctx.packets_sent)
             if _ctx.packets_sent == 0:
@@ -94,12 +128,12 @@ def show_statistics(_ctx: Context):
             else:
                 size_sent = f'{Fore.LIGHTCYAN_EX}{size_sent}{Fore.RESET}'
 
-            print(f'Total Packets Sent Size:    {size_sent}{Fore.RESET}')
+            print(f'Total Packets Sent Size:      {size_sent}{Fore.RESET}')
         else:  # udp
-            print(f'Packets Sent:               {_ctx.packets_sent}{Fore.RESET}')
-        print(f'Connection Success:         {connections_success}{Fore.RESET}')
-        print(f'Connection Failed:          {connections_failed}{Fore.RESET}')
-        print('------------------------------------------------------')
+            print(f'Packets Sent:                 {_ctx.packets_sent}{Fore.RESET}')
+        print(f'Connection Success:           {connections_success}{Fore.RESET}')
+        print(f'Connection Failed:            {connections_failed}{Fore.RESET}')
+        print('-----------------------------------------------------------')
         print(f'{Fore.LIGHTBLACK_EX}Press CTRL+C to interrupt process.{Fore.RESET}')
 
         if _ctx.errors:

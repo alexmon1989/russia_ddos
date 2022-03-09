@@ -15,6 +15,7 @@ from ripper.common import (readfile, get_current_ip, get_no_successful_connectio
 from ripper.constants import (SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG,
                               NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC)
 from ripper.statistics import show_info
+from ripper.health_check import fetch_host_statuses, get_health_check_method
 
 _ctx = Context()
 
@@ -53,24 +54,9 @@ def init_context(_ctx: Context, args):
     _ctx.attack_method = str(args[0].attack_method).lower()
     _ctx.random_packet_len = bool(args[0].random_packet_len)
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
-    _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
-
-    _ctx.user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
-    _ctx.base_headers = readfile(os.path.dirname(__file__) + '/headers.txt')
-    _ctx.headers = get_headers_dict(_ctx.base_headers)
 
     _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
-    _ctx.start_time = datetime.now()
-
-
-def get_headers_dict(base_headers: List[str]):
-    """Set headers for the request"""
-    headers_dict = {}
-    for line in base_headers:
-        parts = line.split(':')
-        headers_dict[parts[0]] = parts[1].strip()
-
-    return headers_dict
+    _ctx.health_check_method = get_health_check_method(_ctx.attack_method)
 
 
 def update_host_ip(_ctx: Context):
@@ -89,6 +75,30 @@ def update_current_ip(_ctx: Context):
     _ctx.getting_ip_in_progress = False
     if _ctx.start_ip == '':
         _ctx.start_ip = _ctx.current_ip
+
+
+def update_host_statuses(_ctx: Context):
+    """Updates host statuses based on check-host.net nodes"""
+    MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
+
+    diff = float('inf')
+    if _ctx.last_host_statuses_update is not None:
+        diff = time.time() - datetime.timestamp(_ctx.last_host_statuses_update)
+
+    if _ctx.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
+        return
+    _ctx.fetching_host_statuses_in_progress = True
+    try:
+        if _ctx.host_ip:
+            host_statuses = fetch_host_statuses(_ctx)
+            # API in some cases returns 403, so we can't update statuses
+            if len(host_statuses.values()):
+                _ctx.host_statuses = host_statuses
+                _ctx.last_host_statuses_update = datetime.now()
+    except:
+        pass
+    finally:
+        _ctx.fetching_host_statuses_in_progress = False
 
 
 def connect_host(_ctx: Context):
