@@ -68,7 +68,7 @@ def show_info(_ctx: Context):
     print('-----------------------------------------------------------')
     print(f'Start time:                   {format_dt(_ctx.start_time)}')
     print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET}')
-    print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET}')
+    print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
     print(f'Host availability:            {get_health_status(_ctx)}')
     if _ctx.last_host_statuses_update is not None:
         print(f'Host availability updated at: {format_dt(_ctx.last_host_statuses_update)}')
