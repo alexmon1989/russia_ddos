@@ -31,7 +31,7 @@ def get_health_status(_ctx: Context):
     if(availability_percentage < 50):
         return f'{Fore.RED}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%). It should be dead. Consider another target!{Fore.RESET}'
     else:
-        return f'{Fore.CYAN}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%){Fore.RESET}'
+        return f'{Fore.GREEN}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%){Fore.RESET}'
 
 
 def format_dt(dt: datetime):
