@@ -18,12 +18,13 @@ from ripper.constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECT
 
 @lru_cache(maxsize=None)
 def get_server_ip_error_msg() -> str:
-    return Fore.RED + GETTING_SERVER_IP_ERROR_MSG + Fore.RESET
+    """Error: Cannot get server IP."""
+    return GETTING_SERVER_IP_ERROR_MSG
 
 
 @lru_cache(maxsize=None)
 def get_no_successful_connection_error_msg() -> str:
-    return Fore.RED + NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG + Fore.RESET
+    return NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
 
 
 def readfile(filename: str):

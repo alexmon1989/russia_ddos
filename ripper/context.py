@@ -6,15 +6,29 @@ from ripper.sockets import SocketManager
 
 class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
+
     version: str = ''
+    """Application version."""
 
     # Input params
     host: str = ''
+    """Original HOST name from input args. Can be domain name or IP address."""
+
     host_ip: str = ''
+    """HOST IPv4 address."""
+
     port: int = 80
+    """Destination Port."""
+
     threads: int = 100
+    """The number of threads."""
+
     max_random_packet_len: int = 0
+    """Limit for Random Packet Length."""
+
     random_packet_len: bool = False
+    """Is Random Packet Length enabled."""
+
     attack_method: str = None
 
     protocol: str = 'http://'
