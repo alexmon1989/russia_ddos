@@ -62,6 +62,7 @@ def update_host_ip(_ctx: Context):
     """Gets target's IP by host"""
     try:
         _ctx.host_ip = socket.gethostbyname(_ctx.host)
+        _ctx.target_country = get_host_country(_ctx.host_ip)
     except:
         pass
 
@@ -100,6 +101,7 @@ def update_host_statuses(_ctx: Context):
 
 
 def connect_host(_ctx: Context):
+    _ctx.connecting_host = True
     try:
         sock = _ctx.sock_manager.create_tcp_socket()
         sock.connect((_ctx.host, _ctx.port))
@@ -108,6 +110,7 @@ def connect_host(_ctx: Context):
     else:
         _ctx.connections_success += 1
         sock.close()
+    _ctx.connecting_host = False
 
 
 def check_successful_connections(_ctx: Context):
@@ -181,6 +184,13 @@ def validate_context(_ctx: Context):
     return True
 
 
+def connect_host_loop(_ctx: Context, timeout_secs: int = 3) -> None:
+    """Tries to connect host in permanent loop."""
+    while True:
+        connect_host(_ctx)
+        time.sleep(timeout_secs)
+
+
 def main():
     """The main function to run the script from the command line."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
@@ -192,6 +202,7 @@ def main():
     init_context(_ctx, args)
     update_host_ip(_ctx)
     update_current_ip(_ctx)
+    _ctx.my_country = get_host_country(_ctx.current_ip)
     go_home(_ctx)
 
     if not validate_context(_ctx):
@@ -205,6 +216,11 @@ def main():
     _ctx.connections_check_time = time.time_ns()
 
     create_thread_pool(_ctx)
+
+    if _ctx.attack_method == 'udp' and _ctx.port:
+        thread = threading.Thread(target=connect_host_loop, args=[_ctx])
+        thread.daemon = True
+        thread.start()
 
     while True:
         time.sleep(1)

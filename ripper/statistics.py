@@ -35,6 +35,8 @@ def get_health_status(_ctx: Context):
 
 
 def format_dt(dt: datetime):
+    if dt is None:
+        return ''
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -65,7 +67,7 @@ def show_info(_ctx: Context):
 
     print('-----------------------------------------------------------')
     print(f'Start time:                   {format_dt(_ctx.start_time)}')
-    print(f'Your public IP:               {your_ip}{Fore.RESET}')
+    print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET}')
     print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET}')
     print(f'Host availability:            {get_health_status(_ctx)}')
     if _ctx.last_host_statuses_update is not None:

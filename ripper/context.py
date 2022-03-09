@@ -42,8 +42,9 @@ class Context:
     headers = get_headers_dict(base_headers)
 
     # Statistic
-    # start_time: datetime = None
-    start_time: datetime = datetime.now()
+    my_country: str = None
+    target_country: str = None
+    start_time = datetime.now()
     start_ip: str = ''
     packets_sent: int = 0
     connections_success: int = 0
@@ -65,6 +66,8 @@ class Context:
     # External API and services info
     isCloudflareProtected: bool = False
     sock_manager: SocketManager = SocketManager()
+
+    connecting_host: bool = False
 
     # Health-check
     fetching_host_statuses_in_progress: bool = False

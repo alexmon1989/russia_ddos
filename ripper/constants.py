@@ -2,7 +2,7 @@
 # Constants
 ###############################################
 
-VERSION = 'v1.3.8'
+VERSION = 'v1.3.9'
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
