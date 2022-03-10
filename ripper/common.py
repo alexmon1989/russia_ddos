@@ -1,5 +1,6 @@
 import http.client
 import ipaddress
+import re
 import socket
 import string
 import random
@@ -47,14 +48,6 @@ def get_random_port() -> int:
     return random.choice(ports)
 
 
-def get_first_ip_part(ip: str) -> str:
-    parts = ip.split('.')
-    if len(parts) > 1:
-        return f'{parts[0]}.*.*.*'
-    else:
-        return parts[0]
-
-
 def get_current_ip() -> str:
     """Gets user IP with external service."""
     current_ip = DEFAULT_CURRENT_IP_VALUE
@@ -67,8 +60,21 @@ def get_current_ip() -> str:
     return current_ip
 
 
-def get_host_country(host_ip):
-    """Gets country of the target's IP"""
+def get_ipv4(host: str) -> str:
+    """Get target IPv4 address by domain name."""
+    match = re.match(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$", host)
+
+    if bool(match) is True:
+        return host  # do not use socket if we already have a valid IPv4
+
+    try:
+        return socket.gethostbyname(host)
+    except:
+        pass
+
+
+def get_country_by_ipv4(host_ip: str) -> str:
+    """Gets country of the target's IPv4"""
     country = 'NOT DEFINED'
     try:
         response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}', timeout=1).read().decode('utf8')
@@ -80,7 +86,7 @@ def get_host_country(host_ip):
     return country
 
 
-def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
+def isCloudFlareProtected(link: str, user_agents: list) -> bool:
     """Check if the site is under CloudFlare protection."""
 
     parsed_uri = urllib.request.urlparse(link)
@@ -105,16 +111,11 @@ def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
 
 
 def convert_size(size_bytes: int) -> str:
-    """Converts size in bytes to human format."""
-    if size_bytes == 0:
-        return '0 B'
-
-    size_name = ('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
-    i = int(math.floor(math.log(size_bytes, 1024)))
-    p = math.pow(1024, i)
-    s = round(size_bytes / p, 2)
-
-    return '%s %s' % (s, size_name[i])
+    """Converts size in bytes to human-readable format."""
+    for x in ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']:
+        if size_bytes < 1024.: return "%3.2f %sB" % (size_bytes, x)
+        size_bytes /= 1024.
+    return "%3.2f PB" % size_bytes
 
 
 def get_cpu_load() -> str:
