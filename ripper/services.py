@@ -1,15 +1,12 @@
 import curses
-import threading
 import time
 import sys
 from optparse import OptionParser
 from base64 import b64decode
 from typing import List
-from colorama import Fore
 
 from ripper import context, common
-from ripper.context import Context
-from ripper.attacks import down_it_http, down_it_tcp, down_it_udp
+from ripper.attacks import *
 from ripper.common import (get_current_ip, get_no_successful_connection_error_msg,
                            print_usage, parse_args)
 from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
@@ -115,19 +112,19 @@ def go_home(_ctx: Context) -> None:
 def validate_input(args) -> bool:
     """Validates input params."""
     if int(args.port) < 0:
-        print(f'{Fore.RED}Wrong port number.{Fore.RESET}')
+        print(f'Wrong port number.')
         return False
 
     if int(args.threads) < 1:
-        print(f'{Fore.RED}Wrong threads number.{Fore.RESET}')
+        print(f'Wrong threads number.')
         return False
 
     if not args.host:
-        print(f'{Fore.RED}Host wasn\'t detected{Fore.RESET}')
+        print(f'Host wasn\'t detected')
         return False
 
     if str(args.attack_method).lower() not in ('udp', 'tcp', 'http'):
-        print(f'{Fore.RED}Wrong attack type. Possible options: udp, tcp, http.{Fore.RESET}')
+        print(f'Wrong attack type. Possible options: udp, tcp, http.')
         return False
 
     return True
@@ -136,7 +133,7 @@ def validate_input(args) -> bool:
 def validate_context(_ctx: Context) -> bool:
     """Validates context"""
     if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
-        print(f'{Fore.RED}Could not connect to the host{Fore.RESET}')
+        print(f'Could not connect to the host')
         return False
 
     return True
@@ -158,26 +155,30 @@ def main():
         print_usage(parser)
 
     # Init context
-    init_context(_ctx, args)
-    update_host_ip(_ctx)
+    context.init_context(_ctx, args)
     update_current_ip(_ctx)
-    _ctx.my_country = get_host_country(_ctx.current_ip)
     go_home(_ctx)
 
     if not validate_context(_ctx):
         sys.exit()
 
     time.sleep(.5)
-    show_info(_ctx)
 
-    _ctx.connections_check_time = time.time_ns()
+    # _ctx.connections_check_time = time.time_ns()
 
-    create_thread_pool(_ctx)
+    threads = create_thread_pool(_ctx)
 
-    if _ctx.attack_method == 'udp' and _ctx.port:
-        thread = threading.Thread(target=connect_host_loop, args=[_ctx])
-        thread.daemon = True
-        thread.start()
-
-    while True:
-        time.sleep(1)
+    curses.wrapper(create_dashboard, _ctx)
+    # while count > 0:
+    #     for t in threads:
+    #         if t.is_alive():
+    #             continue
+    #         count -= 1
+    #
+    # if _ctx.attack_method == 'udp' and _ctx.port:
+    #     thread = threading.Thread(target=connect_host_loop, args=[_ctx])
+    #     thread.daemon = True
+    #     thread.start()
+    #
+    # while True:
+    #     time.sleep(1)

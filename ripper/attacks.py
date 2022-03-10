@@ -79,7 +79,9 @@ def down_it_tcp(_ctx: Context) -> None:
                     bytes_to_send = randbytes(_ctx.max_random_packet_len)
                     sock.send(bytes_to_send)
                     _ctx.Statistic.tcp.packets_sent_bytes += bytes_to_send_len
+                    _ctx.Statistic.tcp.packets_sent += 1
                 except:
+                    _ctx.Statistic.connect.failed += 1
                     sock.close()
                     break
         except:

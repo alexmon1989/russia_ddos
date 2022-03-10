@@ -35,6 +35,13 @@ class ConnectionStats:
     in_progress: bool = False
     """Connection state used for checking liveness of Socket."""
 
+    def get_success_rate(self) -> int:
+        """Calculate Success Rate for connection."""
+        if self.success == 0:
+            return 0
+
+        return int(self.success / (self.success + self.failed) * 100)
+
     def sync_success(self):
         """Sync previous success state with current success state."""
         self.success_prev = self.success
@@ -162,8 +169,10 @@ def init_context(_ctx: Context, args):
     _ctx.threads = args[0].threads
 
     _ctx.attack_method = str(args[0].attack_method).lower()
-    _ctx.random_packet_len = bool(args[0].random_packet_len)
-    _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
+    if not _ctx.attack_method == 'http':
+        _ctx.random_packet_len = bool(args[0].random_packet_len)
+        _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
+
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
     # Get required data from files

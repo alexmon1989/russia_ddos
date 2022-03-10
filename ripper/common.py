@@ -4,17 +4,14 @@ import re
 import socket
 import string
 import random
-import math
 import os
 import subprocess
 import json
 import sys
 import urllib.request
 from functools import lru_cache
-from colorama import Fore
 
-from ripper.constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG, DEFAULT_CURRENT_IP_VALUE,
-                       VERSION)
+from ripper.constants import *
 
 
 @lru_cache(maxsize=None)
@@ -132,22 +129,21 @@ def get_cpu_load() -> str:
         return f"{cpu_usage:.2f}%"
 
 
-def print_logo():
-    print(Fore.CYAN + f'''
+def logo() -> str:
+    return f'''
 
 ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
 ██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
-██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝ {Fore.YELLOW + ''}
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
 ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
 ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-                                            {Fore.GREEN + VERSION + Fore.RESET}
+                                           {VERSION}
 
 It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
-Please, make sure you are ANONYMOUS!
-    ''')
+Please, make sure you are ANONYMOUS!'''
 
 
 ###############################################
@@ -157,7 +153,7 @@ Please, make sure you are ANONYMOUS!
 
 def print_usage(parser):
     """Wrapper for Logo with help."""
-    print_logo()
+    print(logo())
     parser.print_help()
     sys.exit()
 
