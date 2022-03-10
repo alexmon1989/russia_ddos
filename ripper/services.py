@@ -11,6 +11,7 @@ from ripper.common import (get_current_ip, get_no_successful_connection_error_ms
                            print_usage, parse_args)
 from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
 from ripper.statistics import create_dashboard
+from ripper.health_check import fetch_host_statuses, get_health_check_method
 
 _ctx = Context()
 
@@ -54,6 +55,30 @@ def update_current_ip(_ctx: Context) -> None:
         _ctx.IpInfo.my_start_ip = _ctx.IpInfo.my_current_ip
 
 
+def update_host_statuses(_ctx: Context):
+    """Updates host statuses based on check-host.net nodes"""
+    MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
+
+    diff = float('inf')
+    if _ctx.last_host_statuses_update is not None:
+        diff = time.time() - datetime.timestamp(_ctx.last_host_statuses_update)
+
+    if _ctx.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
+        return
+    _ctx.fetching_host_statuses_in_progress = True
+    try:
+        if _ctx.host_ip:
+            host_statuses = fetch_host_statuses(_ctx)
+            # API in some cases returns 403, so we can't update statuses
+            if len(host_statuses.values()):
+                _ctx.host_statuses = host_statuses
+                _ctx.last_host_statuses_update = datetime.now()
+    except:
+        pass
+    finally:
+        _ctx.fetching_host_statuses_in_progress = False
+
+
 def connect_host(_ctx: Context) -> None:
     _ctx.Statistic.connect.set_state_in_progress()
     try:
@@ -67,8 +92,9 @@ def connect_host(_ctx: Context) -> None:
     _ctx.Statistic.connect.set_state_is_connected()
 
 
-def check_successful_connections(_ctx: Context) -> None:
-    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
+def check_successful_connections(_ctx: Context) -> bool:
+    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
@@ -77,15 +103,18 @@ def check_successful_connections(_ctx: Context) -> None:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
                 _ctx.errors.append(error_msg)
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.connect.last_check_time = curr_ms
         _ctx.Statistic.connect.sync_success()
         if error_msg in _ctx.errors:
             _ctx.errors.remove(error_msg)
+    return True
 
 
-def check_successful_tcp_attack(_ctx: Context) -> None:
-    """Checks if there are changes in sent bytes count."""
+def check_successful_tcp_attack(_ctx: Context) -> bool:
+    """Checks if there are changes in sended bytes count.
+    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
@@ -94,11 +123,13 @@ def check_successful_tcp_attack(_ctx: Context) -> None:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
                 _ctx.errors.append(error_msg)
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.tcp.connections_check_time = curr_ms
         _ctx.Statistic.tcp.sync_packets_sent()
         if error_msg in _ctx.errors:
             _ctx.errors.remove(error_msg)
+    return True
 
 
 def go_home(_ctx: Context) -> None:
@@ -123,8 +154,8 @@ def validate_input(args) -> bool:
         print(f'Host wasn\'t detected')
         return False
 
-    if str(args.attack_method).lower() not in ('udp', 'tcp', 'http'):
-        print(f'Wrong attack type. Possible options: udp, tcp, http.')
+    if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
+        print(f'{Fore.RED}Wrong attack type. Possible options: udp, tcp, http.{Fore.RESET}')
         return False
 
     return True

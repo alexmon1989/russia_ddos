@@ -6,6 +6,17 @@ from typing import List
 
 from ripper import services, common
 from ripper.sockets import SocketManager
+from ripper.common import readfile
+
+
+def get_headers_dict(base_headers: List[str]):
+    """Set headers for the request"""
+    headers_dict = {}
+    for line in base_headers:
+        parts = line.split(':')
+        headers_dict[parts[0]] = parts[1].strip()
+    
+    return headers_dict
 
 
 class PacketsStats:
@@ -152,6 +163,12 @@ class Context:
     def get_target_url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
         return f"{self.protocol}{self.host}:{self.port}"
+
+    # Health-check
+    fetching_host_statuses_in_progress: bool = False
+    last_host_statuses_update: datetime = None
+    health_check_method: str = ''
+    host_statuses = {}
 
     def __new__(cls):
         """Singleton realization."""

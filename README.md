@@ -73,6 +73,18 @@ python -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 python3 -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 ```
 
+## How to run unit tests
+
+#### Prepare
+```bash
+pip install pytest
+```
+
+#### Run
+```bash
+pytest
+```
+
 # License
 
 This project is distributed under the MIT License, see [LICENSE](./LICENSE) for more information.

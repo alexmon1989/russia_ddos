@@ -25,6 +25,12 @@ def get_no_successful_connection_error_msg() -> str:
     return NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
 
 
+def get_no_successful_connection_die_msg() -> str:
+    return f"{Fore.LIGHTRED_EX}There were no successful connections for more " \
+           f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
+           f"Your attack is ineffective.{Fore.RESET}"
+
+
 def readfile(filename: str) -> list[str]:
     """Read string from file"""
     with open(filename, 'r') as file:
@@ -55,6 +61,12 @@ def get_current_ip() -> str:
         pass
 
     return current_ip
+
+
+def format_dt(dt: datetime):
+    if dt is None:
+        return ''
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_ipv4(host: str) -> str:
