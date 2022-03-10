@@ -1,7 +1,97 @@
+import os
+
 from datetime import datetime
 from collections import defaultdict
 from typing import List
+
+from ripper import services, common
 from ripper.sockets import SocketManager
+
+
+class PacketsStats:
+    """Class for TCP/UDP statistic collection."""
+    packets_sent: int = 0
+    """Total packets sent by TCP/UDP."""
+    packets_sent_prev: int = 0
+    """Total packets sent by TCP/UDP (previous state)"""
+    packets_sent_bytes: int = 0
+    """Total sent bytes by TCP/UDP connect."""
+
+    def sync_packets_sent(self):
+        """Sync previous packets sent stats with current packets sent stats."""
+        self.packets_sent_prev = self.packets_sent
+
+
+class ConnectionStats:
+    """Class for Connection statistic"""
+    success_prev: int = 0
+    """Total connections to HOST with Success status (previous state)"""
+    success: int = 0
+    """Total connections to HOST with Success status"""
+    failed: int = 0
+    """Total connections to HOST with Failed status."""
+    last_check_time: int = 0
+    """Last check connection time."""
+    in_progress: bool = False
+    """Connection state used for checking liveness of Socket."""
+
+    def sync_success(self):
+        """Sync previous success state with current success state."""
+        self.success_prev = self.success
+
+    def set_state_in_progress(self):
+        """Set connection State - in progress."""
+        self.in_progress = True
+
+    def set_state_is_connected(self):
+        """Set connection State - is connected."""
+        self.in_progress = False
+
+
+class Statistic:
+    """Collect all statistics."""
+    udp: PacketsStats = PacketsStats()
+    """Collect all the stats about UDP packets."""
+    tcp: PacketsStats = PacketsStats()
+    """Collect all the stats about TCP packets."""
+    http: PacketsStats = PacketsStats()
+    """Collect all the stats about HTTP packets."""
+    http_stats = defaultdict(int)
+    """Collect stats about HTTP response codes."""
+    connect: ConnectionStats = ConnectionStats()
+    """Collect all the Connections stats via Socket or HTTP Client."""
+    start_time: datetime = None
+    """Script start time."""
+
+
+class IpInfo:
+    """All the info about IP addresses and Geo info."""
+    my_country: str = None
+    """Country code based on your public IPv4 address."""
+    target_country: str = None
+    """Country code based on target public IPv4 address."""
+    my_start_ip: str = None
+    """My IPv4 address within script starting."""
+    my_current_ip: str = None
+    """My current IPv4 address. It can be changed during script run."""
+    isCloudflareProtected: bool = False
+    """Is Host protected by CloudFlare."""
+
+    def cloudflare_status(self) -> str:
+        """Get human-readable status for CloudFlare target HOST protection."""
+        return 'Protected' if self.isCloudflareProtected else 'Not protected'
+
+    def my_ip_masked(self) -> str:
+        """
+        Get my initial IPv4 address with masked octets.
+
+        127.0.0.1 -> 127.*.*.*
+        """
+        parts = self.my_start_ip.split('.')
+        if len(parts) > 1:
+            return f'{parts[0]}.*.*.*'
+        else:
+            return parts[0]
 
 
 class Context:
@@ -24,10 +114,22 @@ class Context:
     random_packet_len: bool = False
     """Is Random Packet Length enabled."""
     attack_method: str = None
+    """Current attack method."""
 
+    # ==== Statistic ====
+    Statistic: Statistic = Statistic()
+    """All the statistics collected separately by protocols and operations."""
+    IpInfo: IpInfo = IpInfo()
+    """All the info about IP addresses and GeoIP information."""
+    errors: List[str] = []
+    """All the errors during script run."""
+
+    # ==========================================================================
+
+    cpu_count: int = 1
+    """vCPU cont of current machine."""
     protocol: str = 'http://'
-    original_host: str = ''
-    url: str = None
+    """HTTP protocol. Can be http/https."""
 
     # ==== Internal variables ====
     user_agents: list = None
@@ -37,35 +139,42 @@ class Context:
     headers: dict[str, str] = None
     """HTTP Headers used to make Requests."""
 
-    # Statistic
-    my_country: str = None
-    target_country: str = None
-    start_time: datetime = None
-    start_ip: str = ''
-    packets_sent: int = 0
-    connections_success: int = 0
-    connections_success_prev: int = 0
-    packets_sent_prev: int = 0
-    connections_failed: int = 0
-    connections_check_time: int = 0
-    errors: List[str] = []
-
-    cpu_count: int = 1
-    show_statistics: bool = False
-    current_ip = None
-    getting_ip_in_progress: bool = False
-
-    # Method-related stats
-    http_codes_counter = defaultdict(int)
-
     # External API and services info
-    isCloudflareProtected: bool = False
     sock_manager: SocketManager = SocketManager()
 
-    connecting_host: bool = False
+    def get_target_url(self) -> str:
+        """Get fully qualified URI for target HOST - schema://host:port"""
+        return f"{self.protocol}{self.host}:{self.port}"
 
     def __new__(cls):
         """Singleton realization."""
         if not hasattr(cls, 'instance'):
             cls.instance = super().__new__(cls)
         return cls.instance
+
+
+def init_context(_ctx: Context, args):
+    """Initialize Context from Input args."""
+    _ctx.host = args[0].host
+    _ctx.host_ip = common.get_ipv4(args[0].host)
+    _ctx.port = args[0].port
+    _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
+    _ctx.threads = args[0].threads
+
+    _ctx.attack_method = str(args[0].attack_method).lower()
+    _ctx.random_packet_len = bool(args[0].random_packet_len)
+    _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
+    _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
+
+    # Get required data from files
+    _ctx.user_agents = common.readfile(os.path.dirname(__file__) + '/useragents.txt')
+    _ctx.base_headers = common.readfile(os.path.dirname(__file__) + '/headers.txt')
+    _ctx.headers = services.get_headers_dict(_ctx.base_headers)
+
+    # Get initial info from external services
+    _ctx.IpInfo.my_start_ip = common.get_current_ip()
+    _ctx.IpInfo.my_country = common.get_country_by_ipv4(_ctx.IpInfo.my_start_ip)
+    _ctx.IpInfo.target_country = common.get_country_by_ipv4(_ctx.host_ip)
+    _ctx.IpInfo.isCloudflareProtected = common.isCloudFlareProtected(_ctx.host, _ctx.user_agents)
+
+    _ctx.Statistic.start_time = datetime.now()
