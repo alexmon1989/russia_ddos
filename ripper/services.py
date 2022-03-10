@@ -1,19 +1,19 @@
-import os
+import curses
 import threading
-import socket
 import time
 import sys
 from optparse import OptionParser
 from base64 import b64decode
 from typing import List
-from datetime import datetime
 from colorama import Fore
+
+from ripper import context, common
 from ripper.context import Context
 from ripper.attacks import down_it_http, down_it_tcp, down_it_udp
-from ripper.common import (readfile, get_current_ip, get_no_successful_connection_error_msg, get_host_country,
-                           __isCloudFlareProtected, print_usage, parse_args)
+from ripper.common import (get_current_ip, get_no_successful_connection_error_msg,
+                           print_usage, parse_args)
 from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
-from ripper.statistics import show_info
+from ripper.statistics import create_dashboard
 
 _ctx = Context()
 
@@ -38,31 +38,7 @@ def update_url(_ctx: Context) -> None:
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
 
 
-def init_context(_ctx: Context, args):
-    """Initialize Context from Input args."""
-    _ctx.host = args[0].host
-    _ctx.host_ip = ''
-    _ctx.original_host = args[0].host
-    _ctx.port = args[0].port
-    _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
-    update_url(_ctx)
-
-    _ctx.threads = args[0].threads
-
-    _ctx.attack_method = str(args[0].attack_method).lower()
-    _ctx.random_packet_len = bool(args[0].random_packet_len)
-    _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
-    _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
-
-    _ctx.user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
-    _ctx.base_headers = readfile(os.path.dirname(__file__) + '/headers.txt')
-    _ctx.headers = get_headers_dict(_ctx.base_headers)
-
-    _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
-    _ctx.start_time = datetime.now()
-
-
-def get_headers_dict(base_headers: List[str]):
+def get_headers_dict(base_headers: List[str]) -> dict[str, str]:
     """Set headers for the request"""
     headers_dict = {}
     for line in base_headers:
@@ -74,38 +50,39 @@ def get_headers_dict(base_headers: List[str]):
 
 def update_current_ip(_ctx: Context) -> None:
     """Updates current ip"""
-    _ctx.getting_ip_in_progress = True
-    _ctx.current_ip = get_current_ip()
-    _ctx.getting_ip_in_progress = False
-    if _ctx.start_ip == '':
-        _ctx.start_ip = _ctx.current_ip
+    _ctx.Statistic.connect.set_state_in_progress()
+    _ctx.IpInfo.my_current_ip = get_current_ip()
+    _ctx.Statistic.connect.set_state_is_connected()
+    if _ctx.IpInfo.my_start_ip == '':
+        _ctx.IpInfo.my_start_ip = _ctx.IpInfo.my_current_ip
 
 
 def connect_host(_ctx: Context) -> None:
-    _ctx.connecting_host = True
+    _ctx.Statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket()
         sock.connect((_ctx.host, _ctx.port))
     except:
-        _ctx.connections_failed += 1
+        _ctx.Statistic.connect.failed += 1
     else:
-        _ctx.connections_success += 1
+        _ctx.Statistic.connect.success += 1
         sock.close()
-    _ctx.connecting_host = False
+    _ctx.Statistic.connect.set_state_is_connected()
 
 
 def check_successful_connections(_ctx: Context) -> None:
     """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
     curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
+    diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
-    if _ctx.connections_success == _ctx.connections_success_prev:
+
+    if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
                 _ctx.errors.append(error_msg)
     else:
-        _ctx.connections_check_time = curr_ms
-        _ctx.connections_success_prev = _ctx.connections_success
+        _ctx.Statistic.connect.last_check_time = curr_ms
+        _ctx.Statistic.connect.sync_success()
         if error_msg in _ctx.errors:
             _ctx.errors.remove(error_msg)
 
@@ -113,15 +90,16 @@ def check_successful_connections(_ctx: Context) -> None:
 def check_successful_tcp_attack(_ctx: Context) -> None:
     """Checks if there are changes in sent bytes count."""
     curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
+    diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
-    if _ctx.packets_sent == _ctx.packets_sent_prev:
+
+    if _ctx.Statistic.tcp.packets_sent == _ctx.Statistic.tcp.packets_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
                 _ctx.errors.append(error_msg)
     else:
-        _ctx.connections_check_time = curr_ms
-        _ctx.packets_sent_prev = _ctx.packets_sent
+        _ctx.Statistic.tcp.connections_check_time = curr_ms
+        _ctx.Statistic.tcp.sync_packets_sent()
         if error_msg in _ctx.errors:
             _ctx.errors.remove(error_msg)
 
@@ -129,10 +107,9 @@ def check_successful_tcp_attack(_ctx: Context) -> None:
 def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
-    if _ctx.host.endswith('.' + home_code.lower()) or get_host_country(_ctx.host_ip) in home_code.upper():
+    if _ctx.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.host_ip) in home_code.upper():
         _ctx.host_ip = _ctx.host = 'localhost'
-        _ctx.original_host += '*'
-        update_url(_ctx)
+        _ctx.host += '*'
 
 
 def validate_input(args) -> bool:
