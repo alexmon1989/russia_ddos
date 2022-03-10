@@ -12,7 +12,7 @@ from ripper.common import get_random_string, get_server_ip_error_msg
 ###############################################
 # Attack methods
 ###############################################
-def down_it_udp(_ctx: Context):
+def down_it_udp(_ctx: Context) -> None:
     i = 1
     while True:
         sock = _ctx.sock_manager.get_udp_socket()
@@ -46,7 +46,7 @@ def down_it_udp(_ctx: Context):
             show_statistics(_ctx)
 
 
-def down_it_http(_ctx: Context):
+def down_it_http(_ctx: Context) -> None:
     http_headers = _ctx.headers
 
     while True:

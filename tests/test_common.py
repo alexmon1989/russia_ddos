@@ -12,7 +12,7 @@ def test_get_first_ip_part(actual_ip, expected_result):
 
 
 @pytest.mark.parametrize('actual, expected', [
-    (0, '0B'),
+    (0, '0 B'),
     (100, '100.0 B'),
     (1024, '1.0 KB'),
     (16384096, '15.63 MB'),

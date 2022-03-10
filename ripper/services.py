@@ -34,7 +34,7 @@ def create_thread_pool(_ctx: Context) -> list:
     return thread_pool
 
 
-def update_url(_ctx: Context):
+def update_url(_ctx: Context) -> None:
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
 
 
@@ -90,7 +90,7 @@ def update_current_ip(_ctx: Context):
         _ctx.start_ip = _ctx.current_ip
 
 
-def connect_host(_ctx: Context):
+def connect_host(_ctx: Context) -> None:
     _ctx.connecting_host = True
     try:
         sock = _ctx.sock_manager.create_tcp_socket()
@@ -103,7 +103,7 @@ def connect_host(_ctx: Context):
     _ctx.connecting_host = False
 
 
-def check_successful_connections(_ctx: Context):
+def check_successful_connections(_ctx: Context) -> None:
     """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
@@ -119,8 +119,8 @@ def check_successful_connections(_ctx: Context):
             _ctx.errors.remove(error_msg)
 
 
-def check_successful_tcp_attack(_ctx: Context):
-    """Checks if there are changes in sended bytes count."""
+def check_successful_tcp_attack(_ctx: Context) -> None:
+    """Checks if there are changes in sent bytes count."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
@@ -135,7 +135,7 @@ def check_successful_tcp_attack(_ctx: Context):
             _ctx.errors.remove(error_msg)
 
 
-def go_home(_ctx: Context):
+def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
     if _ctx.host.endswith('.' + home_code.lower()) or get_host_country(_ctx.host_ip) in home_code.upper():
@@ -144,7 +144,7 @@ def go_home(_ctx: Context):
         update_url(_ctx)
 
 
-def validate_input(args):
+def validate_input(args) -> bool:
     """Validates input params."""
     if int(args.port) < 0:
         print(f'{Fore.RED}Wrong port number.{Fore.RESET}')
@@ -165,7 +165,7 @@ def validate_input(args):
     return True
 
 
-def validate_context(_ctx: Context):
+def validate_context(_ctx: Context) -> bool:
     """Validates context"""
     if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
         print(f'{Fore.RED}Could not connect to the host{Fore.RESET}')

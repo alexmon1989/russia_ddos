@@ -27,13 +27,13 @@ def get_no_successful_connection_error_msg() -> str:
     return NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
 
 
-def readfile(filename: str):
+def readfile(filename: str) -> list[str]:
     """Read string from file"""
     with open(filename, 'r') as file:
         return file.readlines()
 
 
-def get_random_string(len_from, len_to):
+def get_random_string(len_from: int, len_to: int) -> str:
     """Random string with different length"""
     length = random.randint(len_from, len_to)
     letters = string.ascii_lowercase
@@ -42,7 +42,7 @@ def get_random_string(len_from, len_to):
     return result_str
 
 
-def get_random_port():
+def get_random_port() -> int:
     ports = [22, 53, 80, 443]
     return random.choice(ports)
 
@@ -55,8 +55,8 @@ def get_first_ip_part(ip: str) -> str:
         return parts[0]
 
 
-def get_current_ip():
-    """Gets user IP."""
+def get_current_ip() -> str:
+    """Gets user IP with external service."""
     current_ip = DEFAULT_CURRENT_IP_VALUE
     try:
         current_ip = os.popen('curl -s ifconfig.me').readline() \
@@ -107,23 +107,27 @@ def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
 def convert_size(size_bytes: int) -> str:
     """Converts size in bytes to human format."""
     if size_bytes == 0:
-        return '0B'
+        return '0 B'
+
     size_name = ('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
+
     return '%s %s' % (s, size_name[i])
 
 
-def get_cpu_load():
+def get_cpu_load() -> str:
     if os.name == 'nt':
         pipe = subprocess.Popen('wmic cpu get loadpercentage', stdout=subprocess.PIPE)
         out = pipe.communicate()[0].decode('utf-8')
         out = out.replace('LoadPercentage', '').strip()
+
         return f'{out}%'
     else:
         load1, load5, load15 = os.getloadavg()
         cpu_usage = (load15 / os.cpu_count()) * 100
+
         return f"{cpu_usage:.2f}%"
 
 
