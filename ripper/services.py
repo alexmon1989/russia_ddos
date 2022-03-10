@@ -18,7 +18,7 @@ from ripper.statistics import show_info
 _ctx = Context()
 
 
-def create_thread_pool(_ctx: Context) -> list:
+def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
     thread_pool = []
     for i in range(int(_ctx.threads)):
         if _ctx.attack_method == 'http':
@@ -72,16 +72,7 @@ def get_headers_dict(base_headers: List[str]):
     return headers_dict
 
 
-def update_host_ip(_ctx: Context):
-    """Gets target's IP by host"""
-    try:
-        _ctx.host_ip = socket.gethostbyname(_ctx.host)
-        _ctx.target_country = get_host_country(_ctx.host_ip)
-    except:
-        pass
-
-
-def update_current_ip(_ctx: Context):
+def update_current_ip(_ctx: Context) -> None:
     """Updates current ip"""
     _ctx.getting_ip_in_progress = True
     _ctx.current_ip = get_current_ip()

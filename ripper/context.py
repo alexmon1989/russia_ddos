@@ -10,35 +10,32 @@ class Context:
     version: str = ''
     """Application version."""
 
-    # Input params
+    # ==== Input params ====
     host: str = ''
     """Original HOST name from input args. Can be domain name or IP address."""
-
     host_ip: str = ''
     """HOST IPv4 address."""
-
     port: int = 80
     """Destination Port."""
-
     threads: int = 100
     """The number of threads."""
-
     max_random_packet_len: int = 0
     """Limit for Random Packet Length."""
-
     random_packet_len: bool = False
     """Is Random Packet Length enabled."""
-
     attack_method: str = None
 
     protocol: str = 'http://'
     original_host: str = ''
     url: str = None
 
-    # Internal vars
+    # ==== Internal variables ====
     user_agents: list = None
+    """User-Agent list. RAW data for random choice."""
     base_headers: list = None
-    headers = None
+    """Base HTTP headers list for HTTP Client. RAW data for internal usage."""
+    headers: dict[str, str] = None
+    """HTTP Headers used to make Requests."""
 
     # Statistic
     my_country: str = None
