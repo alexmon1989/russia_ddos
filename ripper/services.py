@@ -1,4 +1,5 @@
 import curses
+import datetime
 import time
 import sys
 from optparse import OptionParser
@@ -9,7 +10,7 @@ from ripper import context, common
 from ripper.attacks import *
 from ripper.common import (get_current_ip, get_no_successful_connection_error_msg,
                            print_usage, parse_args)
-from ripper.constants import SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG
+from ripper.constants import *
 from ripper.statistics import create_dashboard
 from ripper.health_check import fetch_host_statuses, get_health_check_method
 
@@ -34,16 +35,6 @@ def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
 
 def update_url(_ctx: Context) -> None:
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
-
-
-def get_headers_dict(base_headers: List[str]) -> dict[str, str]:
-    """Set headers for the request"""
-    headers_dict = {}
-    for line in base_headers:
-        parts = line.split(':')
-        headers_dict[parts[0]] = parts[1].strip()
-
-    return headers_dict
 
 
 def update_current_ip(_ctx: Context) -> None:
@@ -94,7 +85,7 @@ def connect_host(_ctx: Context) -> None:
 
 def check_successful_connections(_ctx: Context) -> bool:
     """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
-    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
@@ -113,8 +104,8 @@ def check_successful_connections(_ctx: Context) -> bool:
 
 
 def check_successful_tcp_attack(_ctx: Context) -> bool:
-    """Checks if there are changes in sended bytes count.
-    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    """Checks if there are changes in sent bytes count.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
@@ -155,7 +146,7 @@ def validate_input(args) -> bool:
         return False
 
     if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
-        print(f'{Fore.RED}Wrong attack type. Possible options: udp, tcp, http.{Fore.RESET}')
+        print(f'Wrong attack type. Possible options: udp, tcp, http.')
         return False
 
     return True

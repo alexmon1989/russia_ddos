@@ -1,9 +1,11 @@
 import sys
 import pytest as pytest
+
+from ripper import context
+from ripper.context import Context
+from ripper.common import get_ipv4
 from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses, construct_request_url
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
-from ripper.context import Context
-from ripper.services import update_host_ip
 
 
 @pytest.mark.parametrize('value, status', [
@@ -41,7 +43,10 @@ def test_fetch_host_statuses():
     _ctx = Context()
     _ctx.host = 'google.com'
     _ctx.health_check_method = 'tcp'
-    update_host_ip(_ctx)
+    _ctx.user_agents = ['Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)']
+    _ctx.headers['Accept-Encoding'] = 'gzip,deflate'
+    _ctx.host_ip = get_ipv4(_ctx.host)
+
     assert len(_ctx.host_ip) > 0
     distribution = fetch_host_statuses(_ctx)
     # some nodes have issues with file descriptor or connection

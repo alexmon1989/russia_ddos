@@ -6,8 +6,8 @@ import _thread
 from datetime import datetime
 
 from ripper.context import Context
-from ripper.common import convert_size
-from ripper.constants import DEFAULT_CURRENT_IP_VALUE, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
+from ripper.common import convert_size, format_dt, get_no_successful_connection_die_msg
+from ripper.constants import DEFAULT_CURRENT_IP_VALUE, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS, VERSION
 import ripper.services
 from ripper.health_check import construct_request_url
 
@@ -16,7 +16,7 @@ lock = threading.Lock()
 
 def get_health_status(_ctx: Context):
     if(_ctx.last_host_statuses_update is None or len(_ctx.host_statuses.values()) == 0):
-        return f'...detecting ({Fore.CYAN}{_ctx.health_check_method.upper()}{Fore.RESET} health check method from {Fore.CYAN}check-host.net{Fore.RESET})'
+        return f'...detecting ({_ctx.health_check_method.upper()} health check method from check-host.net)'
 
     failed_cnt = 0
     succeeded_cnt = 0
@@ -28,12 +28,12 @@ def get_health_status(_ctx: Context):
     total_cnt = failed_cnt + succeeded_cnt
     if total_cnt < 1:
         return
-    
+
     availability_percentage = round(100 * succeeded_cnt / total_cnt)
     if(availability_percentage < 50):
-        return f'{Fore.RED}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%). It should be dead. Consider another target!{Fore.RESET}'
+        return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%). It should be dead. Consider another target!'
     else:
-        return f'{Fore.GREEN}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%){Fore.RESET}'
+        return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%)'
 
 
 def show_info(_ctx: Context):
@@ -61,17 +61,17 @@ def show_info(_ctx: Context):
 
     print('-----------------------------------------------------------')
     print(f'Start time:                   {format_dt(_ctx.start_time)}')
-    print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET}')
-    print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
+    print(f'Your public IP:               {your_ip} / {_ctx.my_country}')
+    print(f'Host:                         {target_host} / {_ctx.target_country}')
     print(f'Host availability:            {get_health_status(_ctx)}')
     if _ctx.last_host_statuses_update is not None:
         print(f'Host availability updated at: {format_dt(_ctx.last_host_statuses_update)}')
-    print(f'CloudFlare Protection:        {ddos_protection}{Fore.RESET}')
-    print(f'Load Method:                  {Fore.CYAN}{load_method}{Fore.RESET}')
-    print(f'Threads:                      {Fore.CYAN}{thread_pool}{Fore.RESET}')
-    print(f'vCPU count:                   {Fore.CYAN}{available_cpu}{Fore.RESET}')
-    print(f'Random Packet Length:         {rnd_packet_len}{Fore.RESET}')
-    print(f'Max Random Packet Length:     {max_rnd_packet_len}{Fore.RESET}')
+    print(f'CloudFlare Protection:        {_ctx.IpInfo.cloudflare_status()}')
+    print(f'Load Method:                  {load_method}')
+    print(f'Threads:                      {thread_pool}')
+    print(f'vCPU count:                   {available_cpu}')
+    print(f'Random Packet Length:         {rnd_packet_len}')
+    print(f'Max Random Packet Length:     {max_rnd_packet_len}')
     print('-----------------------------------------------------------')
 
     sys.stdout.flush()
@@ -80,52 +80,52 @@ def show_info(_ctx: Context):
 def show_statistics(_ctx: Context):
     """Prints statistics to console."""
 
-        lock.acquire()
-        if not _ctx.getting_ip_in_progress:
-            t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
-            t.start()
-            t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
-            t.start()
-        lock.release()
+    lock.acquire()
+    if not _ctx.Statistic.connect.in_progress:
+        t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
+        t.start()
+        t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
+        t.start()
+    lock.release()
 
-        if _ctx.attack_method == 'tcp':
-            attack_successful = ripper.services.check_successful_tcp_attack(_ctx)
-        else:
-            attack_successful = ripper.services.check_successful_connections(_ctx)
-        if not attack_successful:
-            print(f"\n\n\n{get_no_successful_connection_die_msg()}")
-            _thread.interrupt_main()
-            exit()
+    if _ctx.attack_method == 'tcp':
+        attack_successful = ripper.services.check_successful_tcp_attack(_ctx)
+    else:
+        attack_successful = ripper.services.check_successful_connections(_ctx)
+    if not attack_successful:
+        print(f"\n\n\n{get_no_successful_connection_die_msg()}")
+        _thread.interrupt_main()
+        exit()
 
-        # cpu_load = get_cpu_load()
+    # cpu_load = get_cpu_load()
 
-    show_info(_ctx)
+    # show_info(_ctx)
 
     connections_success = f'{_ctx.Statistic.connect.success}'
     connections_failed = f'{_ctx.Statistic.connect.failed}'
 
     curr_time = datetime.now() - _ctx.Statistic.start_time
 
-        print(f'Duration:                     {str(curr_time).split(".", 2)[0]}')
-        # print(f'CPU Load Average:             {cpu_load}')
-        if _ctx.attack_method == 'http':
-            print(f'Requests sent:                {_ctx.packets_sent}')
-            if len(_ctx.http_codes_counter.keys()):
-                print(f'HTTP codes distribution:      {build_http_codes_distribution(_ctx.http_codes_counter)}')
-        elif _ctx.attack_method == 'tcp':
-            size_sent = convert_size(_ctx.packets_sent)
-            if _ctx.packets_sent == 0:
-                size_sent = f'{Fore.LIGHTRED_EX}{size_sent}{Fore.RESET}'
-            else:
-                size_sent = f'{Fore.LIGHTCYAN_EX}{size_sent}{Fore.RESET}'
+    print(f'Duration:                     {str(curr_time).split(".", 2)[0]}')
+    # print(f'CPU Load Average:             {cpu_load}')
+    if _ctx.attack_method == 'http':
+        print(f'Requests sent:                {_ctx.Statistic.http.packets_sent}')
+        if len(_ctx.Statistic.http_stats.keys()):
+            print(f'HTTP codes distribution:      {build_http_codes_distribution(_ctx.Statistic.http_stats)}')
+    elif _ctx.attack_method == 'tcp':
+        size_sent = convert_size(_ctx.Statistic.tcp.packets_sent)
+        if _ctx.Statistic.tcp.packets_sent == 0:
+            size_sent = f'{size_sent}'
+        else:
+            size_sent = f'{size_sent}'
 
-            print(f'Total Packets Sent Size:      {size_sent}{Fore.RESET}')
-        else:  # udp
-            print(f'Packets Sent:                 {_ctx.packets_sent}{Fore.RESET}')
-        print(f'Connection Success:           {connections_success}{Fore.RESET}')
-        print(f'Connection Failed:            {connections_failed}{Fore.RESET}')
-        print('-----------------------------------------------------------')
-        print(f'{Fore.LIGHTBLACK_EX}Press CTRL+C to interrupt process.{Fore.RESET}')
+        print(f'Total Packets Sent Size:      {size_sent}')
+    else:  # udp
+        print(f'Packets Sent:                 {_ctx.Statistic.udp.packets_sent}')
+    print(f'Connection Success:           {connections_success}')
+    print(f'Connection Failed:            {connections_failed}')
+    print('-----------------------------------------------------------')
+    print(f'Press CTRL+C to interrupt process.')
 
     if _ctx.errors:
         print('\n\n')

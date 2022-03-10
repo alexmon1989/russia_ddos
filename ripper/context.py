@@ -4,9 +4,8 @@ from datetime import datetime
 from collections import defaultdict
 from typing import List
 
-from ripper import services, common
+from ripper import common
 from ripper.sockets import SocketManager
-from ripper.common import readfile
 
 
 def get_headers_dict(base_headers: List[str]):
@@ -15,7 +14,7 @@ def get_headers_dict(base_headers: List[str]):
     for line in base_headers:
         parts = line.split(':')
         headers_dict[parts[0]] = parts[1].strip()
-    
+
     return headers_dict
 
 
@@ -154,7 +153,7 @@ class Context:
     """User-Agent list. RAW data for random choice."""
     base_headers: list = None
     """Base HTTP headers list for HTTP Client. RAW data for internal usage."""
-    headers: dict[str, str] = None
+    headers: dict[str, str] = defaultdict(dict[str, str])
     """HTTP Headers used to make Requests."""
 
     # External API and services info
@@ -195,7 +194,7 @@ def init_context(_ctx: Context, args):
     # Get required data from files
     _ctx.user_agents = common.readfile(os.path.dirname(__file__) + '/useragents.txt')
     _ctx.base_headers = common.readfile(os.path.dirname(__file__) + '/headers.txt')
-    _ctx.headers = services.get_headers_dict(_ctx.base_headers)
+    _ctx.headers = get_headers_dict(_ctx.base_headers)
 
     # Get initial info from external services
     _ctx.IpInfo.my_start_ip = common.get_current_ip()
