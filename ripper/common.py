@@ -71,7 +71,7 @@ def get_host_country(host_ip):
     """Gets country of the target's IP"""
     country = 'NOT DEFINED'
     try:
-        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}').read().decode('utf8')
+        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}', timeout=1).read().decode('utf8')
         response_data = json.loads(response_body)
         country = response_data['country']
     except:
@@ -87,7 +87,7 @@ def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
     domain = "{uri.netloc}".format(uri=parsed_uri)
     try:
         origin = socket.gethostbyname(domain)
-        conn = http.client.HTTPSConnection('www.cloudflare.com')
+        conn = http.client.HTTPSConnection('www.cloudflare.com', timeout=1)
         headers = {
             'Cookie': '__cf_bm=OnRKNQTGoxsvaPnhUpTwRi4UGosW61HHYDZ0KratigY-1646567348-0-AXoOT+WpLyPZuVwGPE2Zb1FxFR2oB18wPkJE1UUXfAEbJDKtsZB0X3O8ED29koUfldx63GwHg/sm4TtEkk4hBL3ET83DUUTWCKrb6Z0ZSlcP',
             'User-Agent': str(random.choice(user_agents)).strip('\n')
