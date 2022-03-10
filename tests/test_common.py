@@ -1,14 +1,15 @@
 import pytest as pytest
-from ripper.common import get_first_ip_part, convert_size
+
+import ripper
 
 
-@pytest.mark.parametrize('actual_ip, expected_result', [
-    ('127.0.0.1', '127.*.*.*'),
-    ('42.199.100.200', '42.*.*.*'),
-    ('42', '42')
-])
-def test_get_first_ip_part(actual_ip, expected_result):
-    assert get_first_ip_part(actual_ip) == expected_result
+# @pytest.mark.parametrize('actual_ip, expected_result', [
+#     ('127.0.0.1', '127.*.*.*'),
+#     ('42.199.100.200', '42.*.*.*'),
+#     ('42', '42')
+# ])
+# def test_get_first_ip_part(actual_ip, expected_result):
+#     assert get_first_ip_part(actual_ip) == expected_result
 
 
 @pytest.mark.parametrize('actual, expected', [
@@ -20,4 +21,4 @@ def test_get_first_ip_part(actual_ip, expected_result):
     (620832256798429, '564.64 TB'),
 ])
 def test_convert_size(actual, expected):
-    assert convert_size(actual) == expected
+    assert ripper.common.convert_size(actual) == expected
