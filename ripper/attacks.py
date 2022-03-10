@@ -42,8 +42,8 @@ def down_it_udp(_ctx: Context):
                 threading.Thread(daemon=True, target=ripper.services.connect_host, args=[_ctx]).start()
                 # ripper.services.connect_host(_ctx)
 
-        if not _ctx.show_statistics:
-            show_statistics(_ctx)
+        # if not _ctx.show_statistics:
+        #     show_statistics(_ctx)
 
 
 def down_it_http(_ctx: Context):
@@ -56,7 +56,9 @@ def down_it_http(_ctx: Context):
             res = urllib.request.urlopen(
                 urllib.request.Request(_ctx.url, headers=http_headers))
             _ctx.http_codes_counter[res.status] += 1
+            print('done')
         except Exception as e:
+            print(e)
             try:
                 _ctx.http_codes_counter[e.status] += 1
             except:
@@ -66,7 +68,7 @@ def down_it_http(_ctx: Context):
             _ctx.connections_success += 1
 
         _ctx.packets_sent += 1
-        show_statistics(_ctx)
+        # show_statistics(_ctx)
 
 
 def down_it_tcp(_ctx: Context):

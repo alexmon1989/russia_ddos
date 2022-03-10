@@ -1,11 +1,44 @@
+import socks
+import sockshandler
 from socket import socket, AF_INET, SOCK_DGRAM, SOCK_STREAM, SOL_TCP, IPPROTO_TCP, TCP_NODELAY
 from typing import Optional
+import urllib.request
 
+def create_connection(address, timeout=None, source_address=None):
+    sock = socks.socksocket()
+    sock.connect(address)
+    return sock
 
 class SocketManager:
     """Manager for creating and closing sockets."""
 
     udp_socket: Optional[socket] = None
+
+    def apply_proxy(self):
+        # handlers = [gziphandler.GzipHandler]
+        # handlers = []
+        # handlers.append(sockshandler.SocksHandler(proxy_url=proxy_url))
+        # if proxy_url is not None:
+        #     scheme = (urllib.parse.urlparse(proxy_url).scheme or "").lower()
+        #     if scheme in ("http", "https"):
+        #         handlers.append(urllib.request.ProxyHandler({scheme: proxy_url}))
+        #     elif scheme in ("socks4", "socks5"):
+        #         handlers.append(sockshandler.SocksHandler(proxy_url=proxy_url))
+        #     else:
+        #         raise RuntimeError("Invalid proxy protocol: {}".format(scheme))
+
+        # if cookie_jar is not None:
+        #     handlers.append(urllib.request.HTTPCookieProcessor(cookie_jar))
+
+        # return urllib.request.build_opener(*handlers)
+        socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5, '45.136.228.80', 6135, True, 'fhghetlr', 'y28lfq0ek85w')
+        socket.socket = socks.socksocket
+        socket.create_connection = create_connection
+
+        proxy_support = urllib.request.ProxyHandler({'http': 'socks5://fhghetlr:y28lfq0ek85w@45.136.228.80:6135',
+                                                     'https': 'socks5://fhghetlr:y28lfq0ek85w@45.136.228.80:6135'})
+        opener = urllib.request.build_opener(proxy_support)
+        urllib.request.install_opener(opener)
 
     def get_udp_socket(self) -> socket:
         """Returns udp socket."""

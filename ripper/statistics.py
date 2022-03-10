@@ -87,8 +87,8 @@ def show_statistics(_ctx: Context):
         if not _ctx.getting_ip_in_progress:
             t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
             t.start()
-            t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
-            t.start()
+            # t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
+            # t.start()
         lock.release()
 
         if _ctx.attack_method == 'tcp':
