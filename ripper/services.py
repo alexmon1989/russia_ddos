@@ -57,8 +57,7 @@ def init_context(_ctx: Context, args):
 
     _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
     _ctx.health_check_method = get_health_check_method(_ctx.attack_method)
-    
-    _ctx.sock_manager.apply_proxy()
+
 
 def update_host_ip(_ctx: Context):
     """Gets target's IP by host"""
