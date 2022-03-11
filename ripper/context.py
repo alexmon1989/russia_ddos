@@ -1,4 +1,5 @@
 import os
+import time
 
 from datetime import datetime
 from collections import defaultdict
@@ -20,16 +21,16 @@ def get_headers_dict(base_headers: List[str]):
 
 class PacketsStats:
     """Class for TCP/UDP statistic collection."""
-    packets_sent: int = 0
+    total_sent: int = 0
     """Total packets sent by TCP/UDP."""
-    packets_sent_prev: int = 0
+    total_sent_prev: int = 0
     """Total packets sent by TCP/UDP (previous state)"""
-    packets_sent_bytes: int = 0
+    total_sent_bytes: int = 0
     """Total sent bytes by TCP/UDP connect."""
 
     def sync_packets_sent(self):
         """Sync previous packets sent stats with current packets sent stats."""
-        self.packets_sent_prev = self.packets_sent
+        self.total_sent_prev = self.total_sent
 
 
 class ConnectionStats:
@@ -67,12 +68,8 @@ class ConnectionStats:
 
 class Statistic:
     """Collect all statistics."""
-    udp: PacketsStats = PacketsStats()
-    """Collect all the stats about UDP packets."""
-    tcp: PacketsStats = PacketsStats()
-    """Collect all the stats about TCP packets."""
-    http: PacketsStats = PacketsStats()
-    """Collect all the stats about HTTP packets."""
+    packets: PacketsStats = PacketsStats()
+    """Collect all the stats about TCP/UDP and HTTP packets."""
     http_stats = defaultdict(int)
     """Collect stats about HTTP response codes."""
     connect: ConnectionStats = ConnectionStats()
@@ -164,6 +161,7 @@ class Context:
         return f"{self.protocol}{self.host}:{self.port}"
 
     # Health-check
+    connections_check_time: int = 0
     fetching_host_statuses_in_progress: bool = False
     last_host_statuses_update: datetime = None
     health_check_method: str = ''
@@ -203,3 +201,5 @@ def init_context(_ctx: Context, args):
     _ctx.IpInfo.isCloudflareProtected = common.isCloudFlareProtected(_ctx.host, _ctx.user_agents)
 
     _ctx.Statistic.start_time = datetime.now()
+    _ctx.connections_check_time = time.time_ns()
+    _ctx.health_check_method = 'ping' if _ctx.attack_method == 'udp'else _ctx.attack_method

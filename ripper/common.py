@@ -176,7 +176,7 @@ def parser_add_options(parser):
                       help='Max random packets length (default: 48)')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
-                      help='Attack method: udp (default), http')
+                      help='Attack method: udp (default), tcp, http')
     parser.add_option('-s', '--server',
                       dest='host',
                       help='Attack to server IP')
