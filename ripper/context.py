@@ -1,9 +1,11 @@
 import os
+import random
 from datetime import datetime
 from collections import defaultdict
 from typing import List
 from ripper.sockets import SocketManager
 from ripper.common import readfile
+from ripper.proxy import Sock5Proxy
 
 
 def get_headers_dict(base_headers: List[str]):
@@ -75,8 +77,16 @@ class Context:
     health_check_method: str = ''
     host_statuses = {}
 
+    # Proxy lists
+    proxies: List[Sock5Proxy] = []
+
     def __new__(cls):
         """Singleton realization."""
         if not hasattr(cls, 'instance'):
             cls.instance = super().__new__(cls)
         return cls.instance
+
+    def random_proxy(cls):
+        if not cls.proxies or not len(cls.proxies):
+            return None
+        return random.choice(cls.proxies)

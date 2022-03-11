@@ -3,14 +3,7 @@ import sockshandler
 import socket
 from typing import Optional
 import urllib.request
-
-
-class Sock5Proxy:
-    def __init__(self, host: str, port: int, user: str = None, password: str = None):
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
+from ripper.proxy import Sock5Proxy
 
 
 class SocketManager:
@@ -46,10 +39,10 @@ class SocketManager:
         http_sock.settimeout(5)
         return http_sock
 
-    def get_udp_socket(self) -> socket:
+    def get_udp_socket(self, proxy: Sock5Proxy = None) -> socket:
         """Returns udp socket."""
         if not self.udp_socket:
-            self.udp_socket = self.create_udp_socket()
+            self.udp_socket = self.create_udp_socket(proxy)
         return self.udp_socket
 
     def close_udp_socket(self) -> bool:
