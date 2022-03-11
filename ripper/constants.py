@@ -14,3 +14,35 @@ DEFAULT_CURRENT_IP_VALUE = '...detecting'
 HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
 HOST_FAILED_STATUS = 'HOST_FAILED'
 HOST_SUCCESS_STATUS = 'HOST_SUCCESS'
+
+MIN_SCREEN_WIDTH = 80
+
+LOGO_COLOR = f'''[cyan]
+██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
+██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝[yellow]
+██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
+██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
+                                           [green]{VERSION}
+[default]
+It is the end user's responsibility to obey all applicable laws.
+It is just like a server testing script and Your IP is visible.
+
+Please, make sure you are ANONYMOUS!
+'''
+
+LOGO_NOCOLOR = f'''
+██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
+██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
+██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
+██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
+                                           {VERSION}
+
+It is the end user's responsibility to obey all applicable laws.
+It is just like a server testing script and Your IP is visible.
+
+Please, make sure you are ANONYMOUS!
+'''
