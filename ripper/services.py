@@ -1,23 +1,22 @@
-import curses
 import datetime
 import time
 import sys
 from optparse import OptionParser
 from base64 import b64decode
-from typing import List
 
 from ripper import context, common
 from ripper.attacks import *
 from ripper.common import (get_current_ip, get_no_successful_connection_error_msg,
                            print_usage, parse_args)
 from ripper.constants import *
-from ripper.statistics import create_dashboard
-from ripper.health_check import fetch_host_statuses, get_health_check_method
+from ripper.statistic import render
+from ripper.health_check import fetch_host_statuses
 
 _ctx = Context()
 
 
 def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
+    """Create Thread pool for selected attack method."""
     thread_pool = []
     for i in range(int(_ctx.threads)):
         if _ctx.attack_method == 'http':
@@ -38,7 +37,7 @@ def update_url(_ctx: Context) -> None:
 
 
 def update_current_ip(_ctx: Context) -> None:
-    """Updates current ip"""
+    """Updates current IPv4 address."""
     _ctx.Statistic.connect.set_state_in_progress()
     _ctx.IpInfo.my_current_ip = get_current_ip()
     _ctx.Statistic.connect.set_state_is_connected()
@@ -48,11 +47,9 @@ def update_current_ip(_ctx: Context) -> None:
 
 def update_host_statuses(_ctx: Context):
     """Updates host statuses based on check-host.net nodes"""
-    MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
-
     diff = float('inf')
     if _ctx.last_host_statuses_update is not None:
-        diff = time.time() - datetime.timestamp(_ctx.last_host_statuses_update)
+        diff = time.time() - datetime.datetime.timestamp(_ctx.last_host_statuses_update)
 
     if _ctx.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
         return
@@ -63,7 +60,7 @@ def update_host_statuses(_ctx: Context):
             # API in some cases returns 403, so we can't update statuses
             if len(host_statuses.values()):
                 _ctx.host_statuses = host_statuses
-                _ctx.last_host_statuses_update = datetime.now()
+                _ctx.last_host_statuses_update = datetime.datetime.now()
     except:
         pass
     finally:
@@ -110,14 +107,14 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
     diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
     error_msg = get_no_successful_connection_error_msg()
 
-    if _ctx.Statistic.tcp.packets_sent == _ctx.Statistic.tcp.packets_sent_prev:
+    if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             if error_msg not in _ctx.errors:
                 _ctx.errors.append(error_msg)
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
-        _ctx.Statistic.tcp.connections_check_time = curr_ms
-        _ctx.Statistic.tcp.sync_packets_sent()
+        _ctx.Statistic.packets.connections_check_time = curr_ms
+        _ctx.Statistic.packets.sync_packets_sent()
         if error_msg in _ctx.errors:
             _ctx.errors.remove(error_msg)
     return True
@@ -184,13 +181,14 @@ def main():
     if not validate_context(_ctx):
         sys.exit()
 
+    update_host_statuses(_ctx)
     time.sleep(.5)
-
-    # _ctx.connections_check_time = time.time_ns()
 
     threads = create_thread_pool(_ctx)
 
-    curses.wrapper(create_dashboard, _ctx)
+    render(_ctx)
+    # dashboard(_ctx)
+    # curses.wrapper(create_dashboard, _ctx)
     # while count > 0:
     #     for t in threads:
     #         if t.is_alive():
