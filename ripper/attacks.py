@@ -30,8 +30,8 @@ def down_it_udp(_ctx: Context) -> None:
         except:
             _ctx.sock_manager.close_udp_socket()
         else:
-            _ctx.Statistic.udp.packets_sent += 1
-            _ctx.Statistic.udp.packets_sent_bytes += len(packet)
+            _ctx.Statistic.packets.total_sent += 1
+            _ctx.Statistic.packets.total_sent_bytes += len(packet)
             if get_server_ip_error_msg in _ctx.errors:
                 _ctx.errors.remove(str(get_server_ip_error_msg))
 
@@ -62,7 +62,7 @@ def down_it_http(_ctx: Context) -> None:
         else:
             _ctx.Statistic.connect.success += 1
 
-        _ctx.Statistic.http.packets_sent += 1
+        _ctx.Statistic.packets.total_sent += 1
 
 
 def down_it_tcp(_ctx: Context) -> None:
@@ -78,8 +78,8 @@ def down_it_tcp(_ctx: Context) -> None:
                 try:
                     bytes_to_send = randbytes(_ctx.max_random_packet_len)
                     sock.send(bytes_to_send)
-                    _ctx.Statistic.tcp.packets_sent_bytes += bytes_to_send_len
-                    _ctx.Statistic.tcp.packets_sent += 1
+                    _ctx.Statistic.packets.total_sent_bytes += bytes_to_send_len
+                    _ctx.Statistic.packets.total_sent += 1
                 except:
                     _ctx.Statistic.connect.failed += 1
                     sock.close()
