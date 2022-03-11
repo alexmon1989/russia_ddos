@@ -9,6 +9,29 @@ from ripper.context import Context
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 
 
+def get_health_status(_ctx: Context):
+    if _ctx.last_host_statuses_update is None or len(_ctx.host_statuses.values()) == 0:
+        return f'...detecting ({_ctx.health_check_method.upper()} health check method from check-host.net)'
+
+    failed_cnt = 0
+    succeeded_cnt = 0
+    if HOST_FAILED_STATUS in _ctx.host_statuses:
+        failed_cnt = _ctx.host_statuses[HOST_FAILED_STATUS]
+    if HOST_SUCCESS_STATUS in _ctx.host_statuses:
+        succeeded_cnt = _ctx.host_statuses[HOST_SUCCESS_STATUS]
+
+    total_cnt = failed_cnt + succeeded_cnt
+    if total_cnt < 1:
+        return
+
+    availability_percentage = round(100 * succeeded_cnt / total_cnt)
+    if availability_percentage < 50:
+        return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%).\n' \
+               f'[red]It should be dead. Consider another target!'
+    else:
+        return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%)'
+
+
 def classify_host_status(node_response):
     """Classifies the status of the host based on the regional node information from check-host.net"""
     if node_response is None:
@@ -105,8 +128,9 @@ def fetch_host_statuses(_ctx: Context) -> dict:
     statuses = {}
     try:
         request_url = construct_request_url(_ctx)
+        body = fetch_zipped_body(_ctx, request_url)
         # request_code is some sort of trace_id which is provided on every request to master node
-        request_code = re.search(r"get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, request_url))[1]
+        request_code = re.search(r"get_check_results\(\n* *'([^']+)", body)[1]
         # it takes time to poll all information from slave nodes
         time.sleep(5)
         # to prevent loop, do not wait for more than 30 seconds
