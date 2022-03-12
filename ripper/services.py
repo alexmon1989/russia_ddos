@@ -68,17 +68,20 @@ def update_host_statuses(_ctx: Context):
         _ctx.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context) -> None:
+def connect_host(_ctx: Context) -> bool:
     _ctx.Statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket()
         sock.connect((_ctx.host, _ctx.port))
     except:
+        res = False
         _ctx.Statistic.connect.failed += 1
     else:
+        res = True
         _ctx.Statistic.connect.success += 1
         sock.close()
     _ctx.Statistic.connect.set_state_is_connected()
+    return res
 
 
 def check_successful_connections(_ctx: Context) -> bool:
@@ -161,7 +164,8 @@ def connect_host_loop(_ctx: Context, timeout_secs: int = 3) -> None:
     i = 0
     while i < CONNECT_TO_HOST_MAX_RETRY:
         print(f'{format_dt(datetime.datetime.now())} Trying connect to {_ctx.host}:{_ctx.port}...')
-        connect_host(_ctx)
+        if connect_host(_ctx):
+            break
         time.sleep(timeout_secs)
         i += 1
 
