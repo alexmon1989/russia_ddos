@@ -220,8 +220,8 @@ def main():
 
     connect_host(_ctx)
 
-    # time.sleep(1)
-    # show_info(_ctx)
+    time.sleep(1)
+    show_info(_ctx)
 
     _ctx.connections_check_time = time.time_ns()
 

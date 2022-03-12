@@ -1,4 +1,5 @@
 import re
+import sys
 import socket
 import socks
 import random
@@ -77,7 +78,9 @@ def down_it_http(_ctx: Context):
             status = re.search(r" (\d+) ", http_response)[1]
             _ctx.http_codes_counter[status] += 1
             _ctx.connections_success += 1
-        except:
+        except Exception as e:
+            print(e)
+            sys.exit()
             _ctx.connections_failed += 1
 
         _ctx.packets_sent += 1
