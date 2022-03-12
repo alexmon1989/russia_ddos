@@ -1,3 +1,4 @@
+import _thread
 import threading
 import time
 from datetime import datetime
@@ -7,7 +8,7 @@ from rich.live import Live
 from rich.table import Table
 
 from ripper import common
-from ripper.context import Context
+from ripper.context import Context, ErrorCodes, Errors
 from ripper.common import *
 from ripper.constants import *
 from ripper.health_check import get_health_status
@@ -134,15 +135,15 @@ def refresh(_ctx: Context):
 
     lock.release()
 
-    # if _ctx.attack_method == 'tcp':
-    #     attack_successful = ripper.services.check_successful_tcp_attack(_ctx)
-    # else:
-    #     attack_successful = ripper.services.check_successful_connections(_ctx)
-    # if not attack_successful:
-    #     _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, get_no_successful_connection_die_msg()))
-    #     # _ctx.errors.append(get_no_successful_connection_die_msg())
-    #     # _thread.interrupt_main()
-    #     # exit()
+    if _ctx.attack_method == 'tcp':
+        attack_successful = ripper.services.check_successful_tcp_attack(_ctx)
+    else:
+        attack_successful = ripper.services.check_successful_connections(_ctx)
+    if not attack_successful:
+        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, get_no_successful_connection_die_msg()))
+        # _ctx.errors.append(get_no_successful_connection_die_msg())
+        _thread.interrupt_main()
+        exit()
 
 
 def render(_ctx: Context):
