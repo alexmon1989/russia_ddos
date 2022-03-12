@@ -78,15 +78,10 @@ class Context:
     host_statuses = {}
 
     # Proxy lists
-    proxies: List[Sock5Proxy] = []
+    proxy_list: List[Sock5Proxy] = []
 
     def __new__(cls):
         """Singleton realization."""
         if not hasattr(cls, 'instance'):
             cls.instance = super().__new__(cls)
         return cls.instance
-
-    def random_proxy(cls):
-        if not cls.proxies or not len(cls.proxies):
-            return None
-        return random.choice(cls.proxies)

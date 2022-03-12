@@ -195,3 +195,6 @@ def parser_add_options(parser):
     parser.add_option('-s', '--server',
                       dest='host',
                       help='Attack to server IP')
+    parser.add_option('-y', '--proxy_list',
+                      dest='proxy_list',
+                      help='File with sock5 proxies in ip:port:username:password line format')

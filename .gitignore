@@ -141,3 +141,6 @@ dmypy.json
 cython_debug/
 
 .idea/
+
+# Proxy lists
+proxylist.txt

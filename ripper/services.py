@@ -16,6 +16,7 @@ from ripper.constants import (SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EP
                               NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC)
 from ripper.statistics import show_info
 from ripper.health_check import fetch_host_statuses, get_health_check_method
+from ripper.proxy import read_proxy_list
 
 _ctx = Context()
 
@@ -57,6 +58,8 @@ def init_context(_ctx: Context, args):
 
     _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
     _ctx.health_check_method = get_health_check_method(_ctx.attack_method)
+
+    _ctx.proxy_list = read_proxy_list(args[0].proxy_list) if args[0].proxy_list else None
 
 
 def update_host_ip(_ctx: Context):

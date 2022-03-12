@@ -12,22 +12,17 @@ class SocketManager:
     udp_socket: Optional[socket.socket] = None
 
     @staticmethod
-    def open_socket(args, proxy: Sock5Proxy = None):
-        s = socks.socksocket(*args)
-        if proxy:
-            s.set_proxy(socks.PROXY_TYPE_SOCKS5, proxy.host, proxy.port, True, proxy.user, proxy.password)
-        return s
-
-    @staticmethod
     def create_udp_socket(proxy: Sock5Proxy = None) -> socket:
         """Creates udp socket."""
-        udp_socket = SocketManager.open_socket([socket.AF_INET, socket.SOCK_DGRAM], proxy)
+        udp_socket = socks.socksocket(socket.AF_INET, socket.SOCK_DGRAM)
+        proxy.decorate_socket(udp_socket) if proxy else 0
         return udp_socket
 
     @staticmethod
     def create_tcp_socket(proxy: Sock5Proxy = None) -> socket:
         """Returns tcp socket."""
-        tcp_sock = SocketManager.open_socket([socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP], proxy)
+        tcp_sock = socks.socksocket(socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP)
+        proxy.decorate_socket(tcp_sock) if proxy else 0
         tcp_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         tcp_sock.settimeout(5)
         return tcp_sock
@@ -35,7 +30,8 @@ class SocketManager:
     @staticmethod
     def create_http_socket(proxy: Sock5Proxy = None) -> socket:
         """Returns http socket."""
-        http_sock = SocketManager.open_socket([socket.AF_INET, socket.SOCK_STREAM], proxy)
+        http_sock = socks.socksocket(socket.AF_INET, socket.SOCK_STREAM)
+        proxy.decorate_socket(http_sock) if proxy else 0
         http_sock.settimeout(5)
         return http_sock
 
