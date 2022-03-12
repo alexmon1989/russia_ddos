@@ -7,8 +7,9 @@ from base64 import b64decode
 from ripper import context, common
 from ripper.attacks import *
 from ripper.common import (get_current_ip, get_no_successful_connection_error_msg,
-                           print_usage, parse_args)
+                           print_usage, parse_args, format_dt)
 from ripper.constants import *
+from ripper.context import Errors, ErrorCodes
 from ripper.statistic import render
 from ripper.health_check import fetch_host_statuses
 
@@ -41,7 +42,7 @@ def update_current_ip(_ctx: Context) -> None:
     _ctx.Statistic.connect.set_state_in_progress()
     _ctx.IpInfo.my_current_ip = get_current_ip()
     _ctx.Statistic.connect.set_state_is_connected()
-    if _ctx.IpInfo.my_start_ip == '':
+    if _ctx.IpInfo.my_start_ip is None:
         _ctx.IpInfo.my_start_ip = _ctx.IpInfo.my_current_ip
 
 
@@ -82,21 +83,25 @@ def connect_host(_ctx: Context) -> None:
 
 def check_successful_connections(_ctx: Context) -> bool:
     """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+    :parameter _ctx: Context
+    """
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
-    error_msg = get_no_successful_connection_error_msg()
+    error_msg = NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
 
     if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            if error_msg not in _ctx.errors:
-                _ctx.errors.append(error_msg)
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, error_msg))
+            # if error_msg not in _ctx.errors:
+            #     _ctx.errors.append(error_msg)
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.connect.last_check_time = curr_ms
         _ctx.Statistic.connect.sync_success()
-        if error_msg in _ctx.errors:
-            _ctx.errors.remove(error_msg)
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+        # if error_msg in _ctx.errors:
+        #     _ctx.errors.remove(error_msg)
     return True
 
 
@@ -109,14 +114,16 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
 
     if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            if error_msg not in _ctx.errors:
-                _ctx.errors.append(error_msg)
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, error_msg))
+            # if error_msg not in _ctx.errors:
+            #     _ctx.errors.append(error_msg)
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.packets.connections_check_time = curr_ms
         _ctx.Statistic.packets.sync_packets_sent()
-        if error_msg in _ctx.errors:
-            _ctx.errors.remove(error_msg)
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+        # if error_msg in _ctx.errors:
+        #     _ctx.errors.remove(error_msg)
     return True
 
 
@@ -149,20 +156,14 @@ def validate_input(args) -> bool:
     return True
 
 
-def validate_context(_ctx: Context) -> bool:
-    """Validates context"""
-    if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
-        print(f'Could not connect to the host')
-        return False
-
-    return True
-
-
 def connect_host_loop(_ctx: Context, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
-    while True:
+    i = 0
+    while i < CONNECT_TO_HOST_MAX_RETRY:
+        print(f'{format_dt(datetime.datetime.now())} Trying connect to {_ctx.host}:{_ctx.port}...')
         connect_host(_ctx)
         time.sleep(timeout_secs)
+        i += 1
 
 
 def main():
@@ -177,28 +178,13 @@ def main():
     context.init_context(_ctx, args)
     update_current_ip(_ctx)
     go_home(_ctx)
+    connect_host_loop(_ctx)
 
-    if not validate_context(_ctx):
-        sys.exit()
+    _ctx.validate()
 
     update_host_statuses(_ctx)
     time.sleep(.5)
 
-    threads = create_thread_pool(_ctx)
+    create_thread_pool(_ctx)
 
     render(_ctx)
-    # dashboard(_ctx)
-    # curses.wrapper(create_dashboard, _ctx)
-    # while count > 0:
-    #     for t in threads:
-    #         if t.is_alive():
-    #             continue
-    #         count -= 1
-    #
-    # if _ctx.attack_method == 'udp' and _ctx.port:
-    #     thread = threading.Thread(target=connect_host_loop, args=[_ctx])
-    #     thread.daemon = True
-    #     thread.start()
-    #
-    # while True:
-    #     time.sleep(1)

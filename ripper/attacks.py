@@ -8,10 +8,8 @@ from ripper.context import Context
 from ripper.common import get_random_string, get_server_ip_error_msg
 
 
-###############################################
-# Attack methods
-###############################################
 def down_it_udp(_ctx: Context) -> None:
+    """UDP flood method."""
     i = 1
     while True:
         sock = _ctx.sock_manager.get_udp_socket()
@@ -44,6 +42,7 @@ def down_it_udp(_ctx: Context) -> None:
 
 
 def down_it_http(_ctx: Context) -> None:
+    """HTTP flood method."""
     http_headers = _ctx.headers
 
     while True:
@@ -66,7 +65,7 @@ def down_it_http(_ctx: Context) -> None:
 
 
 def down_it_tcp(_ctx: Context) -> None:
-    """TCP flood."""
+    """TCP flood method."""
     bytes_to_send_len = _ctx.max_random_packet_len if _ctx.random_packet_len else 1024
 
     while True:

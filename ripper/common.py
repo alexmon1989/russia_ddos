@@ -14,6 +14,9 @@ from functools import lru_cache
 
 from ripper.constants import *
 
+# Prepare static patterns once at start.
+IPv4_PATTERN = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
+
 
 @lru_cache(maxsize=None)
 def get_server_ip_error_msg() -> str:
@@ -61,31 +64,44 @@ def get_current_ip() -> str:
     except:
         pass
 
-    return current_ip
+    return current_ip if is_ipv4(current_ip) else DEFAULT_CURRENT_IP_VALUE
 
 
-def format_dt(dt: datetime):
+def format_dt(dt: datetime, fmt=DATE_TIME_FULL) -> str:
+    """Convert datetime to string using specified format pattern."""
     if dt is None:
         return ''
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
+    return dt.strftime(fmt)
+
+
+def is_ipv4(ip: str) -> bool:
+    """Check if specified string - is IPv4 format."""
+    match = re.match(IPv4_PATTERN, ip)
+
+    return bool(match)
 
 
 def get_ipv4(host: str) -> str:
     """Get target IPv4 address by domain name."""
-    match = re.match(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$", host)
-
-    if bool(match) is True:
+    if is_ipv4(host):
         return host  # do not use socket if we already have a valid IPv4
 
     try:
-        return socket.gethostbyname(host)
+        host_ip = socket.gethostbyname(host)
+        if is_ipv4(host_ip):
+            return host_ip
     except:
         pass
+    else:
+        return DEFAULT_CURRENT_IP_VALUE
 
 
 def get_country_by_ipv4(host_ip: str) -> str:
     """Gets country of the target's IPv4"""
-    country = 'NOT DEFINED'
+    if host_ip is None or not is_ipv4(host_ip):
+        return GEOIP_NOT_DEFINED
+
+    country = GEOIP_NOT_DEFINED
     try:
         response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}', timeout=1).read().decode('utf8')
         response_data = json.loads(response_body)

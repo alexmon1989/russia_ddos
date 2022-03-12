@@ -3,9 +3,12 @@ import time
 
 from datetime import datetime
 from collections import defaultdict
+from enum import Enum
 from typing import List
 
 from ripper import common
+from ripper.common import is_ipv4
+from ripper.constants import DEFAULT_CURRENT_IP_VALUE
 from ripper.sockets import SocketManager
 
 
@@ -102,17 +105,38 @@ class IpInfo:
         127.0.0.1 -> 127.*.*.*
         """
         parts = self.my_start_ip.split('.')
-        if len(parts) > 1:
+        if not parts[0].isdigit():
+            return DEFAULT_CURRENT_IP_VALUE
+
+        if len(parts) > 1 and parts[0].isdigit():
             return f'{parts[0]}.*.*.*'
         else:
             return parts[0]
 
 
+class ErrorCodes(Enum):
+    CannotGetServerIP = 'CANNOT_GET_SERVER_IP'
+    ConnectionError = 'CONNECTION_ERROR'
+    HostDoesNotResponse = 'HOST_DOES_NOT_RESPONSE'
+
+
+class Errors:
+    """Class with Error details."""
+    code: str = None
+    """Error type."""
+    count: int = 0
+    """Error count."""
+    message: str = ''
+    """Error message"""
+
+    def __init__(self, code: str, message: str):
+        self.code = code
+        self.count = 1
+        self.message = message
+
+
 class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
-
-    version: str = ''
-    """Application version."""
 
     # ==== Input params ====
     host: str = ''
@@ -135,7 +159,7 @@ class Context:
     """All the statistics collected separately by protocols and operations."""
     IpInfo: IpInfo = IpInfo()
     """All the info about IP addresses and GeoIP information."""
-    errors: List[str] = []
+    errors: dict[str, Errors] = defaultdict(dict[str, Errors])
     """All the errors during script run."""
 
     # ==========================================================================
@@ -156,16 +180,41 @@ class Context:
     # External API and services info
     sock_manager: SocketManager = SocketManager()
 
-    def get_target_url(self) -> str:
-        """Get fully qualified URI for target HOST - schema://host:port"""
-        return f"{self.protocol}{self.host}:{self.port}"
-
     # Health-check
     connections_check_time: int = 0
     fetching_host_statuses_in_progress: bool = False
     last_host_statuses_update: datetime = None
     health_check_method: str = ''
     host_statuses = {}
+
+    def get_target_url(self) -> str:
+        """Get fully qualified URI for target HOST - schema://host:port"""
+        return f"{self.protocol}{self.host}:{self.port}"
+
+    def add_error(self, error: Errors):
+        """
+        Add Error to Errors collection without duplication.
+        If Error exists in collection - it updates the error counter.
+        """
+        if self.errors.__contains__(error.code):
+            self.errors[error.code].count += 1
+        else:
+            self.errors[error.code] = error
+
+    def remove_error(self, error_code: str):
+        """Remove Error from collection by Error Code."""
+        if self.errors.__contains__(error_code):
+            self.errors.__delitem__(error_code)
+
+    def validate(self):
+        """Validates context before Run script. Order is matter!"""
+        if self.host_ip is None or not is_ipv4(self.host):
+            print(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
+            exit(1)
+
+        if self.IpInfo.my_start_ip is None or not is_ipv4(self.IpInfo.my_start_ip):
+            print(f'Cannot get your public IPv4 address. Check your VPN connection.')
+            exit(1)
 
     def __new__(cls):
         """Singleton realization."""

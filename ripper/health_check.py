@@ -27,7 +27,7 @@ def get_health_status(_ctx: Context):
     availability_percentage = round(100 * succeeded_cnt / total_cnt)
     if availability_percentage < 50:
         return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%).\n' \
-               f'[red]It should be dead. Consider another target!'
+               f'[orange1]It should be dead. Consider another target!'
     else:
         return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%)'
 
