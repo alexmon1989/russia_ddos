@@ -42,7 +42,6 @@ def show_info(_ctx: Context):
 
     my_ip_masked = get_first_ip_part(_ctx.current_ip) if _ctx.current_ip != DEFAULT_CURRENT_IP_VALUE \
         else DEFAULT_CURRENT_IP_VALUE
-    is_random_packet_len = _ctx.attack_method in ('tcp', 'udp') and _ctx.random_packet_len
 
     if _ctx.current_ip:
         if _ctx.current_ip == _ctx.start_ip:
@@ -56,8 +55,7 @@ def show_info(_ctx: Context):
     load_method = f'{str(_ctx.attack_method).upper()}'
     thread_pool = f'{_ctx.threads}'
     available_cpu = f'{_ctx.cpu_count}'
-    rnd_packet_len = Fore.CYAN + 'YES' if is_random_packet_len else 'NO'
-    max_rnd_packet_len = f'{Fore.CYAN}{_ctx.max_random_packet_len}' if is_random_packet_len else 'NOT REQUIRED'
+    max_rnd_packet_len = f'{Fore.CYAN}{_ctx.max_random_packet_len}'
     ddos_protection = Fore.RED + 'Protected' if _ctx.isCloudflareProtected else Fore.GREEN + 'Not protected'
 
     print('-----------------------------------------------------------')
@@ -73,7 +71,6 @@ def show_info(_ctx: Context):
     if _ctx.proxy_list and len(_ctx.proxy_list):
         print(f'Proxies count:                {Fore.CYAN}{len(_ctx.proxy_list)}{Fore.RESET}')
     print(f'vCPU count:                   {Fore.CYAN}{available_cpu}{Fore.RESET}')
-    print(f'Random Packet Length:         {rnd_packet_len}{Fore.RESET}')
     print(f'Max Random Packet Length:     {max_rnd_packet_len}{Fore.RESET}')
     print('-----------------------------------------------------------')
 

