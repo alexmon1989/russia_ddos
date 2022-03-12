@@ -208,7 +208,7 @@ class Context:
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
-        if self.host_ip is None or not is_ipv4(self.host):
+        if self.host_ip is None or not is_ipv4(self.host_ip):
             print(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
             exit(1)
 
