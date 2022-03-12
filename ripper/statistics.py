@@ -43,6 +43,11 @@ def show_info(_ctx: Context):
     my_ip_masked = get_first_ip_part(_ctx.current_ip) if _ctx.current_ip != DEFAULT_CURRENT_IP_VALUE \
         else DEFAULT_CURRENT_IP_VALUE
 
+    is_proxy_list = _ctx.proxy_list and len(_ctx.proxy_list)
+    your_ip_disclaimer = ''
+    if is_proxy_list:
+        your_ip_disclaimer = f'{Fore.RED}(do not use VPN with proxy){Fore.RESET}'
+
     if _ctx.current_ip:
         if _ctx.current_ip == _ctx.start_ip:
             your_ip = Fore.CYAN + my_ip_masked
@@ -60,7 +65,7 @@ def show_info(_ctx: Context):
 
     print('-----------------------------------------------------------')
     print(f'Start time:                   {format_dt(_ctx.start_time)}')
-    print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET}')
+    print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET} {your_ip_disclaimer}')
     print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
     print(f'Host availability:            {get_health_status(_ctx)}')
     if _ctx.last_host_statuses_update is not None:
@@ -68,7 +73,7 @@ def show_info(_ctx: Context):
     print(f'CloudFlare Protection:        {ddos_protection}{Fore.RESET}')
     print(f'Load Method:                  {Fore.CYAN}{load_method}{Fore.RESET}')
     print(f'Threads:                      {Fore.CYAN}{thread_pool}{Fore.RESET}')
-    if _ctx.proxy_list and len(_ctx.proxy_list):
+    if is_proxy_list:
         print(f'Proxies count:                {Fore.CYAN}{len(_ctx.proxy_list)}{Fore.RESET}')
     print(f'vCPU count:                   {Fore.CYAN}{available_cpu}{Fore.RESET}')
     print(f'Max Random Packet Length:     {max_rnd_packet_len}{Fore.RESET}')
