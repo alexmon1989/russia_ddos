@@ -19,6 +19,9 @@ class Sock5Proxy:
         s.set_proxy(PROXY_TYPE_SOCKS5, self.host, self.port, self.rdns)
       return s
 
+    # def test(self):
+
+
 
 def read_proxy_list(filename: str) -> List[Sock5Proxy]:
   proxy_list = []
