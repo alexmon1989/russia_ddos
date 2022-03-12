@@ -78,9 +78,7 @@ def down_it_http(_ctx: Context):
             status = re.search(r" (\d+) ", http_response)[1]
             _ctx.http_codes_counter[status] += 1
             _ctx.connections_success += 1
-        except Exception as e:
-            print(e)
-            sys.exit()
+        except:
             _ctx.connections_failed += 1
 
         _ctx.packets_sent += 1

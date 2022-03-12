@@ -70,6 +70,8 @@ def show_info(_ctx: Context):
     print(f'CloudFlare Protection:        {ddos_protection}{Fore.RESET}')
     print(f'Load Method:                  {Fore.CYAN}{load_method}{Fore.RESET}')
     print(f'Threads:                      {Fore.CYAN}{thread_pool}{Fore.RESET}')
+    if _ctx.proxy_list and len(_ctx.proxy_list):
+        print(f'Proxies count:                {Fore.CYAN}{len(_ctx.proxy_list)}{Fore.RESET}')
     print(f'vCPU count:                   {Fore.CYAN}{available_cpu}{Fore.RESET}')
     print(f'Random Packet Length:         {rnd_packet_len}{Fore.RESET}')
     print(f'Max Random Packet Length:     {max_rnd_packet_len}{Fore.RESET}')
