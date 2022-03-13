@@ -40,7 +40,9 @@ class Context:
     # base_headers: list = None
     # headers = None
     user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
-    base_headers = readfile(os.path.dirname(__file__) + '/headers.txt')
+    # TODO remove
+    base_headers = readfile(os.path.dirname(__file__) + '/base_headers.txt')
+    # TODO rename to base_headers
     headers = get_headers_dict(base_headers)
 
     # Statistic
