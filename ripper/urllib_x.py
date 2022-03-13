@@ -28,21 +28,31 @@ def check_headers_for_user_agent(headers):
   header_names = set(k.lower() for k in headers)
   return 'user-agent' in header_names
 
-def build_request_http_package(host, headers = {}, extra_data = None, http_method: str = DEFAULT_HTTP_METHOD, is_random_user_agent: bool = True) -> str:
+def build_request_http_package(
+  host: str,
+  path: str = '/',
+  headers = {},
+  extra_data: str = None,
+  http_method: str = DEFAULT_HTTP_METHOD,
+  is_random_user_agent: bool = True,
+  is_content_length_header: bool = True) -> str:
   if not http_method:
     http_method = DEFAULT_HTTP_METHOD
   
-  packet_txt = f'{http_method.upper()} / HTTP/1.1' \
+  packet_txt = f'{http_method.upper()} {path} HTTP/1.1' \
                f'\nHost: {host}'
 
   if is_random_user_agent and not check_headers_for_user_agent(headers):
     headers['User-Agent'] = get_random_user_agent()
 
+  if is_content_length_header and extra_data:
+    headers['Content-Length'] = len(extra_data.encode('utf-8'))
+
   if headers and len(headers.items()):
     packet_txt += f'\n\n{build_headers_string_from_dict(headers)}'
 
   if extra_data:
-      packet_txt += f'\n\n{extra_data}'
+    packet_txt += f'\n\n{extra_data}'
 
   return packet_txt.encode('utf-8')
 

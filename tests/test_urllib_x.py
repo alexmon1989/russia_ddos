@@ -1,4 +1,3 @@
-import sys
 import re
 import pytest as pytest
 from ripper.urllib_x import http_request, build_headers_string_from_dict, build_request_http_package
@@ -43,6 +42,20 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
        '\nHost: google.com' \
        '\n\nrow1: xyz' \
        '\nrow2: ijk' \
+       '\nContent-Length: 5' \
+       '\n\nHello'
+       ),
+    ({
+      'host': 'google.com',
+      'http_method': 'POST',
+      'headers': {'row1': 'xyz', 'row2': 'ijk'},
+      'extra_data': 'Hello',
+      'is_random_user_agent': False,
+      'is_content_length_header': False,
+    }, 'POST / HTTP/1.1' \
+       '\nHost: google.com' \
+       '\n\nrow1: xyz' \
+       '\nrow2: ijk' \
        '\n\nHello'
        ),
     ({
@@ -54,6 +67,7 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
        '\nHost: google.com' \
        '\n\nrow1: xyz' \
        '\nrow2: ijk' \
+       '\nContent-Length: 5' \
        '\n\nHello'
        ),
     ({
@@ -69,6 +83,13 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
       'host': 'google.com',
       'is_random_user_agent': False,
     }, 'GET / HTTP/1.1' \
+       '\nHost: google.com'
+       ),
+    ({
+      'host': 'google.com',
+      'path': '/hello',
+      'is_random_user_agent': False,
+    }, 'GET /hello HTTP/1.1' \
        '\nHost: google.com'
        ),
 ])
