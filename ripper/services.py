@@ -33,10 +33,6 @@ def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
     return thread_pool
 
 
-def update_url(_ctx: Context) -> None:
-    _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
-
-
 def update_current_ip(_ctx: Context) -> None:
     """Updates current IPv4 address."""
     _ctx.Statistic.connect.set_state_in_progress()
