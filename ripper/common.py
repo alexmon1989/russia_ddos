@@ -99,7 +99,7 @@ def get_host_country(host_ip):
 
     return country
 
-
+# TODO change to snake_case
 def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
     """Check if the site is under CloudFlare protection."""
 
@@ -206,3 +206,6 @@ def parser_add_options(parser):
     parser.add_option('-y', '--proxy_list',
                       dest='proxy_list',
                       help='File with sock5 proxies in ip:port:username:password line format')
+    parser.add_option('-c', '--health_check',
+                      dest='health_check',
+                      help='Controls health check availability. Turn on: 1, turn off: 0. Default: 1')

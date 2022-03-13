@@ -16,10 +16,10 @@ from ripper.constants import (SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EP
                               NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC)
 from ripper.statistics import show_info
 from ripper.health_check import fetch_host_statuses, get_health_check_method
-from ripper.proxy import read_proxy_list
+from ripper.proxy import Sock5Proxy, read_proxy_list
 
 _ctx = Context()
-
+lock = threading.Lock()
 
 def create_thread_pool(_ctx: Context) -> list:
     thread_pool = []
@@ -41,6 +41,15 @@ def update_url(_ctx: Context):
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
 
 
+def delete_proxy(_ctx: Context, proxy: Sock5Proxy):
+    lock.acquire()
+    is_exists = proxy in _ctx.proxy_list
+    if is_exists:
+        _ctx.proxy_list.remove(proxy)
+    lock.release()
+    return is_exists
+
+
 def init_context(_ctx: Context, args):
     """Initialize Context from Input args."""
     _ctx.host = args[0].host
@@ -57,7 +66,9 @@ def init_context(_ctx: Context, args):
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
 
     _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
+
     _ctx.health_check_method = get_health_check_method(_ctx.attack_method)
+    _ctx.is_health_check = False if args[0].health_check == '0' else True
 
     _ctx.proxy_list = read_proxy_list(args[0].proxy_list) if args[0].proxy_list else None
 

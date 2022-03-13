@@ -67,9 +67,10 @@ def show_info(_ctx: Context):
     print(f'Start time:                   {format_dt(_ctx.start_time)}')
     print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET} {your_ip_disclaimer}')
     print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
-    print(f'Host availability:            {get_health_status(_ctx)}')
-    if _ctx.last_host_statuses_update is not None:
-        print(f'Host availability updated at: {format_dt(_ctx.last_host_statuses_update)}')
+    if _ctx.is_health_check:
+        print(f'Host availability:            {get_health_status(_ctx)}')
+        if _ctx.last_host_statuses_update is not None:
+            print(f'Host availability updated at: {format_dt(_ctx.last_host_statuses_update)}')
     print(f'CloudFlare Protection:        {ddos_protection}{Fore.RESET}')
     print(f'Load Method:                  {Fore.CYAN}{load_method}{Fore.RESET}')
     print(f'Threads:                      {Fore.CYAN}{thread_pool}{Fore.RESET}')
@@ -91,8 +92,9 @@ def show_statistics(_ctx: Context):
         if not _ctx.getting_ip_in_progress:
             t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
             t.start()
-            t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
-            t.start()
+            if _ctx.is_health_check:
+                t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
+                t.start()
         lock.release()
 
         if _ctx.attack_method == 'tcp':

@@ -74,6 +74,7 @@ class Context:
     connecting_host: bool = False
 
     # Health-check
+    is_health_check: bool = True
     fetching_host_statuses_in_progress: bool = False
     last_host_statuses_update: datetime = None
     health_check_method: str = ''
