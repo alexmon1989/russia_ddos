@@ -28,7 +28,7 @@ def check_headers_for_user_agent(headers):
 def build_request_http_package(
         host: str,
         path: str = '/',
-        headers={},
+        headers = {},
         extra_data: str = None,
         http_method: str = DEFAULT_HTTP_METHOD,
         is_random_user_agent: bool = True,
