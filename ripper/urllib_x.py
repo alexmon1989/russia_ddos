@@ -74,6 +74,7 @@ def http_request(url: str, headers = {}, extra_data = None, read_resp_size = 32,
   url_data = urlparse(url)
   hostname = url_data.hostname
   port = url_data.port if url_data.port is not None else default_scheme_port(url_data.scheme)
+  path = url_data.path if url_data.path else '/'
   client = SocketManager.create_http_socket(proxy)
 
   if url_data.scheme == 'https':
