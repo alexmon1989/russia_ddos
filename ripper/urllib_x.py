@@ -7,12 +7,7 @@ from operator import itemgetter
 from ripper.proxy import Sock5Proxy
 from ripper.sockets import SocketManager
 from ripper.common import get_random_user_agent
-
-
-###############################################
-# Common methods for network methods
-###############################################
-DEFAULT_HTTP_METHOD = 'GET'
+from ripper.constants import DEFAULT_HTTP_METHOD
 
 
 ###############################################
@@ -27,6 +22,7 @@ def check_headers_for_user_agent(headers):
     return False
   header_names = set(k.lower() for k in headers)
   return 'user-agent' in header_names
+
 
 def build_request_http_package(
   host: str,
