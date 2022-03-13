@@ -43,7 +43,7 @@ def get_current_ip() -> str:
     current_ip = DEFAULT_CURRENT_IP_VALUE
     try:
         # Check if curl exists in Linux/macOS
-        rc = subprocess.call(['which', 'curl']) if os.name == 'posix' else 1
+        rc = subprocess.call(['which', 'curl'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) if os.name == 'posix' else 1
         current_ip = os.popen('curl -s ifconfig.me').readline() \
             if rc == 0 else urllib.request.urlopen('https://ifconfig.me').read().decode('utf8')
     except:
