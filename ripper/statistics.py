@@ -75,7 +75,7 @@ def show_info(_ctx: Context):
     print(f'Load Method:                  {Fore.CYAN}{load_method}{Fore.RESET}')
     print(f'Threads:                      {Fore.CYAN}{thread_pool}{Fore.RESET}')
     if is_proxy_list:
-        print(f'Proxies count:                {Fore.CYAN}{len(_ctx.proxy_list)}{Fore.RESET}')
+        print(f'Proxies count:                {Fore.CYAN}{len(_ctx.proxy_list)} / {_ctx.proxy_list_initial_len}{Fore.RESET}')
     print(f'vCPU count:                   {Fore.CYAN}{available_cpu}{Fore.RESET}')
     print(f'Max Random Packet Length:     {max_rnd_packet_len}{Fore.RESET}')
     print('-----------------------------------------------------------')
@@ -104,7 +104,11 @@ def show_statistics(_ctx: Context):
         if not attack_successful:
             print(f"\n\n\n{get_no_successful_connection_die_msg()}")
             _thread.interrupt_main()
-            exit()
+            sys.exit()
+        if _ctx.proxy_list_initial_len > 0 and len(_ctx.proxy_list) == 0:
+            print(f"\n\n\n{Fore.LIGHTRED_EX}There are no more operational proxies to work with host.{Fore.RESET}")
+            _thread.interrupt_main()
+            sys.exit()
 
         # cpu_load = get_cpu_load()
 

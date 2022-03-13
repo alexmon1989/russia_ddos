@@ -61,6 +61,7 @@ def init_context(_ctx: Context, args):
     _ctx.is_health_check = False if args[0].health_check == '0' else True
 
     _ctx.proxy_list = read_proxy_list(args[0].proxy_list) if args[0].proxy_list else None
+    _ctx.proxy_list_initial_len = len(_ctx.proxy_list) if _ctx.proxy_list is not None else 0
 
 
 def update_host_ip(_ctx: Context):
