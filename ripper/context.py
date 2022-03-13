@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 from collections import defaultdict
 from enum import Enum
-from typing import List
 
 from ripper import common
 from ripper.common import is_ipv4
@@ -12,7 +11,7 @@ from ripper.constants import DEFAULT_CURRENT_IP_VALUE
 from ripper.sockets import SocketManager
 
 
-def get_headers_dict(base_headers: List[str]):
+def get_headers_dict(base_headers: list[str]):
     """Set headers for the request"""
     headers_dict = {}
     for line in base_headers:
