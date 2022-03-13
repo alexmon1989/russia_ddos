@@ -53,11 +53,13 @@ def collect_stats(_ctx: Context) -> list:
     sent_units = 'Requests' if _ctx.attack_method.lower() == 'http' else 'Packets'
     conn_success_rate = _ctx.Statistic.connect.get_success_rate()
     has_errors = True if len(_ctx.errors) > 0 else False
+    check_my_ip = is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
+    your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
 
     full_stats = [
         # Description                 Status
         ('Start Time',                format_dt(_ctx.Statistic.start_time)),
-        ('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}'),
+        ('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}{your_ip_was_changed}'),
         ('Host IP / Country',         f'[cyan]{_ctx.host_ip}:{_ctx.port} / {_ctx.IpInfo.target_country}'),
         ('Load Method',               _ctx.attack_method.upper(), True),
         # ===================================
@@ -134,6 +136,10 @@ def refresh(_ctx: Context):
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.host_ip]).start()
 
     lock.release()
+
+    # Check for my IPv4 wasn't changed
+    if common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
+        _ctx.add_error(Errors(ErrorCodes.YourIpWasChanged.value, YOUR_IP_WAS_CHANGED))
 
     if _ctx.attack_method == 'tcp':
         attack_successful = ripper.services.check_successful_tcp_attack(_ctx)

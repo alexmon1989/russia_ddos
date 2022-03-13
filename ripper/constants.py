@@ -41,6 +41,7 @@ Please, make sure you are ANONYMOUS!
 GETTING_SERVER_IP_ERROR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
 NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = 'There are no successful connections more than 2 min. ' \
                                       'Check your VPN or change host/port.'
+YOUR_IP_WAS_CHANGED = 'Your IP was changed!!! Check VPN connection.'
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
 HOST_FAILED_STATUS = 'HOST_FAILED'

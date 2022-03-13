@@ -118,6 +118,7 @@ class ErrorCodes(Enum):
     CannotGetServerIP = 'CANNOT_GET_SERVER_IP'
     ConnectionError = 'CONNECTION_ERROR'
     HostDoesNotResponse = 'HOST_DOES_NOT_RESPONSE'
+    YourIpWasChanged = 'YOUR_IP_WAS_CHANGED'
 
 
 class Errors:

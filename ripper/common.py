@@ -50,11 +50,6 @@ def get_random_string(len_from: int, len_to: int) -> str:
     return result_str
 
 
-def get_random_port() -> int:
-    ports = [22, 53, 80, 443]
-    return random.choice(ports)
-
-
 def get_current_ip() -> str:
     """Gets user IP with external service."""
     current_ip = DEFAULT_CURRENT_IP_VALUE
@@ -72,6 +67,11 @@ def format_dt(dt: datetime, fmt=DATE_TIME_FULL) -> str:
     if dt is None:
         return ''
     return dt.strftime(fmt)
+
+
+def is_my_ip_changed(my_start_ip: str, my_current_ip: str) -> bool:
+    """Check if my IPv4 starting address wasn't changed during script run."""
+    return my_start_ip != my_current_ip
 
 
 def is_ipv4(ip: str) -> bool:
