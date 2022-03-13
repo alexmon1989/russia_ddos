@@ -66,6 +66,8 @@ def show_info(_ctx: Context):
     print('-----------------------------------------------------------')
     print(f'Start time:                   {format_dt(_ctx.start_time)}')
     print(f'Your public IP:               {your_ip}{Fore.RESET} / {Fore.YELLOW}{_ctx.my_country}{Fore.RESET} {your_ip_disclaimer}')
+    if _ctx.attack_method == 'http':
+        print(f'Target:                       {Fore.CYAN}{_ctx.http_method} {_ctx.url}{Fore.RESET}')
     print(f'Host:                         {Fore.CYAN}{target_host}{Fore.RESET} / {Fore.RED}{_ctx.target_country}{Fore.RESET}')
     if _ctx.is_health_check:
         print(f'Host availability:            {get_health_status(_ctx)}')
@@ -75,7 +77,7 @@ def show_info(_ctx: Context):
     print(f'Load Method:                  {Fore.CYAN}{load_method}{Fore.RESET}')
     print(f'Threads:                      {Fore.CYAN}{thread_pool}{Fore.RESET}')
     if is_proxy_list:
-        print(f'Proxies count:                {Fore.CYAN}{len(_ctx.proxy_list)} / {_ctx.proxy_list_initial_len}{Fore.RESET}')
+        print(f'Proxies count:                {Fore.CYAN}{len(_ctx.proxy_list)}{Fore.RESET} / {Fore.CYAN}{_ctx.proxy_list_initial_len}{Fore.RESET}')
     print(f'vCPU count:                   {Fore.CYAN}{available_cpu}{Fore.RESET}')
     print(f'Max Random Packet Length:     {max_rnd_packet_len}{Fore.RESET}')
     print('-----------------------------------------------------------')

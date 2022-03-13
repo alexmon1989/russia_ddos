@@ -2,6 +2,7 @@ import sys
 import re
 import random
 import ssl
+import time
 from urllib.parse import urlparse
 from operator import itemgetter
 from ripper.proxy import Sock5Proxy
@@ -75,6 +76,7 @@ def http_request(url: str, headers = {}, extra_data = None, read_resp_size = 32,
   hostname = url_data.hostname
   port = url_data.port if url_data.port is not None else default_scheme_port(url_data.scheme)
   path = url_data.path if url_data.path else '/'
+  query = url_data.query if url_data.query else ''
   with SocketManager.create_http_socket(proxy) as client:
     if url_data.scheme == 'https':
       context = ssl.create_default_context()
@@ -86,6 +88,7 @@ def http_request(url: str, headers = {}, extra_data = None, read_resp_size = 32,
       headers=headers,
       extra_data=extra_data,
       http_method=http_method,
+      path=(path if not query else f'{path}?{query}')
     )
     client.send(request_packet)
     # 32 chars is enough to get status code

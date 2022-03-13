@@ -18,6 +18,7 @@ lock = threading.Lock()
 ###############################################
 # Common methods for attacks
 ###############################################
+# TODO add support for http_method, http_path
 def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = True) -> str:
     local_headers = _ctx.headers
     if is_accept_header_only:
@@ -97,7 +98,7 @@ def down_it_http(_ctx: Context):
         if proxy is None:
             proxy = random_proxy_from_context(_ctx)
         try:
-            response = http_request(url=_ctx.url, proxy=proxy)
+            response = http_request(url=_ctx.url, proxy=proxy, http_method=_ctx.http_method)
             _ctx.http_codes_counter[response.status] += 1
             _ctx.connections_success += 1
         except socks.ProxyError:

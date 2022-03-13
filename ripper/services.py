@@ -37,7 +37,7 @@ def create_thread_pool(_ctx: Context) -> list:
 
 
 def update_url(_ctx: Context):
-    _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
+    _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}{_ctx.http_path}"
 
 
 def init_context(_ctx: Context, args):
@@ -47,6 +47,10 @@ def init_context(_ctx: Context, args):
     _ctx.original_host = args[0].host
     _ctx.port = args[0].port
     _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
+    if args[0].http_method:
+        _ctx.http_method = args[0].http_method.upper()
+    if args[0].http_path:
+        _ctx.http_path = args[0].http_path.lower()
     update_url(_ctx)
 
     _ctx.threads = args[0].threads

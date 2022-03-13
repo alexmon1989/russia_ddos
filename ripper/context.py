@@ -67,6 +67,10 @@ class Context:
     # Method-related stats
     http_codes_counter = defaultdict(int)
 
+    # HTTP-related
+    http_method: str = 'GET'
+    http_path: str = '/'
+
     # External API and services info
     isCloudflareProtected: bool = False
     sock_manager: SocketManager = SocketManager()
@@ -82,6 +86,7 @@ class Context:
 
     # Proxy lists
     proxy_list: List[Sock5Proxy] = []
+    proxy_list_initial_len: int = 0
 
     def __new__(cls):
         """Singleton realization."""
