@@ -87,20 +87,17 @@ def check_successful_connections(_ctx: Context) -> bool:
     """
     curr_ms = time.time_ns()
     diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
-    error_msg = NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
 
     if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, error_msg))
-            # if error_msg not in _ctx.errors:
-            #     _ctx.errors.append(error_msg)
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
+
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.connect.last_check_time = curr_ms
         _ctx.Statistic.connect.sync_success()
         _ctx.remove_error(ErrorCodes.ConnectionError.value)
-        # if error_msg in _ctx.errors:
-        #     _ctx.errors.remove(error_msg)
+
     return True
 
 
@@ -108,21 +105,18 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
     """Checks if there are changes in sent bytes count.
     Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
-    error_msg = get_no_successful_connection_error_msg()
+    diff_sec = (curr_ms - _ctx.Statistic.packets.connections_check_time) / 1000000 / 1000
 
     if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, error_msg))
-            # if error_msg not in _ctx.errors:
-            #     _ctx.errors.append(error_msg)
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
+
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.packets.connections_check_time = curr_ms
         _ctx.Statistic.packets.sync_packets_sent()
         _ctx.remove_error(ErrorCodes.ConnectionError.value)
-        # if error_msg in _ctx.errors:
-        #     _ctx.errors.remove(error_msg)
+
     return True
 
 
