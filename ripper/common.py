@@ -12,9 +12,10 @@ import urllib.request
 from functools import lru_cache
 from datetime import datetime
 from colorama import Fore
-
 from ripper.constants import (GETTING_SERVER_IP_ERROR_MSG, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG,
                               DEFAULT_CURRENT_IP_VALUE, VERSION, NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC)
+
+user_agents = None
 
 
 @lru_cache(maxsize=None)
@@ -37,6 +38,13 @@ def readfile(filename: str):
     """Read string from file"""
     with open(filename, 'r') as file:
         return file.readlines()
+
+
+def get_random_user_agent() -> str:
+    global user_agents
+    if user_agents is None:
+        user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
+    return random.choice(user_agents)
 
 
 def get_random_string(len_from, len_to):

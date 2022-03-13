@@ -1,6 +1,7 @@
 import sys
+import re
 import pytest as pytest
-from ripper.urllib_x import http_request, build_headers_string_from_dict
+from ripper.urllib_x import http_request, build_headers_string_from_dict, build_request_http_package
 from ripper.context import Context
 
 @pytest.mark.parametrize('url, status', [
@@ -11,7 +12,6 @@ def test_http_request(url, status):
   _ctx = Context()
   response = http_request(
     url=url,
-    user_agents=_ctx.user_agents,
     headers=_ctx.headers,
   )
   assert response.status == status
@@ -30,3 +30,55 @@ def test_http_request(url, status):
 def test_build_headers_string_from_dict(headers_dict, headers_txt):
   actual = build_headers_string_from_dict(headers_dict)
   assert actual == headers_txt
+
+
+@pytest.mark.parametrize('args, http_package', [
+    ({
+      'host': 'google.com',
+      'http_method': 'POST',
+      'headers': {'row1': 'xyz', 'row2': 'ijk'},
+      'extra_data': 'Hello',
+      'is_random_user_agent': False,
+    }, 'POST / HTTP/1.1' \
+       '\nHost: google.com' \
+       '\n\nrow1: xyz' \
+       '\nrow2: ijk' \
+       '\n\nHello'
+       ),
+    ({
+      'host': 'google.com',
+      'headers': {'row1': 'xyz', 'row2': 'ijk'},
+      'extra_data': 'Hello',
+      'is_random_user_agent': False,
+    }, 'GET / HTTP/1.1' \
+       '\nHost: google.com' \
+       '\n\nrow1: xyz' \
+       '\nrow2: ijk' \
+       '\n\nHello'
+       ),
+    ({
+      'host': 'google.com',
+      'headers': {'row1': 'xyz', 'row2': 'ijk'},
+      'is_random_user_agent': False,
+    }, 'GET / HTTP/1.1' \
+       '\nHost: google.com' \
+       '\n\nrow1: xyz' \
+       '\nrow2: ijk'
+       ),
+    ({
+      'host': 'google.com',
+      'is_random_user_agent': False,
+    }, 'GET / HTTP/1.1' \
+       '\nHost: google.com'
+       ),
+])
+def test_build_request_http_package(args, http_package):
+  actual = build_request_http_package(**args)
+  assert actual == http_package.encode('utf-8')
+
+
+def test_build_request_http_package_with_random_user_agent():
+  actual = build_request_http_package(host='google.com').decode()
+  assert actual.startswith('GET / HTTP/1.1' \
+       '\nHost: google.com')
+  assert re.search(r'User-Agent: (.+)$', actual).group()

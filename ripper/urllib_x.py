@@ -6,6 +6,13 @@ from urllib.parse import urlparse
 from operator import itemgetter
 from ripper.proxy import Sock5Proxy
 from ripper.sockets import SocketManager
+from ripper.common import get_random_user_agent
+
+
+###############################################
+# Common methods for network methods
+###############################################
+DEFAULT_HTTP_METHOD = 'GET'
 
 
 ###############################################
@@ -15,14 +22,37 @@ def build_headers_string_from_dict(headers_dict) -> str:
   return '\n'.join([f'{key}: {value}' for (key, value) in headers_dict.items()])
 
 
-def build_request_http_package(host, headers = None, extra_data = None) -> str:
-  packet_txt = f'GET / HTTP/1.1' \
+def check_headers_for_user_agent(headers):
+  if not isinstance(headers, dict):
+    return False
+  header_names = set(k.lower() for k in headers)
+  return 'user-agent' in header_names
+
+def build_request_http_package(host, headers = {}, extra_data = None, http_method: str = DEFAULT_HTTP_METHOD, is_random_user_agent: bool = True) -> str:
+  if not http_method:
+    http_method = DEFAULT_HTTP_METHOD
+  
+  packet_txt = f'{http_method.upper()} / HTTP/1.1' \
                f'\nHost: {host}'
+
+  if is_random_user_agent and not check_headers_for_user_agent(headers):
+    headers['User-Agent'] = get_random_user_agent()
+
   if headers and len(headers.items()):
     packet_txt += f'\n\n{build_headers_string_from_dict(headers)}'
+
   if extra_data:
       packet_txt += f'\n\n{extra_data}'
+
   return packet_txt.encode('utf-8')
+
+
+def default_scheme_port(scheme: str):
+  if scheme == 'http':
+    return 80
+  if scheme == 'https':
+    return 443
+  return None
 
 
 ###############################################
@@ -34,15 +64,7 @@ class Response:
     self.full_response = full_response
 
 
-def default_scheme_port(scheme: str):
-  if scheme == 'http':
-    return 80
-  if scheme == 'https':
-    return 443
-  return None
-
-
-def http_request(url: str, user_agents = None, headers = {}, extra_data = None, read_resp_size = 32, http_method: str = 'GET', proxy: Sock5Proxy = None):
+def http_request(url: str, headers = {}, extra_data = None, read_resp_size = 32, http_method: str = None, proxy: Sock5Proxy = None):
   url_data = urlparse(url)
   hostname = url_data.hostname
   port = url_data.port if url_data.port is not None else default_scheme_port(url_data.scheme)
@@ -52,14 +74,12 @@ def http_request(url: str, user_agents = None, headers = {}, extra_data = None, 
     context = ssl.create_default_context()
     client = context.wrap_socket(client, server_hostname=hostname)
 
-  if user_agents:
-    headers['User-Agent'] = random.choice(user_agents)
-
   client.connect((hostname, port))
   request_packet = build_request_http_package(
     host=f'{hostname}',
     headers=headers,
     extra_data=extra_data,
+    http_method=http_method,
   )
   client.send(request_packet)
   # 32 chars is enough to get status code
