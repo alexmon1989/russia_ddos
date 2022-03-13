@@ -152,7 +152,7 @@ def refresh(_ctx: Context):
 
 def render(_ctx: Context):
     """Show DRipper runtime statistic."""
-    with Live(generate_stats(_ctx), refresh_per_second=1) as live:
+    with Live(generate_stats(_ctx), refresh_per_second=1, vertical_overflow='visible') as live:
         # for _ in range(720):
         while True:
             time.sleep(0.5)
