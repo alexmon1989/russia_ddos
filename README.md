@@ -1,8 +1,8 @@
 # DRipper
 
 [![Build status][actions build badge]][actions build link]
-![Docker Pulls](https://img.shields.io/docker/pulls/alexmon1989/dripper)
-![Docker Image Version (latest semver)](https://img.shields.io/docker/v/alexmon1989/dripper?label=DockerHub)
+[![Docker Pulls][docker pulls badge]][docker pulls link]
+[![Docker Image Version (latest semver)][dockerhub badge]][dockerhub link]
 
 DESCRIPTION
 -----------
@@ -151,3 +151,8 @@ This project is distributed under the MIT License, see [LICENSE](./LICENSE) for 
 <!-- External links -->
 [actions build badge]: https://github.com/alexmon1989/russia_ddos/actions/workflows/build.yml/badge.svg
 [actions build link]:  https://github.com/alexmon1989/russia_ddos/actions/workflows/build.yml
+
+[docker pulls link]:   https://hub.docker.com/r/alexmon1989/dripper
+[docker pulls badge]:  https://img.shields.io/docker/pulls/alexmon1989/dripper
+[dockerhub link]:      https://hub.docker.com/r/alexmon1989/dripper/tags
+[dockerhub badge]:     https://img.shields.io/docker/v/alexmon1989/dripper?label=DockerHub

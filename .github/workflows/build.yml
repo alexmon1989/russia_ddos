@@ -77,4 +77,4 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
-          DOCKERHUB_REPOSITORY: alexmon1989/russia_ddos
+          DOCKERHUB_REPOSITORY: alexmon1989/dripper
