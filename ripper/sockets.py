@@ -23,7 +23,8 @@ class SocketManager:
     @staticmethod
     def create_tcp_socket(proxy: Sock5Proxy = None) -> socket:
         """Returns tcp socket."""
-        tcp_socket = socks.socksocket(socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP)
+        tcp_socket = socks.socksocket(
+            socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP)
         proxy.decorate_socket(tcp_socket) if proxy else 0
         tcp_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         tcp_socket.settimeout(5)

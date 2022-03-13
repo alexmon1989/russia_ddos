@@ -14,7 +14,7 @@ def get_headers_dict(base_headers: List[str]):
     for line in base_headers:
         parts = line.split(':')
         headers_dict[parts[0]] = parts[1].strip()
-    
+
     return headers_dict
 
 
@@ -37,7 +37,8 @@ class Context:
 
     # Internal vars
     user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
-    headers = get_headers_dict(readfile(os.path.dirname(__file__) + '/base_headers.txt'))
+    headers = get_headers_dict(
+        readfile(os.path.dirname(__file__) + '/base_headers.txt'))
 
     # Statistic
     my_country: str = None
@@ -53,7 +54,8 @@ class Context:
     errors: List[str] = []
 
     # cpu_count: int = 1
-    cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
+    # to avoid situation when vCPU might be 0
+    cpu_count = max(os.cpu_count(), 1)
     show_statistics: bool = False
     current_ip = None
     getting_ip_in_progress: bool = False

@@ -91,7 +91,8 @@ def get_host_country(host_ip):
     """Gets country of the target's IP"""
     country = 'NOT DEFINED'
     try:
-        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}').read().decode('utf8')
+        response_body = urllib.request.urlopen(
+            f'https://ipinfo.io/{host_ip}').read().decode('utf8')
         response_data = json.loads(response_body)
         country = response_data['country']
     except:
@@ -100,6 +101,8 @@ def get_host_country(host_ip):
     return country
 
 # TODO change to snake_case
+
+
 def __isCloudFlareProtected(link: str, user_agents: list) -> bool:
     """Check if the site is under CloudFlare protection."""
 
@@ -137,7 +140,8 @@ def convert_size(size_bytes: int) -> str:
 
 def get_cpu_load():
     if os.name == 'nt':
-        pipe = subprocess.Popen('wmic cpu get loadpercentage', stdout=subprocess.PIPE)
+        pipe = subprocess.Popen(
+            'wmic cpu get loadpercentage', stdout=subprocess.PIPE)
         out = pipe.communicate()[0].decode('utf-8')
         out = out.replace('LoadPercentage', '').strip()
         return f'{out}%'
@@ -168,7 +172,6 @@ Please, make sure you are ANONYMOUS!
 ###############################################
 # Input parser, Logo, Help messages
 ###############################################
-
 
 def print_usage(parser):
     """Wrapper for Logo with help."""

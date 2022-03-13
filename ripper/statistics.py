@@ -27,7 +27,7 @@ def get_health_status(_ctx: Context):
     total_cnt = failed_cnt + succeeded_cnt
     if total_cnt < 1:
         return
-    
+
     availability_percentage = round(100 * succeeded_cnt / total_cnt)
     if(availability_percentage < 50):
         return f'{Fore.RED}Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%). It should be dead. Consider another target!{Fore.RESET}'
@@ -61,7 +61,8 @@ def show_info(_ctx: Context):
     thread_pool = f'{_ctx.threads}'
     available_cpu = f'{_ctx.cpu_count}'
     max_rnd_packet_len = f'{Fore.CYAN}{_ctx.max_random_packet_len}'
-    ddos_protection = Fore.RED + 'Protected' if _ctx.isCloudflareProtected else Fore.GREEN + 'Not protected'
+    ddos_protection = Fore.RED + \
+        'Protected' if _ctx.isCloudflareProtected else Fore.GREEN + 'Not protected'
 
     print('-----------------------------------------------------------')
     print(f'Start time:                   {format_dt(_ctx.start_time)}')
@@ -92,10 +93,12 @@ def show_statistics(_ctx: Context):
 
         lock.acquire()
         if not _ctx.getting_ip_in_progress:
-            t = threading.Thread(target=ripper.services.update_current_ip, args=[_ctx])
+            t = threading.Thread(
+                target=ripper.services.update_current_ip, args=[_ctx])
             t.start()
             if _ctx.is_health_check:
-                t = threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx])
+                t = threading.Thread(
+                    target=ripper.services.update_host_statuses, args=[_ctx])
                 t.start()
         lock.release()
 
@@ -108,7 +111,7 @@ def show_statistics(_ctx: Context):
             _thread.interrupt_main()
             sys.exit()
         if _ctx.proxy_list_initial_len > 0 and len(_ctx.proxy_list) == 0:
-            print(f"\n\n\n{Fore.LIGHTRED_EX}There are no more operational proxies to work with host.{Fore.RESET}")
+            print(f'\n\n\n{Fore.LIGHTRED_EX}There are no more operational proxies to work with host.{Fore.RESET}')
             _thread.interrupt_main()
             sys.exit()
 

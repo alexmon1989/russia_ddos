@@ -20,15 +20,19 @@ from ripper.proxy import Sock5Proxy, read_proxy_list
 
 _ctx = Context()
 
+
 def create_thread_pool(_ctx: Context) -> list:
     thread_pool = []
     for i in range(int(_ctx.threads)):
         if _ctx.attack_method == 'http':
-            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+            thread_pool.append(threading.Thread(
+                target=down_it_http, args=[_ctx]))
         elif _ctx.attack_method == 'tcp':
-            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
+            thread_pool.append(threading.Thread(
+                target=down_it_tcp, args=[_ctx]))
         else:  # _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
+            thread_pool.append(threading.Thread(
+                target=down_it_udp, args=[_ctx]))
 
         thread_pool[i].daemon = True  # if thread is exist, it dies
         thread_pool[i].start()
@@ -59,13 +63,16 @@ def init_context(_ctx: Context, args):
     _ctx.random_packet_len = bool(args[0].random_packet_len)
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
 
-    _ctx.isCloudflareProtected = __isCloudFlareProtected(_ctx.host, _ctx.user_agents)
+    _ctx.isCloudflareProtected = __isCloudFlareProtected(
+        _ctx.host, _ctx.user_agents)
 
     _ctx.health_check_method = get_health_check_method(_ctx.attack_method)
     _ctx.is_health_check = False if args[0].health_check == '0' else True
 
-    _ctx.proxy_list = read_proxy_list(args[0].proxy_list) if args[0].proxy_list else None
-    _ctx.proxy_list_initial_len = len(_ctx.proxy_list) if _ctx.proxy_list is not None else 0
+    _ctx.proxy_list = read_proxy_list(
+        args[0].proxy_list) if args[0].proxy_list else None
+    _ctx.proxy_list_initial_len = len(
+        _ctx.proxy_list) if _ctx.proxy_list is not None else 0
 
 
 def update_host_ip(_ctx: Context):
@@ -186,6 +193,14 @@ def validate_input(args):
 
     if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
         print(f'{Fore.RED}Wrong attack type. Possible options: udp, tcp, http.{Fore.RESET}')
+        return False
+
+    if args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
+        print(f'{Fore.RED}Wrong http method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.{Fore.RESET}')
+        return False
+
+    if not args.http_path.startswith('/'):
+        print(f'{Fore.RED}Http path should start with /.{Fore.RESET}')
         return False
 
     return True

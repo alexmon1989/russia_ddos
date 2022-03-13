@@ -47,7 +47,7 @@ def classify_host_status_http(val):
                 return HOST_SUCCESS_STATUS
     except:
         pass
-    return None 
+    return None
 
 
 def count_host_statuses(distribution):
@@ -106,13 +106,15 @@ def fetch_host_statuses(_ctx: Context):
     try:
         request_url = construct_request_url(_ctx)
         # request_code is some sort of trace_id which is provided on every request to master node
-        request_code = re.search(r"get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, request_url))[1]
+        request_code = re.search(
+            r"get_check_results\(\n* *'([^']+)", fetch_zipped_body(_ctx, request_url))[1]
         # it takes time to poll all information from slave nodes
         time.sleep(5)
         # to prevent loop, do not wait for more than 30 seconds
         for i in range(0, 5):
             time.sleep(5)
-            resp_data = json.loads(fetch_zipped_body(_ctx, f'https://check-host.net/check_result/{request_code}'))
+            resp_data = json.loads(fetch_zipped_body(
+                _ctx, f'https://check-host.net/check_result/{request_code}'))
             statuses = count_host_statuses(resp_data)
             if HOST_IN_PROGRESS_STATUS not in statuses:
                 return statuses

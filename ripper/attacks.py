@@ -18,7 +18,10 @@ lock = threading.Lock()
 ###############################################
 # Common methods for attacks
 ###############################################
+
 # TODO add support for http_method, http_path
+
+
 def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = True) -> str:
     local_headers = _ctx.headers
     if is_accept_header_only:
@@ -55,6 +58,7 @@ def delete_proxy(_ctx: Context, proxy: Sock5Proxy):
 ###############################################
 # Attack methods
 ###############################################
+
 def down_it_udp(_ctx: Context):
     i = 1
     proxy = None
@@ -84,7 +88,8 @@ def down_it_udp(_ctx: Context):
         if i == 100:
             i = 1
             if not _ctx.connecting_host:
-                threading.Thread(daemon=True, target=ripper.services.connect_host, args=[_ctx]).start()
+                threading.Thread(
+                    daemon=True, target=ripper.services.connect_host, args=[_ctx]).start()
                 # ripper.services.connect_host(_ctx)
 
         if not _ctx.show_statistics:
@@ -98,7 +103,8 @@ def down_it_http(_ctx: Context):
         if proxy is None:
             proxy = random_proxy_from_context(_ctx)
         try:
-            response = http_request(url=_ctx.url, proxy=proxy, http_method=_ctx.http_method)
+            response = http_request(
+                url=_ctx.url, proxy=proxy, http_method=_ctx.http_method)
             _ctx.http_codes_counter[response.status] += 1
             _ctx.connections_success += 1
         except socks.ProxyError:
