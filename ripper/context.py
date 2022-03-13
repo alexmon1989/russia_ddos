@@ -30,6 +30,8 @@ class PacketsStats:
     """Total packets sent by TCP/UDP (previous state)"""
     total_sent_bytes: int = 0
     """Total sent bytes by TCP/UDP connect."""
+    connections_check_time: int = 0
+    """Connection last check time."""
 
     def sync_packets_sent(self):
         """Sync previous packets sent stats with current packets sent stats."""

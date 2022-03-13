@@ -1,4 +1,3 @@
-import _thread
 import threading
 import time
 from datetime import datetime
@@ -147,9 +146,8 @@ def refresh(_ctx: Context):
         attack_successful = ripper.services.check_successful_connections(_ctx)
     if not attack_successful:
         _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, get_no_successful_connection_die_msg()))
-        # _ctx.errors.append(get_no_successful_connection_die_msg())
-        _thread.interrupt_main()
-        exit()
+
+        exit(get_no_successful_connection_die_msg())
 
 
 def render(_ctx: Context):
