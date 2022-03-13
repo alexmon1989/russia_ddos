@@ -19,7 +19,6 @@ from ripper.health_check import fetch_host_statuses, get_health_check_method
 from ripper.proxy import Sock5Proxy, read_proxy_list
 
 _ctx = Context()
-lock = threading.Lock()
 
 def create_thread_pool(_ctx: Context) -> list:
     thread_pool = []
@@ -39,15 +38,6 @@ def create_thread_pool(_ctx: Context) -> list:
 
 def update_url(_ctx: Context):
     _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}"
-
-
-def delete_proxy(_ctx: Context, proxy: Sock5Proxy):
-    lock.acquire()
-    is_exists = proxy in _ctx.proxy_list
-    if is_exists:
-        _ctx.proxy_list.remove(proxy)
-    lock.release()
-    return is_exists
 
 
 def init_context(_ctx: Context, args):
