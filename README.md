@@ -66,6 +66,8 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
 DRipper can run on Windows/Linux/macOS from command line.
 We recommend to use `PowerShell` for Windows users to run the script, Linux/macOS users can use any shell.
 
+Run `python DRipper --help` to see detailed params description.
+
 ```bash
 
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
@@ -117,7 +119,7 @@ docker run -it --rm alexmon1989/dripper:latest -s 127.0.0.1 -p 80 -t 100 -m upd 
 
 #### Directly with Python.
 
-Ensure you have Python 3 installed. Then clone this repo and run DRipper.py with params you need
+Ensure you have Python 3.9 or better installed. Then clone this repo and run DRipper.py with params you need
 
 ```bash
 git clone https://github.com/alexmon1989/russia_ddos.git
@@ -131,6 +133,11 @@ python -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 # OR
 python3 -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 ```
+
+#### Kubernetes
+
+You can deploy and run DRipper in Kubernetes cluster using [kube-dripper][kube-dripper-link] terraform configuration.
+For details - see the [README][kube-dripper-readme] from **kube-dripper** project.
 
 ## How to run unit tests
 
@@ -156,3 +163,6 @@ This project is distributed under the MIT License, see [LICENSE](./LICENSE) for 
 [docker pulls badge]:  https://img.shields.io/docker/pulls/alexmon1989/dripper
 [dockerhub link]:      https://hub.docker.com/r/alexmon1989/dripper/tags
 [dockerhub badge]:     https://img.shields.io/docker/v/alexmon1989/dripper?label=DockerHub
+
+[kube-dripper-link]:   https://github.com/denismakogon/kube-dripper
+[kube-dripper-readme]: https://github.com/denismakogon/kube-dripper/blob/main/README.md

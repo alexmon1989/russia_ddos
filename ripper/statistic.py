@@ -107,7 +107,7 @@ def generate_stats(_ctx: Context) -> Table:
         box=box.HORIZONTALS,
         min_width=MIN_SCREEN_WIDTH,
         width=MIN_SCREEN_WIDTH,
-        caption='[grey53]Press [green]CTRL+C[grey53] to interrupt process.\n...',
+        caption=f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}',
         caption_style='bold')
 
     table.add_column("Description")

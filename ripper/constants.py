@@ -36,6 +36,8 @@ It is just like a server testing script and Your IP is visible.
 Please, make sure you are ANONYMOUS!
 '''
 
+BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine\n'
+
 
 # ==== Error messages ====
 GETTING_SERVER_IP_ERROR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
