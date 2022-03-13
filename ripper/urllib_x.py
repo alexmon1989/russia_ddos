@@ -75,24 +75,23 @@ def http_request(url: str, headers = {}, extra_data = None, read_resp_size = 32,
   hostname = url_data.hostname
   port = url_data.port if url_data.port is not None else default_scheme_port(url_data.scheme)
   path = url_data.path if url_data.path else '/'
-  client = SocketManager.create_http_socket(proxy)
+  with SocketManager.create_http_socket(proxy) as client:
+    if url_data.scheme == 'https':
+      context = ssl.create_default_context()
+      client = context.wrap_socket(client, server_hostname=hostname)
 
-  if url_data.scheme == 'https':
-    context = ssl.create_default_context()
-    client = context.wrap_socket(client, server_hostname=hostname)
-
-  client.connect((hostname, port))
-  request_packet = build_request_http_package(
-    host=f'{hostname}',
-    headers=headers,
-    extra_data=extra_data,
-    http_method=http_method,
-  )
-  client.send(request_packet)
-  # 32 chars is enough to get status code
-  http_response = repr(client.recv(read_resp_size))
-  status = int(re.search(r" (\d+) ", http_response)[1])
-  return Response(
-    status=status,
-    full_response=http_response,
-  )
+    client.connect((hostname, port))
+    request_packet = build_request_http_package(
+      host=f'{hostname}',
+      headers=headers,
+      extra_data=extra_data,
+      http_method=http_method,
+    )
+    client.send(request_packet)
+    # 32 chars is enough to get status code
+    http_response = repr(client.recv(read_resp_size))
+    status = int(re.search(r" (\d+) ", http_response)[1])
+    return Response(
+      status=status,
+      full_response=http_response,
+    )

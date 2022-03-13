@@ -11,7 +11,7 @@ from ripper.context import Context
 from ripper.statistics import show_statistics
 from ripper.common import get_random_string, get_server_ip_error_msg
 from ripper.proxy import Sock5Proxy
-from ripper.urllib_x import build_request_http_package
+from ripper.urllib_x import build_request_http_package, http_request
 
 
 ###############################################
@@ -87,14 +87,8 @@ def down_it_http(_ctx: Context):
         if proxy is None:
             proxy = random_proxy_from_context(_ctx)
         try:
-            client = _ctx.sock_manager.create_http_socket(proxy)
-            client.connect((_ctx.host, _ctx.port))
-            request_packet = build_ctx_request_http_package(_ctx)
-            client.send(request_packet)
-            # 32 chars is enough to get status code
-            http_response = repr(client.recv(32))
-            status = re.search(r" (\d+) ", http_response)[1]
-            _ctx.http_codes_counter[status] += 1
+            response = http_request(url=_ctx.url, proxy=proxy)
+            _ctx.http_codes_counter[response.status] += 1
             _ctx.connections_success += 1
         except socks.ProxyError:
             ripper.services.delete_proxy(_ctx, proxy)
