@@ -36,14 +36,8 @@ class Context:
     url: str = None
 
     # Internal vars
-    # user_agents: list = None
-    # base_headers: list = None
-    # headers = None
     user_agents = readfile(os.path.dirname(__file__) + '/useragents.txt')
-    # TODO remove
-    base_headers = readfile(os.path.dirname(__file__) + '/base_headers.txt')
-    # TODO rename to base_headers
-    headers = get_headers_dict(base_headers)
+    headers = get_headers_dict(readfile(os.path.dirname(__file__) + '/base_headers.txt'))
 
     # Statistic
     my_country: str = None
