@@ -119,6 +119,7 @@ class ErrorCodes(Enum):
     ConnectionError = 'CONNECTION_ERROR'
     HostDoesNotResponse = 'HOST_DOES_NOT_RESPONSE'
     YourIpWasChanged = 'YOUR_IP_WAS_CHANGED'
+    CannotSendRequest = 'CANNOT_SEND_REQUEST'
 
 
 class Errors:

@@ -6,8 +6,7 @@ from base64 import b64decode
 
 from ripper import context, common
 from ripper.attacks import *
-from ripper.common import (get_current_ip, get_no_successful_connection_error_msg,
-                           print_usage, parse_args, format_dt)
+from ripper.common import (get_current_ip, print_usage, parse_args, format_dt)
 from ripper.constants import *
 from ripper.context import Errors, ErrorCodes
 from ripper.statistic import render

@@ -10,23 +10,11 @@ import subprocess
 import json
 import sys
 import urllib.request
-from functools import lru_cache
 
 from ripper.constants import *
 
 # Prepare static patterns once at start.
 IPv4_PATTERN = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
-
-
-@lru_cache(maxsize=None)
-def get_server_ip_error_msg() -> str:
-    """Error: Cannot get server IP."""
-    return GETTING_SERVER_IP_ERROR_MSG
-
-
-@lru_cache(maxsize=None)
-def get_no_successful_connection_error_msg() -> str:
-    return NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
 
 
 def get_no_successful_connection_die_msg() -> str:
@@ -54,8 +42,10 @@ def get_current_ip() -> str:
     """Gets user IP with external service."""
     current_ip = DEFAULT_CURRENT_IP_VALUE
     try:
+        # Check if curl exists in Linux/macOS
+        rc = subprocess.call(['which', 'curl']) if os.name == 'posix' else 1
         current_ip = os.popen('curl -s ifconfig.me').readline() \
-            if os.name == 'posix' else urllib.request.urlopen('https://ifconfig.me').read().decode('utf8')
+            if rc == 0 else urllib.request.urlopen('https://ifconfig.me').read().decode('utf8')
     except:
         pass
 
