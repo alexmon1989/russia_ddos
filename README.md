@@ -44,6 +44,12 @@ Options:
                         Attack method: udp (default), http
   -s HOST, --server=HOST
                         Attack to server IP
+  -y FILENAME, --proxy_list=FILENAME
+                        File with sock5 proxies in ip:port:username:password or ip:port line format
+  -c STATE, --health_check=STATE (default 1)
+                        Controls health check availability. Turn on: 1, turn off: 0
+  -e HTTP_METHOD, --http_method=HTTP_METHOD (default GET)
+  -a HTTP_PATH, --http_path=HTTP_PATH (default /)
 
 Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100
 ```
