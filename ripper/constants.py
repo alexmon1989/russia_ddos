@@ -3,8 +3,8 @@
 ###############################################
 
 VERSION = 'v2.0.4'
-USAGE = 'Usage: python %prog [options] arg'
-EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
+USAGE = 'Usage: %prog [options] arg'
+EPILOG = 'Example: dripper -s 192.168.0.1 -p 80 -t 100'
 
 LOGO_COLOR = f'''[deep_sky_blue1]
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗

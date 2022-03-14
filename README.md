@@ -67,7 +67,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
 DRipper can run on Windows/Linux/macOS from command line.
 We recommend to use `PowerShell` for Windows users to run the script, Linux/macOS users can use any shell.
 
-Run `python DRipper --help` to see detailed params description.
+Run `dripper --help` to see detailed params description.
 
 ```bash
 
@@ -84,7 +84,7 @@ It is just like a server testing script and Your IP is visible.
 
 Please, make sure you are ANONYMOUS!
 
-Usage: python DRipper.py [options] arg
+Usage: dripper [options] arg
 
 Options:
   -h, --help            show this help message and exit
@@ -100,7 +100,7 @@ Options:
   -s HOST, --server=HOST
                         Attack to server IP
 
-Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100
+Example: dripper -s 192.168.0.1 -p 80 -t 100
 ```
 
 ## How to Run
@@ -130,9 +130,9 @@ cd russia_ddos
 pip install -r requirements.txt
 
 # Run script
-python -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+dripper -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 # OR
-python3 -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+dripper -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 ```
 
 #### Kubernetes
