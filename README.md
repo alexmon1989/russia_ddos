@@ -57,8 +57,9 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
   Connection Failed                 29                                          
   Connection Success Rate           6%                                          
  ────────────────────────────────────────────────────────────────────────────── 
-                       Press CTRL+C to interrupt process.                       
-                                      ...                                       
+                        Press CTRL+C to interrupt process.                       
+                                                                                
+                               #StandWithUkraine                               
 ```
 
 ## Usage
