@@ -3,7 +3,7 @@ ENV PYTHONUNBUFFERED=1
 
 RUN mkdir -p /app/ripper
 COPY ./ripper/* /app/ripper/
-COPY DRipper.py requirements.txt /app/
+COPY DRipper1.py requirements.txt /app/
 
 RUN apk add curl && \
     pip install --upgrade pip && \
@@ -11,4 +11,4 @@ RUN apk add curl && \
     rm -rf /app/requirements.txt
 
 WORKDIR /app
-ENTRYPOINT ["python", "DRipper.py"]
+ENTRYPOINT ["dripper"]
