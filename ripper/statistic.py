@@ -68,12 +68,13 @@ def collect_stats(_ctx: Context) -> list:
     full_stats: list[Row] = [
         #   Description                  Status
         Row('Start Time',                format_dt(_ctx.Statistic.start_time)),
-        Row('Your Public IP / Country',f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
+        Row('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
         Row('Host IP / Country',         f'[cyan]{_ctx.host_ip}:{_ctx.port} / [red]{_ctx.IpInfo.target_country}'),
         Row('HTTP Method / URL',         f'[cyan]{_ctx.http_method} / {_ctx.get_target_url()}', visible=_ctx.attack_method.lower() == 'http'),
         Row('Load Method',               _ctx.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
+        Row('Proxies count',             f'[cyan]{len(_ctx.proxy_list)} / {_ctx.proxy_list_initial_len}', visible=is_proxy_list),
         Row('vCPU Count',                f'{_ctx.cpu_count}'),
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
@@ -149,8 +150,11 @@ def refresh(_ctx: Context):
 
     if not ripper.services.validate_attack(_ctx):
         _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, get_no_successful_connection_die_msg()))
-
         exit(get_no_successful_connection_die_msg())
+    
+    if _ctx.proxy_list_initial_len > 0 and len(_ctx.proxy_list) == 0:
+        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, get_no_more_proxies_msg()))
+        exit(get_no_more_proxies_msg())
 
 
 def render(_ctx: Context):

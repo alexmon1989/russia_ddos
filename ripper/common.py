@@ -26,6 +26,10 @@ def get_no_successful_connection_die_msg() -> str:
            f"Your attack is ineffective."
 
 
+def get_no_more_proxies_msg() -> str:
+    return f"There are no more operational proxies to work with host." \
+
+
 def readfile(filename: str) -> list[str]:
     """Read string from file"""
     with open(filename, 'r') as file:

@@ -87,7 +87,7 @@ def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
         else:  # _ctx.attack_method == 'udp':
             thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
 
-        thread_pool[i].daemon = True  # if thread is exist, it dies
+        thread_pool[i].daemon = True  # if thread exists, it dies
         thread_pool[i].start()
 
     return thread_pool
@@ -200,9 +200,8 @@ def main():
     context.init_context(_ctx, args)
     update_current_ip(_ctx)
     go_home(_ctx)
-    if _ctx.proxy_list_initial_len > 0:
-        connect_host_loop(_ctx, retry_cnt=0)
-
+    # Proxies should be validated during the runtime
+    connect_host_loop(_ctx, retry_cnt=(1 if _ctx.proxy_list_initial_len > 0 else 5))
     _ctx.validate()
 
     if _ctx.is_health_check:
