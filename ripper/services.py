@@ -204,10 +204,6 @@ def main():
     connect_host_loop(_ctx, retry_cnt=(1 if _ctx.proxy_list_initial_len > 0 else 5))
     _ctx.validate()
 
-    if _ctx.is_health_check:
-        update_host_statuses(_ctx)
-        time.sleep(.5)
-
     create_thread_pool(_ctx)
 
     render(_ctx)
