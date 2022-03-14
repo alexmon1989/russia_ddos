@@ -79,7 +79,7 @@ def collect_stats(_ctx: Context) -> list:
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
         Row('CloudFlare DNS Protection', ('[red]' if _ctx.IpInfo.isCloudflareProtected else '[green]') + _ctx.IpInfo.cloudflare_status(), end_section=not _ctx.is_health_check),
-        Row('Last Availability Check',   f'[cyan]{format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}', visible=_ctx.is_health_check),
+        Row('Last Availability Check',   f'[cyan]{format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.host_statuses.values()))),
         Row('Host Availability', f'{get_health_status(_ctx)}', visible=_ctx.is_health_check, end_section=True),
         # ===================================
         Row(f'[cyan][bold]{_ctx.attack_method.upper()} Statistics', '', end_section=True),
