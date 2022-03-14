@@ -1,2 +1,2 @@
-colorama==0.4.4
+rich==12.0.0
 pysocks==1.7.1
