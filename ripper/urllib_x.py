@@ -1,10 +1,8 @@
-import sys
 import re
-import random
 import ssl
-import time
+
 from urllib.parse import urlparse
-from operator import itemgetter
+
 from ripper.proxy import Sock5Proxy
 from ripper.sockets import SocketManager
 from ripper.common import get_random_user_agent

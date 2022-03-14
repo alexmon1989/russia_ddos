@@ -1,8 +1,9 @@
 import socket
 import socks
+
 from typing import List
+
 from ripper.common import readfile
-import time
 
 
 class Sock5Proxy:

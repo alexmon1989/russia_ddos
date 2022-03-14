@@ -1,7 +1,7 @@
 import threading
 import time
-from datetime import datetime
 
+from datetime import datetime
 from rich import box
 from rich.live import Live
 from rich.table import Table

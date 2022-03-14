@@ -1,8 +1,10 @@
 import socket
-import socks
 import random
 import threading
+
 from os import urandom as randbytes
+from socks import ProxyError
+
 import ripper.services
 from ripper.constants import *
 from ripper.context import Context, Errors, ErrorCodes
@@ -98,7 +100,7 @@ def down_it_http(_ctx: Context) -> None:
                 url=_ctx.get_target_url(), proxy=proxy, http_method=_ctx.http_method)
             _ctx.Statistic.http_stats[response.status] += 1
             _ctx.Statistic.connect.success += 1
-        except socks.ProxyError:
+        except ProxyError:
             delete_proxy(_ctx, proxy)
             proxy = None
         except:
@@ -129,7 +131,7 @@ def down_it_tcp(_ctx: Context) -> None:
                     _ctx.Statistic.connect.failed += 1
                     sock.close()
                     break
-        except socks.ProxyError:
+        except ProxyError:
             delete_proxy(_ctx, proxy)
             proxy = None
         except:

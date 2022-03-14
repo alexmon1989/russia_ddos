@@ -1,7 +1,6 @@
 import datetime
 import http.client
 import ipaddress
-import time
 import re
 import socket
 import string

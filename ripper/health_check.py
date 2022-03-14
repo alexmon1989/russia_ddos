@@ -4,7 +4,9 @@ import json
 import urllib
 import gzip
 import time
+
 from collections import defaultdict
+
 from ripper.context import Context
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 

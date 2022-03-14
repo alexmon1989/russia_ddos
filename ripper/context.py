@@ -206,6 +206,8 @@ class Context:
 
     def get_start_time_ns(self) -> int:
         """Get start time in nano seconds"""
+        if not self.Statistic.start_time:
+            return 0
         return self.Statistic.start_time.timestamp() * 1000000 * 1000
 
     def add_error(self, error: Errors):
