@@ -248,6 +248,7 @@ def init_context(_ctx: Context, args):
 
     # Get initial info from external services
     _ctx.IpInfo.my_start_ip = common.get_current_ip()
+    _ctx.IpInfo.my_current_ip = _ctx.IpInfo.my_start_ip
     _ctx.IpInfo.my_country = common.get_country_by_ipv4(_ctx.IpInfo.my_start_ip)
     _ctx.IpInfo.target_country = common.get_country_by_ipv4(_ctx.host_ip)
     _ctx.IpInfo.isCloudflareProtected = common.isCloudFlareProtected(_ctx.host, _ctx.user_agents)

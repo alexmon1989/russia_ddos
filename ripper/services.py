@@ -1,15 +1,12 @@
 import datetime
-import time
 import sys
-from optparse import OptionParser
+import time
 from base64 import b64decode
 
-from ripper import context, common
+from ripper import context, common, statistic, arg_parser
 from ripper.attacks import *
-from ripper.common import (get_current_ip, print_usage, parse_args, format_dt)
 from ripper.constants import *
-from ripper.context import Errors, ErrorCodes
-from ripper.statistic import render
+from ripper.common import get_current_ip, format_dt
 from ripper.health_check import fetch_host_statuses
 
 _ctx = Context()
@@ -137,7 +134,7 @@ def validate_input(args) -> bool:
         print(f'Wrong threads number.')
         return False
 
-    if not args.host:
+    if args.host is None or not args.host:
         print(f'Host wasn\'t detected')
         return False
 
@@ -161,23 +158,20 @@ def connect_host_loop(_ctx: Context, timeout_secs: int = 3) -> None:
 
 def main():
     """The main function to run the script from the command line."""
-    parser = OptionParser(usage=USAGE, epilog=EPILOG)
-    args = parse_args(parser)
+    args = arg_parser.create_parser().parse_args()
 
     if len(sys.argv) < 2 or not validate_input(args[0]):
-        print_usage(parser)
+        arg_parser.print_usage()
 
     # Init context
     context.init_context(_ctx, args)
-    update_current_ip(_ctx)
     go_home(_ctx)
     connect_host_loop(_ctx)
 
     _ctx.validate()
 
-    update_host_statuses(_ctx)
     time.sleep(.5)
 
     create_thread_pool(_ctx)
 
-    render(_ctx)
+    statistic.render_statistic(_ctx)

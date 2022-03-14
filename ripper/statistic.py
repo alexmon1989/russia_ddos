@@ -6,13 +6,12 @@ from rich import box
 from rich.live import Live
 from rich.table import Table
 
-from ripper import common
 from ripper.context import Context, ErrorCodes, Errors
-from ripper.common import *
 from ripper.constants import *
 from ripper.health_check import get_health_status
 
-import ripper.services
+import ripper.common as common
+import ripper.services as services
 
 
 def build_http_codes_distribution(http_codes_counter) -> str:
@@ -52,12 +51,12 @@ def collect_stats(_ctx: Context) -> list:
     sent_units = 'Requests' if _ctx.attack_method.lower() == 'http' else 'Packets'
     conn_success_rate = _ctx.Statistic.connect.get_success_rate()
     has_errors = True if len(_ctx.errors) > 0 else False
-    check_my_ip = is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
+    check_my_ip = common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
 
     full_stats = [
         # Description                 Status
-        ('Start Time',                format_dt(_ctx.Statistic.start_time)),
+        ('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
         ('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}{your_ip_was_changed}'),
         ('Host IP / Country',         f'[cyan]{_ctx.host_ip}:{_ctx.port} / {_ctx.IpInfo.target_country}'),
         ('Load Method',               _ctx.attack_method.upper(), True),
@@ -67,12 +66,12 @@ def collect_stats(_ctx: Context) -> list:
         ('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', True),
         # ===================================
         ('CloudFlare DNS Protection', ('[red]' if _ctx.IpInfo.isCloudflareProtected else '[green]') + _ctx.IpInfo.cloudflare_status()),
-        ('Last Availability Check',   f'[cyan]{format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}'),
+        ('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}'),
         ('Host Availability',         f'{get_health_status(_ctx)}', True),
         # ===================================
         (f'[cyan][bold]{_ctx.attack_method.upper()} Statistic', '', True),
         # ===================================
-        ('Duration',                  f'{str(datetime.datetime.now() - _ctx.Statistic.start_time).split(".", 2)[0]}'),
+        ('Duration',                  f'{str(datetime.now() - _ctx.Statistic.start_time).split(".", 2)[0]}'),
         (f'Sent {sent_units}',        f'{_ctx.Statistic.packets.total_sent:,}'),
         # === Info UDP/TCP => insert Sent bytes statistic
         ('Connection Success',        f'[green]{_ctx.Statistic.connect.success}'),
@@ -86,7 +85,7 @@ def collect_stats(_ctx: Context) -> list:
     if not _ctx.attack_method.lower() == 'http':
         full_stats.insert(
             13,
-            ('Sent Bytes',            f'{convert_size(_ctx.Statistic.packets.total_sent_bytes)}'))
+            ('Sent Bytes',            f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)}'))
 
     if has_errors:
         full_stats.append(('[bright_red][bold]Error Log', '', True))
@@ -126,8 +125,8 @@ lock = threading.Lock()
 def refresh(_ctx: Context):
     lock.acquire()
     if not _ctx.Statistic.connect.in_progress:
-        threading.Thread(target=ripper.services.update_current_ip, args=[_ctx]).start()
-        threading.Thread(target=ripper.services.update_host_statuses, args=[_ctx]).start()
+        threading.Thread(target=services.update_current_ip, args=[_ctx]).start()
+        threading.Thread(target=services.update_host_statuses, args=[_ctx]).start()
 
     if _ctx.IpInfo.my_country == GEOIP_NOT_DEFINED:
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.IpInfo.my_current_ip]).start()
@@ -141,16 +140,16 @@ def refresh(_ctx: Context):
         _ctx.add_error(Errors(ErrorCodes.YourIpWasChanged.value, YOUR_IP_WAS_CHANGED))
 
     if _ctx.attack_method == 'tcp':
-        attack_successful = ripper.services.check_successful_tcp_attack(_ctx)
+        attack_successful = services.check_successful_tcp_attack(_ctx)
     else:
-        attack_successful = ripper.services.check_successful_connections(_ctx)
+        attack_successful = services.check_successful_connections(_ctx)
     if not attack_successful:
-        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, get_no_successful_connection_die_msg()))
+        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, common.get_no_successful_connection_die_msg()))
 
-        exit(get_no_successful_connection_die_msg())
+        exit(common.get_no_successful_connection_die_msg())
 
 
-def render(_ctx: Context):
+def render_statistic(_ctx: Context):
     """Show DRipper runtime statistic."""
     with Live(generate_stats(_ctx), vertical_overflow='visible') as live:
         # for _ in range(720):
