@@ -165,13 +165,11 @@ def main():
 
     # Init context
     context.init_context(_ctx, args)
-    update_current_ip(_ctx)
     go_home(_ctx)
     connect_host_loop(_ctx)
 
     _ctx.validate()
 
-    update_host_statuses(_ctx)
     time.sleep(.5)
 
     create_thread_pool(_ctx)
