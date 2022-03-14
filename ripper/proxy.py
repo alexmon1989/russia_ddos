@@ -1,6 +1,5 @@
 import socket
 import socks
-
 from typing import List
 
 from ripper.common import readfile

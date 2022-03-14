@@ -1,7 +1,6 @@
 import socket
 import random
 import threading
-
 from os import urandom as randbytes
 from socks import ProxyError
 

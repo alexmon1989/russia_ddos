@@ -8,7 +8,6 @@ import random
 import os
 import subprocess
 import json
-import sys
 import urllib.request
 
 from ripper.constants import *
@@ -163,53 +162,3 @@ def get_cpu_load() -> str:
         cpu_usage = (load15 / os.cpu_count()) * 100
 
         return f"{cpu_usage:.2f}%"
-
-
-###############################################
-# Input parser, Logo, Help messages
-###############################################
-def print_usage(parser):
-    """Wrapper for Logo with help."""
-    print(LOGO_NOCOLOR)
-    parser.print_help()
-    sys.exit()
-
-
-def parse_args(parser):
-    """Initialize command line arguments parser and parse CLI arguments."""
-    parser_add_options(parser)
-    return parser.parse_args()
-
-
-def parser_add_options(parser):
-    """Add options to a parser."""
-    parser.add_option('-p', '--port',
-                      dest='port', type='int', default=80,
-                      help='port (default: 80)')
-    parser.add_option('-t', '--threads',
-                      dest='threads', type='int', default=100,
-                      help='threads (default: 100)')
-    parser.add_option('-r', '--random_len',
-                      dest='random_packet_len', type='int', default=1,
-                      help='Send random packets with random length (default: 1')
-    parser.add_option('-l', '--max_random_packet_len',
-                      dest='max_random_packet_len', type='int',
-                      help='Max random packets length (default: 48)')
-    parser.add_option('-m', '--method',
-                      dest='attack_method', type='str', default='udp',
-                      help='Attack method: udp (default), tcp, http')
-    parser.add_option('-s', '--server',
-                      dest='host',
-                      help='Attack to server IP')
-    parser.add_option('-y', '--proxy_list',
-                      dest='proxy_list',
-                      help='File with sock5 proxies in ip:port:username:password line format')
-    parser.add_option('-c', '--health_check',
-                      dest='health_check',
-                      help='Controls health check availability. Turn on: 1, turn off: 0. Default: 1')
-    parser.add_option('-e', '--http_method',
-                      dest='http_method',
-                      help='HTTP method. Default: GET')
-    parser.add_option('-a', '--http_path',
-                      dest='http_path',
-                      help='HTTP path. Default: /')

@@ -1,6 +1,5 @@
 import re
 import ssl
-
 from urllib.parse import urlparse
 
 from ripper.proxy import Sock5Proxy

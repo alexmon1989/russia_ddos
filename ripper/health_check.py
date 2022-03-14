@@ -4,7 +4,6 @@ import json
 import urllib
 import gzip
 import time
-
 from collections import defaultdict
 
 from ripper.context import Context
@@ -13,7 +12,7 @@ from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_S
 
 def get_health_status(_ctx: Context):
     if _ctx.last_host_statuses_update is None or len(_ctx.host_statuses.values()) == 0:
-        return f'...detecting ({_ctx.health_check_method.upper()} health check method from check-host.net)'
+        return f'...detecting\n({_ctx.health_check_method.upper()} health check method from check-host.net)'
 
     failed_cnt = 0
     succeeded_cnt = 0
@@ -27,11 +26,11 @@ def get_health_status(_ctx: Context):
         return
 
     availability_percentage = round(100 * succeeded_cnt / total_cnt)
+    accessible_message = f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%)'
     if availability_percentage < 50:
-        return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%).\n' \
-               f'[orange1]It should be dead. Consider another target!'
-    else:
-        return f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%)'
+        accessible_message += f'\n[orange1]It should be dead. Consider another target!'
+
+    return accessible_message
 
 
 def classify_host_status(node_response):
@@ -104,10 +103,6 @@ def get_health_check_method(attack_method: str) -> str:
     return 'ping'
 
 
-def get_health_check_path(health_check_method: str) -> str:
-    return f'/check-{health_check_method}'
-
-
 def construct_request_url(_ctx: Context) -> str:
     host = f'{_ctx.host_ip}:{_ctx.port}'
     if _ctx.health_check_method == 'http':
@@ -121,7 +116,7 @@ def construct_request_url(_ctx: Context) -> str:
     elif _ctx.health_check_method == 'ping':
         host = _ctx.host_ip
 
-    path = get_health_check_path(_ctx.health_check_method)
+    path = f'/check-{_ctx.health_check_method}'
     return f'https://check-host.net{path}?host={host}'
 
 
