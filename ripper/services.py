@@ -6,7 +6,8 @@ from base64 import b64decode
 
 from ripper import context, common
 from ripper.attacks import *
-from ripper.common import (get_current_ip, print_usage, parse_args, format_dt)
+from ripper.common import (get_current_ip, print_usage,
+                           parse_args, format_dt, ns2s)
 from ripper.constants import *
 from ripper.context import Errors, ErrorCodes
 from ripper.statistic import render
@@ -14,7 +15,67 @@ from ripper.health_check import fetch_host_statuses
 
 _ctx = Context()
 
+###############################################
+# Connection validators
+###############################################
+def validate_attack(_ctx: Context) -> bool:
+    """Checks if attack is valid.
+    Attack is valid if target accepted traffic within
+    last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
+    """
+    if _ctx.attack_method == 'tcp':
+        return ripper.services.check_successful_tcp_attack(_ctx)
+    return ripper.services.check_successful_connections(_ctx)
 
+
+def check_successful_connections(_ctx: Context) -> bool:
+    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+    :parameter _ctx: Context
+    """
+    now_ns = time.time_ns()
+    lower_bound = max(_ctx.get_start_time_ns(),
+                      _ctx.Statistic.connect.last_check_time)
+    diff_sec = ns2s(now_ns - lower_bound)
+
+    if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value,
+                           NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+    else:
+        _ctx.Statistic.connect.last_check_time = now_ns
+        _ctx.Statistic.connect.sync_success()
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+
+    return True
+
+
+def check_successful_tcp_attack(_ctx: Context) -> bool:
+    """Checks if there are changes in sent bytes count.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    now_ns = time.time_ns()
+    lower_bound = max(_ctx.get_start_time_ns(),
+                      _ctx.Statistic.packets.connections_check_time)
+    diff_sec = ns2s(now_ns - lower_bound)
+
+    if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value,
+                           NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
+
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+    else:
+        _ctx.Statistic.packets.connections_check_time = now_ns
+        _ctx.Statistic.packets.sync_packets_sent()
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+
+    return True
+
+
+###############################################
+# Other
+###############################################
 def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
     """Create Thread pool for selected attack method."""
     thread_pool = []
@@ -77,44 +138,6 @@ def connect_host(_ctx: Context) -> bool:
         sock.close()
     _ctx.Statistic.connect.set_state_is_connected()
     return res
-
-def check_successful_connections(_ctx: Context) -> bool:
-    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
-    :parameter _ctx: Context
-    """
-    curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
-
-    if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
-            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-    else:
-        _ctx.Statistic.connect.last_check_time = curr_ms
-        _ctx.Statistic.connect.sync_success()
-        _ctx.remove_error(ErrorCodes.ConnectionError.value)
-
-    return True
-
-
-def check_successful_tcp_attack(_ctx: Context) -> bool:
-    """Checks if there are changes in sent bytes count.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
-    curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.Statistic.packets.connections_check_time) / 1000000 / 1000
-
-    if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
-
-            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-    else:
-        _ctx.Statistic.packets.connections_check_time = curr_ms
-        _ctx.Statistic.packets.sync_packets_sent()
-        _ctx.remove_error(ErrorCodes.ConnectionError.value)
-
-    return True
 
 
 def go_home(_ctx: Context) -> None:

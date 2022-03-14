@@ -15,7 +15,6 @@ lock = threading.Lock()
 ###############################################
 # Common methods for attacks
 ###############################################
-
 # TODO add support for http_method, http_path
 def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = True) -> str:
     local_headers = _ctx.headers

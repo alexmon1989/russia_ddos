@@ -147,11 +147,7 @@ def refresh(_ctx: Context):
     if common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
         _ctx.add_error(Errors(ErrorCodes.YourIpWasChanged.value, YOUR_IP_WAS_CHANGED))
 
-    if _ctx.attack_method == 'tcp':
-        attack_successful = ripper.services.check_successful_tcp_attack(_ctx)
-    else:
-        attack_successful = ripper.services.check_successful_connections(_ctx)
-    if not attack_successful:
+    if not ripper.services.validate_attack(_ctx):
         _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, get_no_successful_connection_die_msg()))
 
         exit(get_no_successful_connection_die_msg())

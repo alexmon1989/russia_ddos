@@ -204,6 +204,10 @@ class Context:
         """Get fully qualified URI for target HOST - schema://host:port"""
         return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
 
+    def get_start_time_ns(self) -> int:
+        """Get start time in nano seconds"""
+        return self.Statistic.start_time.timestamp() * 1000000 * 1000
+
     def add_error(self, error: Errors):
         """
         Add Error to Errors collection without duplication.

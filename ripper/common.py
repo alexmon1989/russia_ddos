@@ -1,6 +1,7 @@
 import datetime
 import http.client
 import ipaddress
+import time
 import re
 import socket
 import string
@@ -59,6 +60,10 @@ def get_current_ip() -> str:
         pass
 
     return current_ip if is_ipv4(current_ip) else DEFAULT_CURRENT_IP_VALUE
+
+
+def ns2s(time_nano: int):
+    return time_nano / 1000000 / 1000
 
 
 def format_dt(dt: datetime, fmt=DATE_TIME_FULL) -> str:
@@ -160,8 +165,6 @@ def get_cpu_load() -> str:
 ###############################################
 # Input parser, Logo, Help messages
 ###############################################
-
-
 def print_usage(parser):
     """Wrapper for Logo with help."""
     print(LOGO_NOCOLOR)

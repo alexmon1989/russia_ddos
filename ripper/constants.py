@@ -1,7 +1,6 @@
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-
 VERSION = 'v2.0.3'
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
