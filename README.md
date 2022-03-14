@@ -92,9 +92,9 @@ Options:
   -t THREADS, --threads=THREADS
                         threads (default: 100)
   -r RANDOM_PACKET_LEN, --random_len=RANDOM_PACKET_LEN
-                        Send random packets with random length (default: 1
+                        Send random packets with random length (default: 1)
   -l MAX_RANDOM_PACKET_LEN, --max_random_packet_len=MAX_RANDOM_PACKET_LEN
-                        Max random packets length (default: 48)
+                        Max random packets length (default: 48 for udp, 1000 for tcp, 0 for http)
   -m ATTACK_METHOD, --method=ATTACK_METHOD
                         Attack method: udp (default), tcp, http
   -s HOST, --server=HOST
@@ -103,8 +103,8 @@ Options:
                         File with sock5 proxies in ip:port:username:password or ip:port line format
   -c STATE, --health_check=STATE (default 1)
                         Controls health check availability. Turn on: 1, turn off: 0
-  -e HTTP_METHOD, --http_method=HTTP_METHOD (default GET)
-  -a HTTP_PATH, --http_path=HTTP_PATH (default /)
+  -e HTTP_METHOD, --http_method=HTTP_METHOD (default: GET)
+  -a HTTP_PATH, --http_path=HTTP_PATH (default: /)
 
 Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100
 ```
