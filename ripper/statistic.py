@@ -1,17 +1,15 @@
 import threading
 import time
 from datetime import datetime
-
 from rich import box
 from rich.live import Live
 from rich.table import Table
 
+import ripper.common as common
+import ripper.services as services
 from ripper.context import Context, ErrorCodes, Errors
 from ripper.constants import *
 from ripper.health_check import get_health_status
-
-import ripper.common as common
-import ripper.services as services
 
 
 def build_http_codes_distribution(http_codes_counter) -> str:
@@ -45,6 +43,14 @@ def rate_color(rate: int) -> str:
     return color
 
 
+class Row:
+    def __init__(self, label: str, value: str, visible: bool = True, end_section: bool = False):
+        self.label = label
+        self.value = value
+        self.visible = visible
+        self.end_section = end_section
+
+
 def collect_stats(_ctx: Context) -> list:
     """Prepare data for Statistic."""
     max_length = f' / Max length: {_ctx.max_random_packet_len}' if _ctx.max_random_packet_len else ''
@@ -53,45 +59,45 @@ def collect_stats(_ctx: Context) -> list:
     has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
+    is_proxy_list = _ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list)
+    your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
 
-    full_stats = [
-        # Description                 Status
-        ('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
-        ('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}{your_ip_was_changed}'),
-        ('Host IP / Country',         f'[cyan]{_ctx.host_ip}:{_ctx.port} / {_ctx.IpInfo.target_country}'),
-        ('Load Method',               _ctx.attack_method.upper(), True),
+    full_stats: list[Row] = [
+        #   Description                  Status
+        Row('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
+        Row('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
+        Row('Host IP / Country',         f'[cyan]{_ctx.host_ip}:{_ctx.port} / [red]{_ctx.IpInfo.target_country}'),
+        Row('HTTP Method / URL',         f'[cyan]{_ctx.http_method} / {_ctx.get_target_url()}', visible=_ctx.attack_method.lower() == 'http'),
+        Row('Load Method',               _ctx.attack_method.upper(), end_section=True),
         # ===================================
-        ('Threads',                   f'{_ctx.threads}'),
-        ('vCPU Count',                f'{_ctx.cpu_count}'),
-        ('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', True),
+        Row('Threads',                   f'{_ctx.threads}'),
+        Row('Proxies count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} / {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
+        Row('vCPU Count',                f'{_ctx.cpu_count}'),
+        Row('Socket Timeout (seconds)',  f'{_ctx.sock_manager.socket_timeout}'),
+        Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
-        ('CloudFlare DNS Protection', ('[red]' if _ctx.IpInfo.isCloudflareProtected else '[green]') + _ctx.IpInfo.cloudflare_status()),
-        ('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}'),
-        ('Host Availability',         f'{get_health_status(_ctx)}', True),
+        Row('CloudFlare DNS Protection', ('[red]' if _ctx.IpInfo.isCloudflareProtected else '[green]') + _ctx.IpInfo.cloudflare_status(), end_section=not _ctx.is_health_check),
+        Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.host_statuses.values()))),
+        Row('Host Availability',         f'{get_health_status(_ctx)}', visible=_ctx.is_health_check, end_section=True),
         # ===================================
-        (f'[cyan][bold]{_ctx.attack_method.upper()} Statistic', '', True),
+        Row(f'[cyan][bold]{_ctx.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
-        ('Duration',                  f'{str(datetime.now() - _ctx.Statistic.start_time).split(".", 2)[0]}'),
-        (f'Sent {sent_units}',        f'{_ctx.Statistic.packets.total_sent:,}'),
+        Row('Duration',                  f'{str(datetime.now() - _ctx.Statistic.start_time).split(".", 2)[0]}'),
+        Row('Sent Bytes',                f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)}', visible=_ctx.attack_method.lower() != 'http'),
+        Row(f'Sent {sent_units}',        f'{_ctx.Statistic.packets.total_sent:,}'),
         # === Info UDP/TCP => insert Sent bytes statistic
-        ('Connection Success',        f'[green]{_ctx.Statistic.connect.success}'),
-        ('Connection Failed',         f'[red]{_ctx.Statistic.connect.failed}'),
-        ('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', True),
+        Row('Connection Success',        f'[green]{_ctx.Statistic.connect.success}'),
+        Row('Connection Failed',         f'[red]{_ctx.Statistic.connect.failed}'),
+        Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', end_section=True),
+        # ===================================
+        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.Statistic.http_stats), end_section=has_errors, visible=_ctx.attack_method.lower() == 'http'),
     ]
 
-    if _ctx.attack_method.lower() == 'http':
-        full_stats.append(
-            ('Status Code Distribution', build_http_codes_distribution(_ctx.Statistic.http_stats), has_errors))
-    if not _ctx.attack_method.lower() == 'http':
-        full_stats.insert(
-            13,
-            ('Sent Bytes',            f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)}'))
-
     if has_errors:
-        full_stats.append(('[bright_red][bold]Error Log', '', True))
+        full_stats.append(Row('[bright_red][bold]Error Log', '', end_section=True))
         for key in _ctx.errors:
             err = _ctx.errors.get(key)
-            full_stats.append((f'{key}', f'Total: {err.count}\n{err.message}'))
+            full_stats.append(Row(f'{key}', f'Total: {err.count}\n{err.message}'))
 
     return full_stats
 
@@ -109,12 +115,12 @@ def generate_stats(_ctx: Context) -> Table:
         caption=f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}',
         caption_style='bold')
 
-    table.add_column("Description")
-    table.add_column("Status")
+    table.add_column('Description')
+    table.add_column('Status')
 
-    for itm in collect_stats(_ctx):
-        end_section = itm[2] if 3 == len(itm) else False
-        table.add_row(itm[0], itm[1], end_section=end_section)
+    for row in collect_stats(_ctx):
+        if row.visible:
+            table.add_row(row.label, row.value, end_section=row.end_section)
 
     return table
 
@@ -126,7 +132,8 @@ def refresh(_ctx: Context):
     lock.acquire()
     if not _ctx.Statistic.connect.in_progress:
         threading.Thread(target=services.update_current_ip, args=[_ctx]).start()
-        threading.Thread(target=services.update_host_statuses, args=[_ctx]).start()
+        if _ctx.is_health_check:
+            threading.Thread(target=services.update_host_statuses, args=[_ctx]).start()
 
     if _ctx.IpInfo.my_country == GEOIP_NOT_DEFINED:
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.IpInfo.my_current_ip]).start()
@@ -135,18 +142,19 @@ def refresh(_ctx: Context):
 
     lock.release()
 
-    # Check for my IPv4 wasn't changed
-    if common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
+    # Check for my IPv4 wasn't changed (if no proxylist only)
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
         _ctx.add_error(Errors(ErrorCodes.YourIpWasChanged.value, YOUR_IP_WAS_CHANGED))
 
-    if _ctx.attack_method == 'tcp':
-        attack_successful = services.check_successful_tcp_attack(_ctx)
-    else:
-        attack_successful = services.check_successful_connections(_ctx)
-    if not attack_successful:
-        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value, common.get_no_successful_connection_die_msg()))
-
+    if not services.validate_attack(_ctx):
+        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value,
+                       common.get_no_successful_connection_die_msg()))
         exit(common.get_no_successful_connection_die_msg())
+
+    if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
+        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value,
+                       common.get_no_more_proxies_msg()))
+        exit(common.get_no_more_proxies_msg())
 
 
 def render_statistic(_ctx: Context):

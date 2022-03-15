@@ -19,7 +19,7 @@ class TestServices:
         assert len(context.errors) == 1
         assert context.errors['CONNECTION_ERROR'].code == 'CONNECTION_ERROR'
         assert context.errors['CONNECTION_ERROR'].count == 1
-        assert context.errors['CONNECTION_ERROR'].message == NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
+        assert context.errors['CONNECTION_ERROR'].message == NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
 
         # Case when we have successful attack after some failed attacks
         context.Statistic.packets.total_sent = 100
@@ -44,7 +44,7 @@ class TestServices:
         assert len(context.errors) == 1
         assert context.errors['CONNECTION_ERROR'].code == 'CONNECTION_ERROR'
         assert context.errors['CONNECTION_ERROR'].count == 1
-        assert context.errors['CONNECTION_ERROR'].message == NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG
+        assert context.errors['CONNECTION_ERROR'].message == NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
 
         # Checks if we have successful connections after connections fail
         context.Statistic.connect.success = 1

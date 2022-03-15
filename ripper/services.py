@@ -1,15 +1,88 @@
+import threading
 import datetime
 import sys
+import random
 import time
 from base64 import b64decode
 
 from ripper import context, common, statistic, arg_parser
 from ripper.attacks import *
 from ripper.constants import *
-from ripper.common import get_current_ip, format_dt
+from ripper.common import get_current_ip, format_dt, ns2s
 from ripper.health_check import fetch_host_statuses
+from ripper.proxy import Sock5Proxy
 
 _ctx = Context()
+
+###############################################
+# Connection validators
+###############################################
+def validate_attack(_ctx: Context) -> bool:
+    """Checks if attack is valid.
+    Attack is valid if target accepted traffic within
+    last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
+    """
+    if _ctx.attack_method == 'tcp':
+        return check_successful_tcp_attack(_ctx)
+    return check_successful_connections(_ctx)
+
+
+def check_successful_connections(_ctx: Context) -> bool:
+    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+    :parameter _ctx: Context
+    """
+    now_ns = time.time_ns()
+    lower_bound = max(_ctx.get_start_time_ns(),
+                      _ctx.Statistic.connect.last_check_time)
+    diff_sec = ns2s(now_ns - lower_bound)
+
+    if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, no_successful_connections_error_msg(_ctx)))
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+    else:
+        _ctx.Statistic.connect.last_check_time = now_ns
+        _ctx.Statistic.connect.sync_success()
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+
+    return True
+
+
+def check_successful_tcp_attack(_ctx: Context) -> bool:
+    """Checks if there are changes in sent bytes count.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    now_ns = time.time_ns()
+    lower_bound = max(_ctx.get_start_time_ns(),
+                      _ctx.Statistic.packets.connections_check_time)
+    diff_sec = ns2s(now_ns - lower_bound)
+
+    if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
+        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, no_successful_connections_error_msg(_ctx)))
+
+            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+    else:
+        _ctx.Statistic.packets.connections_check_time = now_ns
+        _ctx.Statistic.packets.sync_packets_sent()
+        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+
+    return True
+
+
+###############################################
+# Other
+###############################################
+def no_successful_connections_error_msg(_ctx: Context):
+    if _ctx.proxy_manager.proxy_list_initial_len > 0:
+        return NO_SUCCESSFUL_CONNECTIONS_ERROR_PROXY_MSG
+    return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
+
+
+def generate_headers(_ctx: Context) -> dict[str, str]:
+    headers = dict(_ctx.headers)
+    headers['User-Agent'] = random.choice(_ctx.user_agents)
+    return headers
 
 
 def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
@@ -23,7 +96,7 @@ def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
         else:  # _ctx.attack_method == 'udp':
             thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
 
-        thread_pool[i].daemon = True  # if thread is exist, it dies
+        thread_pool[i].daemon = True  # if thread exists, it dies
         thread_pool[i].start()
 
     return thread_pool
@@ -60,10 +133,10 @@ def update_host_statuses(_ctx: Context):
         _ctx.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context) -> bool:
+def connect_host(_ctx: Context, proxy: Sock5Proxy = None) -> bool:
     _ctx.Statistic.connect.set_state_in_progress()
     try:
-        sock = _ctx.sock_manager.create_tcp_socket()
+        sock = _ctx.sock_manager.create_tcp_socket(proxy)
         sock.connect((_ctx.host, _ctx.port))
     except:
         res = False
@@ -74,46 +147,6 @@ def connect_host(_ctx: Context) -> bool:
         sock.close()
     _ctx.Statistic.connect.set_state_is_connected()
     return res
-
-
-def check_successful_connections(_ctx: Context) -> bool:
-    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
-    :parameter _ctx: Context
-    """
-    curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.Statistic.connect.last_check_time) / 1000000 / 1000
-
-    if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
-
-            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-    else:
-        _ctx.Statistic.connect.last_check_time = curr_ms
-        _ctx.Statistic.connect.sync_success()
-        _ctx.remove_error(ErrorCodes.ConnectionError.value)
-
-    return True
-
-
-def check_successful_tcp_attack(_ctx: Context) -> bool:
-    """Checks if there are changes in sent bytes count.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
-    curr_ms = time.time_ns()
-    diff_sec = (curr_ms - _ctx.Statistic.packets.connections_check_time) / 1000000 / 1000
-
-    if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
-
-            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-    else:
-        _ctx.Statistic.packets.connections_check_time = curr_ms
-        _ctx.Statistic.packets.sync_packets_sent()
-        _ctx.remove_error(ErrorCodes.ConnectionError.value)
-
-    return True
 
 
 def go_home(_ctx: Context) -> None:
@@ -142,14 +175,22 @@ def validate_input(args) -> bool:
         print(f'Wrong attack type. Possible options: udp, tcp, http.')
         return False
 
+    if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
+        print(f'Wrong http method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
+        return False
+
+    if args.http_path and not args.http_path.startswith('/'):
+        print(f'Http path should start with /.')
+        return False
+
     return True
 
 
-def connect_host_loop(_ctx: Context, timeout_secs: int = 3) -> None:
+def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
     i = 0
-    while i < CONNECT_TO_HOST_MAX_RETRY:
-        print(f'{format_dt(datetime.datetime.now())} Trying connect to {_ctx.host}:{_ctx.port}...')
+    while i < retry_cnt:
+        print(f'{format_dt(datetime.datetime.now())} ({i+1}/{retry_cnt}) Trying connect to {_ctx.host}:{_ctx.port}...')
         if connect_host(_ctx):
             break
         time.sleep(timeout_secs)
@@ -166,12 +207,11 @@ def main():
     # Init context
     context.init_context(_ctx, args)
     go_home(_ctx)
-    connect_host_loop(_ctx)
-
+    # Proxies should be validated during the runtime
+    connect_host_loop(_ctx, retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 else 5))
     _ctx.validate()
 
     time.sleep(.5)
-
     create_thread_pool(_ctx)
 
     statistic.render_statistic(_ctx)
