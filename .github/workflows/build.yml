@@ -6,15 +6,19 @@ on:
 
 defaults:
   run:
-    shell: bash
+    shell: pwsh
 
 env:
   IMAGE_NAME: alexmon1989/dripper
 
 jobs:
   build:
-    name: Build Docker image
-    runs-on: ubuntu-20.04
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-20.4, macos-10.15, windows-2019 ]
 
     steps:
       - name: Checkout
@@ -27,11 +31,12 @@ jobs:
 
       - name: Setup Python packages
         run: |
-          pip install -r requirements.txt
-          pip install pytest
+          python3 -m pip install -r requirements.txt
+          python3 -m pip install pytest
+          python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git
 
       - name: Minimalistic CLI check
-        run: python -u DRipper.py
+        run: dripper
 
       - name: Run Tests
         run: python3 -m pytest tests/
