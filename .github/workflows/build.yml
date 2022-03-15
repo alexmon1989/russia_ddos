@@ -40,7 +40,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          sed -i "s|\.git|\.git@$env.GIT_BRANCH|g" Dockerfile
+          sed -i "s|\.git|\.git@$GIT_BRANCH|g" Dockerfile
 
       - name: Setup Python packages
         run: |
