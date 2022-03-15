@@ -36,7 +36,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='proxy_list',
                       help='File with sock5 proxies in ip:port:username:password line format')
     parser.add_option('-c', '--health_check',
-                      dest='health_check',
+                      dest='health_check', type='int', default=1,
                       help='Controls health check availability. Turn on: 1, turn off: 0. Default: 1')
     parser.add_option('-e', '--http_method',
                       dest='http_method',
