@@ -39,7 +39,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='health_check', type='int', default=1,
                       help='Controls health check availability. Turn on: 1, turn off: 0. Default: 1')
     parser.add_option('-e', '--http_method',
-                      dest='http_method',
+                      dest='http_method', type='str', default='GET',
                       help='HTTP method. Default: GET')
     parser.add_option('-a', '--http_path',
                       dest='http_path',
