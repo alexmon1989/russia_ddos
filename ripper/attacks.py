@@ -35,6 +35,7 @@ def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = 
     )
 
 
+# TODO prioritize faster proxies
 def random_proxy_from_context(_ctx: Context) -> Sock5Proxy:
     if not _ctx.proxy_list or not len(_ctx.proxy_list):
         return None

@@ -14,14 +14,26 @@ class Sock5Proxy:
         self.password = password
         self.rdns = rdns
         
-        self.last_successful_time = 0
+        self.last_success_time = 0
+        self.success_cnt = 0
+        self.last_failure_time = 0
+        self.failure_cnt = 0
 
     def report_success(self):
-        self.last_successful_time = time.time_ns()
+        self.last_success_time = time.time_ns()
+        self.success_cnt += 1
+
+    def report_failure(self):
+        self.last_failure_time = time.time_ns()
+        self.failure_cnt += 1
 
     def seconds_to_last_success(self):
         now_ns = time.time_ns()
-        return ns2s(now_ns - self.last_successful_time)
+        return ns2s(now_ns - self.last_success_time)
+
+    def seconds_to_last_failure(self):
+        now_ns = time.time_ns()
+        return ns2s(now_ns - self.last_success_time)
 
     # mutates socket
     # https://pypi.org/project/PySocks/
