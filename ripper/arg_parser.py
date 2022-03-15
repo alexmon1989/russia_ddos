@@ -42,7 +42,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='http_method', type='str', default='GET',
                       help='HTTP method. Default: GET')
     parser.add_option('-a', '--http_path',
-                      dest='http_path',
+                      dest='http_path', type='str', default='/',
                       help='HTTP path. Default: /')
 
 
