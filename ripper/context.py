@@ -276,7 +276,7 @@ def init_context(_ctx: Context, args):
     _ctx.Statistic.start_time = datetime.now()
     _ctx.connections_check_time = time.time_ns()
     _ctx.health_check_method = 'ping' if _ctx.attack_method == 'udp' else _ctx.attack_method
-    _ctx.is_health_check = False if args[0].health_check == '0' else True
+    _ctx.is_health_check = False if args[0].health_check == 0 else True
 
     _ctx.proxy_list = read_proxy_list(
         args[0].proxy_list) if args[0].proxy_list else []
