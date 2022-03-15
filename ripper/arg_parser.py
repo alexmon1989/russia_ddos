@@ -16,20 +16,20 @@ def parser_add_options(parser: OptionParser) -> None:
     """Add options to a parser."""
     parser.add_option('-p', '--port',
                       dest='port', type='int', default=80,
-                      help='port (default: 80)')
+                      help='port. Default: 80')
     parser.add_option('-t', '--threads',
                       dest='threads', type='int', default=100,
-                      help='threads (default: 100)')
+                      help='threads. Default: 100')
     parser.add_option('-r', '--random_len',
                       dest='random_packet_len', type='int', default=1,
-                      help='Send random packets with random length (default: 1')
+                      help='Send random packets with random length. Default: 1')
     parser.add_option('-l', '--max_random_packet_len',
                       # default value is not set here to keep dynamic logic during initialization
                       dest='max_random_packet_len', type='int',
-                      help='Max random packets length (Default: 48 for udp, 1000 for tcp)')
+                      help='Max random packets length. Default: 48 for udp, 1000 for tcp')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
-                      help='Attack method: udp (Default), tcp, http')
+                      help='Attack method: udp (default), tcp, http')
     parser.add_option('-s', '--server',
                       dest='host',
                       help='Attack to server IP')

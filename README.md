@@ -88,23 +88,26 @@ Usage: python DRipper.py [options] arg
 
 Options:
   -h, --help            show this help message and exit
-  -p PORT, --port=PORT  port (default: 80)
-  -t THREADS, --threads=THREADS
-                        threads (default: 100)
-  -r RANDOM_PACKET_LEN, --random_len=RANDOM_PACKET_LEN
-                        Send random packets with random length (default: 1)
+  -p PORT, --port=PORT (default: 80)
+                        Port number.
+  -t THREADS, --threads=THREADS (default: 100)
+                        Threads count.
+  -r RANDOM_PACKET_LEN, --random_len=RANDOM_PACKET_LEN (default: 1)
+                        Send random packets with random length .
   -l MAX_RANDOM_PACKET_LEN, --max_random_packet_len=MAX_RANDOM_PACKET_LEN
-                        Max random packets length (default: 48 for udp, 1000 for tcp, 0 for http)
-  -m ATTACK_METHOD, --method=ATTACK_METHOD
-                        Attack method: udp (default), tcp, http
+                        Max random packets length (default: 48 for udp, 1000 for tcp, 0 for http).
+  -m ATTACK_METHOD, --method=ATTACK_METHOD (default: udp)
+                        Attack method: udp, tcp, http.
   -s HOST, --server=HOST
-                        Attack to server IP
+                        Attack to server IP.
   -y FILENAME, --proxy_list=FILENAME
-                        File with sock5 proxies in ip:port:username:password or ip:port line format
-  -c STATE, --health_check=STATE (default 1)
-                        Controls health check availability. Turn on: 1, turn off: 0
+                        File with sock5 proxies in ip:port:username:password or ip:port line format.
+  -c STATE, --health_check=STATE (default: 1)
+                        Controls health check availability. Turn on: 1, turn off: 0.
   -e HTTP_METHOD, --http_method=HTTP_METHOD (default: GET)
   -a HTTP_PATH, --http_path=HTTP_PATH (default: /)
+  -o SOCKET_TIMEOUT, --socket_timeout=SOCKET_TIMEOUT (default: 10 without proxy, 20 with proxy)
+                        Timeout in seconds for socket connection is seconds.
 
 Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100
 ```
