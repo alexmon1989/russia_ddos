@@ -5,7 +5,7 @@ from collections import defaultdict
 from enum import Enum
 
 from ripper import common
-from ripper.common import is_ipv4
+from ripper.common import is_ipv4, strip_lines
 from ripper.constants import DEFAULT_CURRENT_IP_VALUE
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
@@ -17,7 +17,7 @@ def get_headers_dict(base_headers: list[str]):
     headers_dict = {}
     for line in base_headers:
         parts = line.split(':')
-        headers_dict[parts[0]] = parts[1].strip()
+        headers_dict[parts[0]] = parts[1]
 
     return headers_dict
 
@@ -263,8 +263,8 @@ def init_context(_ctx: Context, args):
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
     # Get required data from files
-    _ctx.user_agents = common.readfile(os.path.dirname(__file__) + '/useragents.txt')
-    _ctx.base_headers = common.readfile(os.path.dirname(__file__) + '/headers.txt')
+    _ctx.user_agents = strip_lines(common.readfile(os.path.dirname(__file__) + '/useragents.txt'))
+    _ctx.base_headers = strip_lines(common.readfile(os.path.dirname(__file__) + '/headers.txt'))
     _ctx.headers = get_headers_dict(_ctx.base_headers)
 
     # Get initial info from external services

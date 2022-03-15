@@ -38,7 +38,6 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
         'http_method': 'POST',
         'headers': {'row1': 'xyz', 'row2': 'ijk'},
         'extra_data': 'Hello',
-        'is_random_user_agent': False,
     }, 'POST / HTTP/1.1'
        '\nHost: google.com'
        '\n\nrow1: xyz'
@@ -51,7 +50,6 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
         'http_method': 'POST',
         'headers': {'row1': 'xyz', 'row2': 'ijk'},
         'extra_data': 'Hello',
-        'is_random_user_agent': False,
         'is_content_length_header': False,
     }, 'POST / HTTP/1.1'
        '\nHost: google.com'
@@ -63,7 +61,6 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
         'host': 'google.com',
         'headers': {'row1': 'xyz', 'row2': 'ijk'},
         'extra_data': 'Hello',
-        'is_random_user_agent': False,
     }, 'GET / HTTP/1.1'
        '\nHost: google.com'
        '\n\nrow1: xyz'
@@ -74,7 +71,6 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
     ({
         'host': 'google.com',
         'headers': {'row1': 'xyz', 'row2': 'ijk'},
-        'is_random_user_agent': False,
     }, 'GET / HTTP/1.1'
        '\nHost: google.com'
        '\n\nrow1: xyz'
@@ -82,14 +78,12 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
     ),
     ({
         'host': 'google.com',
-        'is_random_user_agent': False,
     }, 'GET / HTTP/1.1'
        '\nHost: google.com'
     ),
     ({
         'host': 'google.com',
         'path': '/hello',
-        'is_random_user_agent': False,
     }, 'GET /hello HTTP/1.1'
        '\nHost: google.com'
     ),
@@ -97,10 +91,3 @@ def test_build_headers_string_from_dict(headers_dict, headers_txt):
 def test_build_request_http_package(args, http_package):
     actual = build_request_http_package(**args)
     assert actual == http_package.encode('utf-8')
-
-
-def test_build_request_http_package_with_random_user_agent():
-    actual = build_request_http_package(host='google.com').decode()
-    assert actual.startswith('GET / HTTP/1.1'
-                             '\nHost: google.com')
-    assert re.search(r'User-Agent: (.+)$', actual).group()

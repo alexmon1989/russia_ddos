@@ -1,6 +1,7 @@
 import threading
 import datetime
 import sys
+import random
 import time
 from base64 import b64decode
 
@@ -9,6 +10,7 @@ from ripper.attacks import *
 from ripper.constants import *
 from ripper.common import get_current_ip, format_dt, ns2s
 from ripper.health_check import fetch_host_statuses
+from ripper.proxy import Sock5Proxy
 
 _ctx = Context()
 
@@ -21,8 +23,8 @@ def validate_attack(_ctx: Context) -> bool:
     last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
     """
     if _ctx.attack_method == 'tcp':
-        return ripper.services.check_successful_tcp_attack(_ctx)
-    return ripper.services.check_successful_connections(_ctx)
+        return check_successful_tcp_attack(_ctx)
+    return check_successful_connections(_ctx)
 
 
 def check_successful_connections(_ctx: Context) -> bool:
@@ -37,8 +39,7 @@ def check_successful_connections(_ctx: Context) -> bool:
 
     if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value,
-                           NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, no_successful_connections_error_msg(_ctx)))
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.connect.last_check_time = now_ns
@@ -58,8 +59,7 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
 
     if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value,
-                           NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG))
+            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, no_successful_connections_error_msg(_ctx)))
 
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
@@ -73,6 +73,18 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
 ###############################################
 # Other
 ###############################################
+def no_successful_connections_error_msg(_ctx: Context):
+    if _ctx.proxy_manager.proxy_list_initial_len > 0:
+        return NO_SUCCESSFUL_CONNECTIONS_ERROR_PROXY_MSG
+    return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
+
+
+def generate_headers(_ctx: Context) -> dict[str, str]:
+    headers = dict(_ctx.headers)
+    headers['User-Agent'] = random.choice(_ctx.user_agents)
+    return headers
+
+
 def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
     """Create Thread pool for selected attack method."""
     thread_pool = []

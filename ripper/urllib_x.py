@@ -5,7 +5,6 @@ import socket
 from urllib.parse import urlparse
 
 from ripper.proxy import Sock5Proxy
-from ripper.common import get_random_user_agent
 
 
 ###############################################
@@ -28,7 +27,6 @@ def build_request_http_package(
         headers={},
         extra_data: str = None,
         http_method: str = None,
-        is_random_user_agent: bool = True,
         is_content_length_header: bool = True) -> str:
     # redefinition is required to support bad argument propagation from http_request
     if not http_method:
@@ -37,8 +35,6 @@ def build_request_http_package(
     packet_txt = f'{http_method.upper()} {path} HTTP/1.1' \
                  f'\nHost: {host}'
 
-    if is_random_user_agent and not check_headers_for_user_agent(headers):
-        headers['User-Agent'] = get_random_user_agent()
 
     if is_content_length_header and extra_data:
         headers['Content-Length'] = len(extra_data.encode('utf-8'))

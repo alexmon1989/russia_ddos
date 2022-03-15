@@ -9,7 +9,6 @@ from collections import defaultdict
 from ripper.context import Context
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 
-
 def get_health_status(_ctx: Context):
     if _ctx.last_host_statuses_update is None or len(_ctx.host_statuses.values()) == 0:
         return f'...detecting\n({_ctx.health_check_method.upper()} health check method from check-host.net)'
@@ -85,8 +84,8 @@ def count_host_statuses(distribution) -> dict[int]:
 
 def fetch_zipped_body(_ctx: Context, url: str) -> str:
     """Fetches response body in text of the resource with gzip"""
-    http_headers = _ctx.headers
-    http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
+    http_headers = dict(_ctx.headers)
+    http_headers['User-Agent'] = random.choice(_ctx.user_agents)
     compressed_resp = urllib.request.urlopen(
         urllib.request.Request(url, headers=http_headers)).read()
     return gzip.decompress(compressed_resp).decode('utf8')
