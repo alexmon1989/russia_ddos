@@ -12,7 +12,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
 
 ## Prerequisites
 
-- Python 3.9 or better
+- Python 3.9 or higher
 - Docker (optional) if you'd like to run script with docker
 
 ## How it looks
