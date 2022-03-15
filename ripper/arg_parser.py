@@ -24,11 +24,12 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='random_packet_len', type='int', default=1,
                       help='Send random packets with random length (default: 1')
     parser.add_option('-l', '--max_random_packet_len',
-                      dest='max_random_packet_len', type='int', default=48,
-                      help='Max random packets length (default: 48)')
+                      # default value is not set here to keep dynamic logic during initialization
+                      dest='max_random_packet_len', type='int',
+                      help='Max random packets length (Default: 48 for udp, 1000 for tcp)')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default='udp',
-                      help='Attack method: udp (default), tcp, http')
+                      help='Attack method: udp (Default), tcp, http')
     parser.add_option('-s', '--server',
                       dest='host',
                       help='Attack to server IP')
@@ -44,6 +45,10 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-a', '--http_path',
                       dest='http_path', type='str', default='/',
                       help='HTTP path. Default: /')
+    parser.add_option('-o', '--socket_timeout',
+                      # default value is not set here to keep dynamic logic during initialization
+                      dest='socket_timeout', type='int',
+                      help='Timeout for socket connection is seconds. Default (seconds): 10 without proxy, 20 with proxy')
 
 
 def print_usage():

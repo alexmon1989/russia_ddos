@@ -73,6 +73,7 @@ def collect_stats(_ctx: Context) -> list:
         Row('Threads',                   f'{_ctx.threads}'),
         Row('Proxies count',             f'[cyan]{len(_ctx.proxy_list)} / {_ctx.proxy_list_initial_len}', visible=is_proxy_list),
         Row('vCPU Count',                f'{_ctx.cpu_count}'),
+        Row('Socket Timeout (seconds)',  f'{_ctx.sock_manager.socket_timeout}'),
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
         Row('CloudFlare DNS Protection', ('[red]' if _ctx.IpInfo.isCloudflareProtected else '[green]') + _ctx.IpInfo.cloudflare_status(), end_section=not _ctx.is_health_check),

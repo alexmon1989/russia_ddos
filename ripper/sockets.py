@@ -8,31 +8,27 @@ class SocketManager:
     """Manager for creating and closing sockets."""
 
     udp_sockets: dict[str, socks.socksocket] = {}
+    """Maps proxy (id) to socket"""
+    socket_timeout: int = None
+    """Timeout for socket connection is seconds."""
 
-    @staticmethod
-    def create_udp_socket(proxy: Sock5Proxy = None) -> socket:
+    def __init__(self, socket_timeout: int = None):
+        self.socket_timeout = socket_timeout
+
+    def create_udp_socket(self, proxy: Sock5Proxy = None) -> socket:
         """Creates udp socket."""
         udp_socket = socks.socksocket(socket.AF_INET, socket.SOCK_DGRAM)
-        proxy.decorate_socket(udp_socket) if proxy else 0
+        proxy.decorate_socket(udp_socket) if proxy is not None else 0
         return udp_socket
 
-    @staticmethod
-    def create_tcp_socket(proxy: Sock5Proxy = None) -> socket:
+    def create_tcp_socket(self, proxy: Sock5Proxy = None) -> socket:
         """Returns tcp socket."""
         tcp_socket = socks.socksocket(
             socket.AF_INET, socket.SOCK_STREAM, socket.SOL_TCP)
-        proxy.decorate_socket(tcp_socket) if proxy else 0
+        proxy.decorate_socket(tcp_socket) if proxy is not None else 0
         tcp_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        tcp_socket.settimeout(5)
+        tcp_socket.settimeout(self.socket_timeout) if self.socket_timeout is not None else 0
         return tcp_socket
-
-    @staticmethod
-    def create_http_socket(proxy: Sock5Proxy = None) -> socket:
-        """Returns http socket."""
-        http_socket = socks.socksocket(socket.AF_INET, socket.SOCK_STREAM)
-        proxy.decorate_socket(http_socket) if proxy else 0
-        http_socket.settimeout(5)
-        return http_socket
 
     def get_udp_socket(self, proxy: Sock5Proxy = None) -> socket:
         """Returns udp socket."""
@@ -41,7 +37,7 @@ class SocketManager:
             self.udp_sockets[id] = self.create_udp_socket(proxy)
         return self.udp_sockets[id]
 
-    def close_udp_socket(self, proxy) -> bool:
+    def close_udp_socket(self, proxy: Sock5Proxy = None) -> bool:
         """Closes udp socket if it exists."""
         id = proxy.id() if proxy is not None else ''
         if id not in self.udp_sockets:

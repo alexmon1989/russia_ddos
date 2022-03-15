@@ -121,6 +121,7 @@ class ErrorCodes(Enum):
     HostDoesNotResponse = 'HOST_DOES_NOT_RESPONSE'
     YourIpWasChanged = 'YOUR_IP_WAS_CHANGED'
     CannotSendRequest = 'CANNOT_SEND_REQUEST'
+    UnhandledError = 'UNHANDLED_ERROR'
 
 
 class Errors:
@@ -184,8 +185,10 @@ class Context:
     sock_manager: SocketManager = SocketManager()
 
     # HTTP-related
-    http_method: str = 'GET'
+    http_method: str = None
+    """HTTP method used in HTTP packets"""
     http_path: str = '/'
+    """HTTP path used in HTTP packets"""
 
     # Health-check
     is_health_check: bool = True
@@ -287,3 +290,10 @@ def init_context(_ctx: Context, args):
         _ctx.http_method = args[0].http_method.upper()
     if args[0].http_path:
         _ctx.http_path = args[0].http_path.lower()
+
+    if args[0].socket_timeout:
+        _ctx.sock_manager.socket_timeout = args[0].socket_timeout
+    else:
+        # proxies are slower
+        socket_timeout_factor = 2 if _ctx.proxy_list_initial_len else 1
+        _ctx.sock_manager.socket_timeout = 10 * socket_timeout_factor

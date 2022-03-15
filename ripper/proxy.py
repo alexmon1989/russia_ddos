@@ -1,8 +1,9 @@
 import socket
 import socks
+import time
 from typing import List
 
-from ripper.common import readfile
+from ripper.common import readfile, ns2s
 
 
 class Sock5Proxy:
@@ -12,6 +13,15 @@ class Sock5Proxy:
         self.username = username
         self.password = password
         self.rdns = rdns
+        
+        self.last_successful_time = 0
+
+    def report_success(self):
+        self.last_successful_time = time.time_ns()
+
+    def seconds_to_last_success(self):
+        now_ns = time.time_ns()
+        return ns2s(now_ns - self.last_successful_time)
 
     # mutates socket
     # https://pypi.org/project/PySocks/

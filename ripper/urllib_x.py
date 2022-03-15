@@ -1,9 +1,10 @@
 import re
 import ssl
+import socks
+import socket
 from urllib.parse import urlparse
 
 from ripper.proxy import Sock5Proxy
-from ripper.sockets import SocketManager
 from ripper.common import get_random_user_agent
 from ripper.constants import DEFAULT_HTTP_METHOD
 
@@ -27,9 +28,10 @@ def build_request_http_package(
         path: str = '/',
         headers = {},
         extra_data: str = None,
-        http_method: str = DEFAULT_HTTP_METHOD,
+        http_method: str = None,
         is_random_user_agent: bool = True,
         is_content_length_header: bool = True) -> str:
+    # redefinition is required to support bad argument propagation from http_request
     if not http_method:
         http_method = DEFAULT_HTTP_METHOD
 
@@ -68,14 +70,22 @@ class Response:
         self.full_response = full_response
 
 
-def http_request(url: str, headers={}, extra_data=None, read_resp_size=32, http_method: str = None, proxy: Sock5Proxy = None):
+def create_http_socket(proxy: Sock5Proxy = None, socket_timeout: int = None) -> socket:
+    """Returns http socket."""
+    http_socket = socks.socksocket(socket.AF_INET, socket.SOCK_STREAM)
+    proxy.decorate_socket(http_socket) if proxy is not None else 0
+    http_socket.settimeout(socket_timeout) if socket_timeout is not None else 0
+    return http_socket
+
+
+def http_request(url: str, headers={}, extra_data=None, read_resp_size=32, http_method: str = None, proxy: Sock5Proxy = None, socket_timeout: int = None):
     url_data = urlparse(url)
     hostname = url_data.hostname
     port = url_data.port if url_data.port is not None else default_scheme_port(
         url_data.scheme)
     path = url_data.path if url_data.path else '/'
     query = url_data.query if url_data.query else ''
-    with SocketManager.create_http_socket(proxy) as client:
+    with create_http_socket(proxy, socket_timeout) as client:
         if url_data.scheme == 'https':
             context = ssl.create_default_context()
             client = context.wrap_socket(client, server_hostname=hostname)

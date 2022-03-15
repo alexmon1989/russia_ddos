@@ -71,7 +71,8 @@ def down_it_udp(_ctx: Context) -> None:
             sock.sendto(request_packet, (_ctx.host_ip, _ctx.port))
         except socket.gaierror:
             _ctx.add_error(Errors(ErrorCodes.CannotGetServerIP.value, GETTING_SERVER_IP_ERROR_MSG))
-        except:
+        except Exception as e:
+            _ctx.add_error(Errors(ErrorCodes.UnhandledError.value, e))
             _ctx.sock_manager.close_udp_socket(proxy)
         else:
             _ctx.Statistic.packets.total_sent += 1
@@ -94,7 +95,11 @@ def down_it_http(_ctx: Context) -> None:
         try:
             proxy = random_proxy_from_context(_ctx)
             response = http_request(
-                url=_ctx.get_target_url(), proxy=proxy, http_method=_ctx.http_method)
+                url=_ctx.get_target_url(),
+                proxy=proxy,
+                http_method=_ctx.http_method,
+                socket_timeout=_ctx.sock_manager.socket_timeout,
+            )
             _ctx.Statistic.http_stats[response.status] += 1
             _ctx.Statistic.connect.success += 1
         except ProxyError:
@@ -128,5 +133,6 @@ def down_it_tcp(_ctx: Context) -> None:
                     break
         except ProxyError:
             delete_proxy(_ctx, proxy)
-        except:
+        except Exception as e:
+            _ctx.add_error(Errors(ErrorCodes.UnhandledError.value, e))
             _ctx.Statistic.connect.failed += 1
