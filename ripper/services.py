@@ -120,10 +120,10 @@ def update_host_statuses(_ctx: Context):
         _ctx.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context) -> bool:
+def connect_host(_ctx: Context, proxy: Sock5Proxy = None) -> bool:
     _ctx.Statistic.connect.set_state_in_progress()
     try:
-        sock = _ctx.sock_manager.create_tcp_socket()
+        sock = _ctx.sock_manager.create_tcp_socket(proxy)
         sock.connect((_ctx.host, _ctx.port))
     except:
         res = False
