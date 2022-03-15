@@ -59,7 +59,7 @@ def collect_stats(_ctx: Context) -> list:
     has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
-    is_proxy_list = _ctx.proxy_list and len(_ctx.proxy_list)
+    is_proxy_list = _ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list)
     your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
 
     full_stats: list[Row] = [
@@ -71,7 +71,7 @@ def collect_stats(_ctx: Context) -> list:
         Row('Load Method',               _ctx.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
-        Row('Proxies count',             f'[cyan]{len(_ctx.proxy_list)} / {_ctx.proxy_list_initial_len}', visible=is_proxy_list),
+        Row('Proxies count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} / {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
         Row('vCPU Count',                f'{_ctx.cpu_count}'),
         Row('Socket Timeout (seconds)',  f'{_ctx.sock_manager.socket_timeout}'),
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
@@ -151,7 +151,7 @@ def refresh(_ctx: Context):
                        common.get_no_successful_connection_die_msg()))
         exit(common.get_no_successful_connection_die_msg())
 
-    if _ctx.proxy_list_initial_len > 0 and len(_ctx.proxy_list) == 0:
+    if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
         _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value,
                        common.get_no_more_proxies_msg()))
         exit(common.get_no_more_proxies_msg())

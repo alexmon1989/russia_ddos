@@ -7,7 +7,8 @@ from enum import Enum
 from ripper import common
 from ripper.common import is_ipv4
 from ripper.constants import DEFAULT_CURRENT_IP_VALUE
-from ripper.sockets import SocketManager
+from ripper.proxy_manager import ProxyManager
+from ripper.socket_manager import SocketManager
 from ripper.proxy import read_proxy_list
 
 
@@ -183,6 +184,7 @@ class Context:
 
     # External API and services info
     sock_manager: SocketManager = SocketManager()
+    proxy_manager: ProxyManager = ProxyManager()
 
     # HTTP-related
     http_method: str = None
@@ -197,10 +199,6 @@ class Context:
     last_host_statuses_update: datetime = None
     health_check_method: str = ''
     host_statuses = {}
-
-    # Proxy lists
-    proxy_list: list = []
-    proxy_list_initial_len: int = 0
 
     def get_target_url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
@@ -281,10 +279,9 @@ def init_context(_ctx: Context, args):
     _ctx.health_check_method = 'ping' if _ctx.attack_method == 'udp' else _ctx.attack_method
     _ctx.is_health_check = False if args[0].health_check == 0 else True
 
-    _ctx.proxy_list = read_proxy_list(
-        args[0].proxy_list) if args[0].proxy_list else []
-    _ctx.proxy_list_initial_len = len(
-        _ctx.proxy_list) if _ctx.proxy_list and len(_ctx.proxy_list) else 0
+    if args[0].proxy_list:
+        proxy_list = read_proxy_list(args[0].proxy_list)
+        _ctx.proxy_manager.set_proxy_list(proxy_list)
 
     if args[0].http_method:
         _ctx.http_method = args[0].http_method.upper()
@@ -295,5 +292,5 @@ def init_context(_ctx: Context, args):
         _ctx.sock_manager.socket_timeout = args[0].socket_timeout
     else:
         # proxies are slower
-        socket_timeout_factor = 2 if _ctx.proxy_list_initial_len else 1
+        socket_timeout_factor = 2 if _ctx.proxy_manager.proxy_list_initial_len else 1
         _ctx.sock_manager.socket_timeout = 10 * socket_timeout_factor

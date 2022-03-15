@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 
 from ripper.proxy import Sock5Proxy
 from ripper.common import get_random_user_agent
-from ripper.constants import DEFAULT_HTTP_METHOD
 
 
 ###############################################
@@ -33,7 +32,7 @@ def build_request_http_package(
         is_content_length_header: bool = True) -> str:
     # redefinition is required to support bad argument propagation from http_request
     if not http_method:
-        http_method = DEFAULT_HTTP_METHOD
+        http_method = 'GET'
 
     packet_txt = f'{http_method.upper()} {path} HTTP/1.1' \
                  f'\nHost: {host}'

