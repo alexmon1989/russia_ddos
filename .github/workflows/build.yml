@@ -49,7 +49,9 @@ jobs:
           python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git@${{ env.GIT_BRANCH }}
 
       - name: Minimalistic CLI check
-        run: dripper --help
+        run: |
+          dripper --help
+          dripper -s 127.0.0.1
 
       - name: Run Tests
         run: python3 -m pytest tests/
