@@ -29,11 +29,18 @@ jobs:
         with:
           python-version: 3.x
 
+      - name: Set environment variables
+        shell: bash
+        run: |
+          # Short name for current branch. For PRs, use target branch (base ref)
+          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
+
       - name: Setup Python packages
         run: |
           python3 -m pip install -r requirements.txt
           python3 -m pip install pytest
-          python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git@${GITHUB_REF_NAME}
+          python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git@${{ env.GIT_BRANCH }}
 
       - name: Minimalistic CLI check
         run: dripper --help
