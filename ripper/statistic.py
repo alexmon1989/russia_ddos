@@ -51,7 +51,7 @@ class Row:
         self.end_section = end_section
 
 
-def collect_stats(_ctx: Context) -> list:
+def collect_stats(_ctx: Context) -> list[Row]:
     """Prepare data for Statistic."""
     max_length = f' / Max length: {_ctx.max_random_packet_len}' if _ctx.max_random_packet_len else ''
     sent_units = 'Requests' if _ctx.attack_method.lower() == 'http' else 'Packets'
@@ -67,7 +67,7 @@ def collect_stats(_ctx: Context) -> list:
         Row('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
         Row('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
         Row('Host IP / Country',         f'[cyan]{_ctx.host_ip}:{_ctx.port} / [red]{_ctx.IpInfo.target_country}'),
-        Row('HTTP Method / URL',         f'[cyan]{_ctx.http_method} / {_ctx.get_target_url()}', visible=_ctx.attack_method.lower() == 'http'),
+        Row('HTTP Request',              f'[cyan]{_ctx.http_method}: {_ctx.get_target_url()}', visible=_ctx.attack_method.lower() == 'http'),
         Row('Load Method',               _ctx.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
@@ -128,7 +128,8 @@ def generate_stats(_ctx: Context) -> Table:
 lock = threading.Lock()
 
 
-def refresh(_ctx: Context):
+def refresh(_ctx: Context) -> None:
+    """Check threads, IPs, VPN status, etc."""
     lock.acquire()
     if not _ctx.Statistic.connect.in_progress:
         threading.Thread(target=services.update_current_ip, args=[_ctx]).start()
@@ -157,7 +158,7 @@ def refresh(_ctx: Context):
         exit(common.get_no_more_proxies_msg())
 
 
-def render_statistic(_ctx: Context):
+def render_statistic(_ctx: Context) -> None:
     """Show DRipper runtime statistic."""
     with Live(generate_stats(_ctx), vertical_overflow='visible') as live:
         # for _ in range(720):

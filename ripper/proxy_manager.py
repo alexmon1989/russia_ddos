@@ -1,4 +1,3 @@
-import threading
 import random
 import threading
 
@@ -6,6 +5,7 @@ from ripper.proxy import Sock5Proxy
 from ripper.constants import PROXY_MAX_FAILURE_RATIO, PROXY_MIN_VALIDATION_REQUESTS
 
 lock = threading.Lock()
+
 
 class ProxyManager:
     """Manager for proxy collection."""
@@ -49,14 +49,14 @@ class ProxyManager:
         is_deleted = self.__delete_proxy(proxy)
         lock.release()
         return is_deleted
-    
+
     def __validate_proxy(self, proxy: Sock5Proxy) -> bool:
         total_cnt = proxy.success_cnt + proxy.failure_cnt
         if total_cnt < PROXY_MIN_VALIDATION_REQUESTS:
             return True
         failure_ratio = proxy.failure_cnt / proxy.success_cnt
         return failure_ratio < PROXY_MAX_FAILURE_RATIO
-        
+
     def vacuum(self) -> int:
         """Removes proxies which are not valid"""
         new_proxy_list = list(filter(lambda proxy: self.__validate_proxy(proxy), self.proxy_list))

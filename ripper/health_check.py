@@ -5,9 +5,14 @@ import urllib
 import gzip
 import time
 from collections import defaultdict
+from urllib import request
 
 from ripper.context import Context
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
+
+# Prepare static patterns once at start.
+STATUS_PATTERN = re.compile(r"get_check_results\(\n* *'([^']+)")
+
 
 def get_health_status(_ctx: Context):
     if _ctx.last_host_statuses_update is None or len(_ctx.host_statuses.values()) == 0:
@@ -126,7 +131,7 @@ def fetch_host_statuses(_ctx: Context) -> dict:
         request_url = construct_request_url(_ctx)
         body = fetch_zipped_body(_ctx, request_url)
         # request_code is some sort of trace_id which is provided on every request to master node
-        request_code = re.search(r"get_check_results\(\n* *'([^']+)", body)[1]
+        request_code = re.search(STATUS_PATTERN, body)[1]
         # it takes time to poll all information from slave nodes
         time.sleep(5)
         # to prevent loop, do not wait for more than 30 seconds

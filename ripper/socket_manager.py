@@ -17,7 +17,9 @@ class SocketManager:
 
     def create_udp_socket(self, proxy: Sock5Proxy = None) -> socket:
         """Creates udp socket."""
-        udp_socket = socks.socksocket(socket.AF_INET, socket.SOCK_DGRAM)
+        # There is issues with UDP protocol vie PySock library
+        # udp_socket = socks.socksocket(socket.AF_INET, socket.SOCK_DGRAM)
+        udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         proxy.decorate_socket(udp_socket) if proxy is not None else 0
         return udp_socket
 

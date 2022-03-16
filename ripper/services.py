@@ -1,4 +1,3 @@
-import threading
 import datetime
 import sys
 import random
@@ -73,7 +72,7 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
 ###############################################
 # Other
 ###############################################
-def no_successful_connections_error_msg(_ctx: Context):
+def no_successful_connections_error_msg(_ctx: Context) -> str:
     if _ctx.proxy_manager.proxy_list_initial_len > 0:
         return NO_SUCCESSFUL_CONNECTIONS_ERROR_PROXY_MSG
     return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG

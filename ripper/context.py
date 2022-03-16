@@ -205,10 +205,10 @@ class Context:
         return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
 
     def get_start_time_ns(self) -> int:
-        """Get start time in nano seconds"""
+        """Get start time in nanoseconds."""
         if not self.Statistic.start_time:
             return 0
-        return self.Statistic.start_time.timestamp() * 1000000 * 1000
+        return int(self.Statistic.start_time.timestamp() * 1000000 * 1000)
 
     def add_error(self, error: Errors):
         """

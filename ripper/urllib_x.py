@@ -27,14 +27,13 @@ def build_request_http_package(
         headers={},
         extra_data: str = None,
         http_method: str = None,
-        is_content_length_header: bool = True) -> str:
+        is_content_length_header: bool = True) -> bytes:
     # redefinition is required to support bad argument propagation from http_request
     if not http_method:
         http_method = 'GET'
 
     packet_txt = f'{http_method.upper()} {path} HTTP/1.1' \
                  f'\nHost: {host}'
-
 
     if is_content_length_header and extra_data:
         headers['Content-Length'] = len(extra_data.encode('utf-8'))
