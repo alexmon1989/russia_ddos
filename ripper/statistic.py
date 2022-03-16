@@ -2,12 +2,13 @@ import threading
 import time
 from datetime import datetime
 from rich import box
+from rich.console import Group
 from rich.live import Live
 from rich.table import Table
 
 import ripper.common as common
 import ripper.services as services
-from ripper.context import Context, ErrorCodes, Errors
+from ripper.context import Context, Errors
 from ripper.constants import *
 from ripper.health_check import get_health_status
 
@@ -93,17 +94,15 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Status Code Distribution',  build_http_codes_distribution(_ctx.Statistic.http_stats), end_section=has_errors, visible=_ctx.attack_method.lower() == 'http'),
     ]
 
-    if has_errors:
-        full_stats.append(Row('[bright_red][bold]Error Log', '', end_section=True))
-        for key in _ctx.errors:
-            err = _ctx.errors.get(key)
-            full_stats.append(Row(f'{key}', f'Total: {err.count}\n{err.message}'))
-
     return full_stats
 
 
-def generate_stats(_ctx: Context) -> Table:
+def generate_stats(_ctx: Context):
     """Create statistic from aggregated RAW Statistic data."""
+
+    caption = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}'
+    table_caption = caption if not _ctx.has_errors() else None
+    logs_caption = caption if _ctx.has_errors() else None
 
     table = Table(
         title=LOGO_COLOR,
@@ -112,7 +111,7 @@ def generate_stats(_ctx: Context) -> Table:
         box=box.HORIZONTALS,
         min_width=MIN_SCREEN_WIDTH,
         width=MIN_SCREEN_WIDTH,
-        caption=f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}',
+        caption=table_caption,
         caption_style='bold')
 
     table.add_column('Description')
@@ -122,7 +121,29 @@ def generate_stats(_ctx: Context) -> Table:
         if row.visible:
             table.add_row(row.label, row.value, end_section=row.end_section)
 
-    return table
+    logs = None
+    if _ctx.has_errors():
+        logs = Table(
+            box=box.SIMPLE,
+            min_width=MIN_SCREEN_WIDTH,
+            width=MIN_SCREEN_WIDTH,
+            caption=logs_caption,
+            caption_style='bold')
+
+        logs.add_column('Time')
+        logs.add_column('Action')
+        logs.add_column('Q-ty')
+        logs.add_column('Message')
+
+        for key in _ctx.errors:
+            err = _ctx.errors.get(key)
+            logs.add_row(f'[cyan]{err.time.strftime(DATE_TIME_SHORT)}',
+                         f'[orange1]{err.code}',
+                         f'{err.count}',
+                         f'{err.message}')
+
+    group = Group(table) if logs is None else Group(table, logs)
+    return group
 
 
 lock = threading.Lock()
@@ -145,16 +166,14 @@ def refresh(_ctx: Context) -> None:
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
-        _ctx.add_error(Errors(ErrorCodes.YourIpWasChanged.value, YOUR_IP_WAS_CHANGED))
+        _ctx.add_error(Errors('IP was changed', YOUR_IP_WAS_CHANGED))
 
     if not services.validate_attack(_ctx):
-        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value,
-                       common.get_no_successful_connection_die_msg()))
+        _ctx.add_error(Errors('Host does not respond', common.get_no_successful_connection_die_msg()))
         exit(common.get_no_successful_connection_die_msg())
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        _ctx.add_error(Errors(ErrorCodes.HostDoesNotResponse.value,
-                       common.get_no_more_proxies_msg()))
+        _ctx.add_error(Errors('Host does not respond', common.get_no_more_proxies_msg()))
         exit(common.get_no_more_proxies_msg())
 
 
