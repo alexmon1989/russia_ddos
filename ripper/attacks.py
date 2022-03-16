@@ -30,6 +30,7 @@ def build_ctx_request_http_package(_ctx: Context) -> bytes:
 # TODO add support for SOCKS5 proxy if proxy supports associate request
 # https://stackoverflow.com/a/47079318/2628125
 # https://datatracker.ietf.org/doc/html/rfc1928
+# https://blog.birost.com/a?ID=00100-38682fbb-83c3-49d7-8cfc-406b05bf086c
 # PySocks has issues with basic implementation
 def down_it_udp(_ctx: Context) -> None:
     """UDP flood method."""
