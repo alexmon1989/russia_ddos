@@ -225,6 +225,10 @@ class Context:
         if self.errors.__contains__(error_code):
             self.errors.__delitem__(error_code)
 
+    def has_errors(self) -> bool:
+        """Check if Errors are exists."""
+        return len(self.errors) > 0
+
     def validate(self):
         """Validates context before Run script. Order is matter!"""
         if self.host_ip is None or not is_ipv4(self.host_ip):
