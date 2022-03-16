@@ -1,12 +1,14 @@
 import os
 import time
+import hashlib
 from datetime import datetime
 from collections import defaultdict
-from enum import Enum
+
+from rich.console import Console
 
 from ripper import common
 from ripper.common import is_ipv4, strip_lines
-from ripper.constants import DEFAULT_CURRENT_IP_VALUE
+from ripper.constants import DEFAULT_CURRENT_IP_VALUE, MIN_SCREEN_WIDTH
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.proxy import read_proxy_list
@@ -116,27 +118,29 @@ class IpInfo:
             return parts[0]
 
 
-class ErrorCodes(Enum):
-    CannotGetServerIP = 'CANNOT_GET_SERVER_IP'
-    ConnectionError = 'CONNECTION_ERROR'
-    HostDoesNotResponse = 'HOST_DOES_NOT_RESPONSE'
-    YourIpWasChanged = 'YOUR_IP_WAS_CHANGED'
-    CannotSendRequest = 'CANNOT_SEND_REQUEST'
-    UnhandledError = 'UNHANDLED_ERROR'
-
-
 class Errors:
     """Class with Error details."""
+    uuid: str = None
+    """UUID for Error, based on error details."""
+    time: datetime = None
+    """Error time."""
     code: str = None
-    """Error type."""
+    """Error type or process/operation short name"""
     count: int = 0
     """Error count."""
     message: str = ''
     """Error message"""
 
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, count: int = 1):
+        """
+        :param code: Error type
+        :param message: Error message
+        :param count: Error counter
+        """
+        self.uuid = hashlib.sha1(f'{code}{message}'.encode()).hexdigest()
+        self.time = datetime.now()
         self.code = code
-        self.count = 1
+        self.count = count
         self.message = message
 
 
@@ -185,6 +189,7 @@ class Context:
     # External API and services info
     sock_manager: SocketManager = SocketManager()
     proxy_manager: ProxyManager = ProxyManager()
+    logger: Console = Console(width=MIN_SCREEN_WIDTH)
 
     # HTTP-related
     http_method: str = None
@@ -215,10 +220,11 @@ class Context:
         Add Error to Errors collection without duplication.
         If Error exists in collection - it updates the error counter.
         """
-        if self.errors.__contains__(error.code):
-            self.errors[error.code].count += 1
+        if self.errors.__contains__(error.uuid):
+            self.errors[error.uuid].count += 1
+            self.errors[error.uuid].time = error.time
         else:
-            self.errors[error.code] = error
+            self.errors[error.uuid] = error
 
     def remove_error(self, error_code: str):
         """Remove Error from collection by Error Code."""
@@ -232,11 +238,11 @@ class Context:
     def validate(self):
         """Validates context before Run script. Order is matter!"""
         if self.host_ip is None or not is_ipv4(self.host_ip):
-            print(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
+            self.logger.log(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
             exit(1)
 
         if self.IpInfo.my_start_ip is None or not is_ipv4(self.IpInfo.my_start_ip):
-            print(f'Cannot get your public IPv4 address. Check your VPN connection.')
+            self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
 
     def __new__(cls):
