@@ -38,12 +38,12 @@ def check_successful_connections(_ctx: Context) -> bool:
 
     if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, no_successful_connections_error_msg(_ctx)))
+            _ctx.add_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)))
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.connect.last_check_time = now_ns
         _ctx.Statistic.connect.sync_success()
-        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+        _ctx.remove_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)).uuid)
 
     return True
 
@@ -58,13 +58,13 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
 
     if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            _ctx.add_error(Errors(ErrorCodes.ConnectionError.value, no_successful_connections_error_msg(_ctx)))
+            _ctx.add_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)))
 
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
         _ctx.Statistic.packets.connections_check_time = now_ns
         _ctx.Statistic.packets.sync_packets_sent()
-        _ctx.remove_error(ErrorCodes.ConnectionError.value)
+        _ctx.remove_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)).uuid)
 
     return True
 
@@ -188,9 +188,11 @@ def validate_input(args) -> bool:
 def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
     i = 0
+    _ctx.logger.rule('[bold]Starting DRipper')
     while i < retry_cnt:
-        print(f'{format_dt(datetime.datetime.now())} ({i+1}/{retry_cnt}) Trying connect to {_ctx.host}:{_ctx.port}...')
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.host}:{_ctx.port}...')
         if connect_host(_ctx):
+            _ctx.logger.rule()
             break
         time.sleep(timeout_secs)
         i += 1

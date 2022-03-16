@@ -7,48 +7,47 @@ class TestContext:
     def test_can_store_error_details(self):
         context = Context()
         context.errors.clear()
-        error_key = ErrorCodes.CannotGetServerIP.value
 
-        assert error_key == 'CANNOT_GET_SERVER_IP'
-
-        actual = Errors(code=error_key, message='Cannot get server ip')
-        context.errors[error_key] = actual
+        actual = Errors(code='send UDP packet', message='Cannot get server ip')
+        uuid = actual.uuid
+        context.errors[uuid] = actual
 
         assert len(context.errors) == 1
-        assert context.errors.get(error_key).code == error_key
-        assert context.errors.get(error_key).count == 1
-        assert context.errors.get(error_key).message == 'Cannot get server ip'
+        assert context.errors.get(uuid).code == 'send UDP packet'
+        assert context.errors.get(uuid).count == 1
+        assert context.errors.get(uuid).message == 'Cannot get server ip'
 
     def test_can_count_the_same_error(self):
         context = Context()
         context.errors.clear()
-        error_key = ErrorCodes.CannotGetServerIP.value
 
         assert len(context.errors) == 0
 
-        actual = Errors(code=error_key, message='Cannot get server ip')
+        actual = Errors(code='send UDP packet', message='Cannot get server ip')
+        uuid = actual.uuid
         context.add_error(actual)
 
         assert len(context.errors) == 1
-        assert context.errors.get(error_key) == actual
-        assert context.errors.get(error_key).count == 1
+        assert context.errors.get(uuid) == actual
+        assert context.errors.get(uuid).count == 1
+        assert context.errors.get(uuid).code == 'send UDP packet'
 
         context.add_error(actual)
         assert len(context.errors) == 1
-        assert context.errors.get(error_key).count == 2
+        assert context.errors.get(uuid).count == 2
 
     def test_can_delete_existing_error(self):
         context = Context()
         context.errors.clear()
 
-        error_key = ErrorCodes.CannotGetServerIP.value
-        actual = Errors(code=error_key, message='Cannot get server ip')
+        actual = Errors(code='send UDP packet', message='Cannot get server ip')
+        uuid = actual.uuid
         context.add_error(actual)
 
         assert len(context.errors) == 1
-        assert context.errors.get(error_key) == actual
+        assert context.errors.get(uuid) == actual
 
-        context.remove_error(error_key)
+        context.remove_error(uuid)
         assert len(context.errors) == 0
 
     @pytest.mark.parametrize('actual_ip, expected_result', [
