@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Added support for SOCKS5 proxies. (HTTP/TCP only)
 - Added possibility to dismiss health check. It is helpful during development.
 - Added the possibility to attack random extra_data for HTTP attack (turned off by default).
+- Added build tools to create `dripper` executable for Windows/Linux/macOS
 
 ### Fixed
 - Fixed proxy list params read

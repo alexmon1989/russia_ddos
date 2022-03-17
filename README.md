@@ -136,13 +136,18 @@ Ensure you have Python 3.9 or better installed. Then clone this repo and run DRi
 git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
 
-# Install python dependencies:
-pip install -r requirements.txt
-
+# Install dependencies
+python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git
 # Run script
 dripper -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
-# OR
-dripper -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+
+
+# ===== Alternative variant =====
+
+# Install python dependencies:
+pip install -r requirements.txt
+# Run script
+python3 -m ripper.services -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 ```
 
 #### Kubernetes
