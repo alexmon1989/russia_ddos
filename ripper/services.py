@@ -232,3 +232,7 @@ def cli():
         sys.stderr.write(f'\n{exc}\n\n')
         sys.stderr.flush()
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    cli()

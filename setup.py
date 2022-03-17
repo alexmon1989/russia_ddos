@@ -5,7 +5,7 @@ setup(
     name='dripper',
     version=VERSION,
     packages=['ripper'],
-    install_requires=['rich==12.0.0'],
+    install_requires=['rich==12.0.0', 'pysocks==1.7.1'],
     package_data={
         'ripper': [
             'headers.txt',
