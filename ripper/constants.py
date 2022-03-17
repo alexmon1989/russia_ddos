@@ -3,9 +3,7 @@
 ###############################################
 VERSION = 'v2.1.0'
 USAGE = 'Usage: %prog [options] arg'
-EPILOG = f'Examples:\n' \
-         f'dripper -s 192.168.0.1 -p 80 -t 100' \
-         f'python3 -m ripper.services -s 192.168.0.1 -p 80 -t 100'
+EPILOG = 'Example: dripper -s 192.168.0.1 -p 80 -t 100'
 
 LOGO_COLOR = f'''[deep_sky_blue1]
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗

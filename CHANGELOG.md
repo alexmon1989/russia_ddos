@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.0.4...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...HEAD)
+
+
+## [v2.1.0](https://github.com/alexmon1989/russia_ddos/compare/2.0.4...2.1.0)
 
 ### Added
 - Added support for SOCKS5 proxies. (HTTP/TCP only)
