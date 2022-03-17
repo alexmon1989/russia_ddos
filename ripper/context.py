@@ -1,14 +1,17 @@
 import os
 import time
-
+import hashlib
 from datetime import datetime
 from collections import defaultdict
-from enum import Enum
+
+from rich.console import Console
 
 from ripper import common
-from ripper.common import is_ipv4
-from ripper.constants import DEFAULT_CURRENT_IP_VALUE
-from ripper.sockets import SocketManager
+from ripper.common import is_ipv4, strip_lines
+from ripper.constants import DEFAULT_CURRENT_IP_VALUE, MIN_SCREEN_WIDTH
+from ripper.proxy_manager import ProxyManager
+from ripper.socket_manager import SocketManager
+from ripper.proxy import read_proxy_list
 
 
 def get_headers_dict(base_headers: list[str]):
@@ -16,7 +19,7 @@ def get_headers_dict(base_headers: list[str]):
     headers_dict = {}
     for line in base_headers:
         parts = line.split(':')
-        headers_dict[parts[0]] = parts[1].strip()
+        headers_dict[parts[0]] = parts[1]
 
     return headers_dict
 
@@ -115,26 +118,29 @@ class IpInfo:
             return parts[0]
 
 
-class ErrorCodes(Enum):
-    CannotGetServerIP = 'CANNOT_GET_SERVER_IP'
-    ConnectionError = 'CONNECTION_ERROR'
-    HostDoesNotResponse = 'HOST_DOES_NOT_RESPONSE'
-    YourIpWasChanged = 'YOUR_IP_WAS_CHANGED'
-    CannotSendRequest = 'CANNOT_SEND_REQUEST'
-
-
 class Errors:
     """Class with Error details."""
+    uuid: str = None
+    """UUID for Error, based on error details."""
+    time: datetime = None
+    """Error time."""
     code: str = None
-    """Error type."""
+    """Error type or process/operation short name"""
     count: int = 0
     """Error count."""
     message: str = ''
     """Error message"""
 
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, count: int = 1):
+        """
+        :param code: Error type
+        :param message: Error message
+        :param count: Error counter
+        """
+        self.uuid = hashlib.sha1(f'{code}{message}'.encode()).hexdigest()
+        self.time = datetime.now()
         self.code = code
-        self.count = 1
+        self.count = count
         self.message = message
 
 
@@ -150,7 +156,7 @@ class Context:
     """Destination Port."""
     threads: int = 100
     """The number of threads."""
-    max_random_packet_len: int = 0
+    max_random_packet_len: int = 48
     """Limit for Random Packet Length."""
     random_packet_len: bool = False
     """Is Random Packet Length enabled."""
@@ -182,8 +188,17 @@ class Context:
 
     # External API and services info
     sock_manager: SocketManager = SocketManager()
+    proxy_manager: ProxyManager = ProxyManager()
+    logger: Console = Console(width=MIN_SCREEN_WIDTH)
+
+    # HTTP-related
+    http_method: str = None
+    """HTTP method used in HTTP packets"""
+    http_path: str = '/'
+    """HTTP path used in HTTP packets"""
 
     # Health-check
+    is_health_check: bool = True
     connections_check_time: int = 0
     fetching_host_statuses_in_progress: bool = False
     last_host_statuses_update: datetime = None
@@ -192,31 +207,42 @@ class Context:
 
     def get_target_url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
-        return f"{self.protocol}{self.host}:{self.port}"
+        return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
+
+    def get_start_time_ns(self) -> int:
+        """Get start time in nanoseconds."""
+        if not self.Statistic.start_time:
+            return 0
+        return int(self.Statistic.start_time.timestamp() * 1000000 * 1000)
 
     def add_error(self, error: Errors):
         """
         Add Error to Errors collection without duplication.
         If Error exists in collection - it updates the error counter.
         """
-        if self.errors.__contains__(error.code):
-            self.errors[error.code].count += 1
+        if self.errors.__contains__(error.uuid):
+            self.errors[error.uuid].count += 1
+            self.errors[error.uuid].time = error.time
         else:
-            self.errors[error.code] = error
+            self.errors[error.uuid] = error
 
     def remove_error(self, error_code: str):
         """Remove Error from collection by Error Code."""
         if self.errors.__contains__(error_code):
             self.errors.__delitem__(error_code)
 
+    def has_errors(self) -> bool:
+        """Check if Errors are exists."""
+        return len(self.errors) > 0
+
     def validate(self):
         """Validates context before Run script. Order is matter!"""
         if self.host_ip is None or not is_ipv4(self.host_ip):
-            print(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
+            self.logger.log(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
             exit(1)
 
         if self.IpInfo.my_start_ip is None or not is_ipv4(self.IpInfo.my_start_ip):
-            print(f'Cannot get your public IPv4 address. Check your VPN connection.')
+            self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
 
     def __new__(cls):
@@ -235,15 +261,20 @@ def init_context(_ctx: Context, args):
     _ctx.threads = args[0].threads
 
     _ctx.attack_method = str(args[0].attack_method).lower()
-    if not _ctx.attack_method == 'http':
-        _ctx.random_packet_len = bool(args[0].random_packet_len)
+    _ctx.random_packet_len = bool(args[0].random_packet_len)
+    if args[0].max_random_packet_len:
         _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
+    elif _ctx.attack_method == 'http':
+        _ctx.random_packet_len = False
+        _ctx.max_random_packet_len = 0
+    elif _ctx.attack_method == 'tcp':
+        _ctx.max_random_packet_len = 1024
 
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
     # Get required data from files
-    _ctx.user_agents = common.readfile(os.path.dirname(__file__) + '/useragents.txt')
-    _ctx.base_headers = common.readfile(os.path.dirname(__file__) + '/headers.txt')
+    _ctx.user_agents = strip_lines(common.readfile(os.path.dirname(__file__) + '/useragents.txt'))
+    _ctx.base_headers = strip_lines(common.readfile(os.path.dirname(__file__) + '/headers.txt'))
     _ctx.headers = get_headers_dict(_ctx.base_headers)
 
     # Get initial info from external services
@@ -255,4 +286,21 @@ def init_context(_ctx: Context, args):
 
     _ctx.Statistic.start_time = datetime.now()
     _ctx.connections_check_time = time.time_ns()
-    _ctx.health_check_method = 'ping' if _ctx.attack_method == 'udp'else _ctx.attack_method
+    _ctx.health_check_method = 'ping' if _ctx.attack_method == 'udp' else _ctx.attack_method
+    _ctx.is_health_check = False if args[0].health_check == 0 else True
+
+    if args[0].proxy_list and _ctx.attack_method != 'udp':
+        proxy_list = read_proxy_list(args[0].proxy_list)
+        _ctx.proxy_manager.set_proxy_list(proxy_list)
+
+    if args[0].http_method:
+        _ctx.http_method = args[0].http_method.upper()
+    if args[0].http_path:
+        _ctx.http_path = args[0].http_path.lower()
+
+    if args[0].socket_timeout:
+        _ctx.sock_manager.socket_timeout = args[0].socket_timeout
+    else:
+        # proxies are slower
+        socket_timeout_factor = 2 if _ctx.proxy_manager.proxy_list_initial_len else 1
+        _ctx.sock_manager.socket_timeout = 10 * socket_timeout_factor

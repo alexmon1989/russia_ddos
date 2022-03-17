@@ -1,7 +1,5 @@
-import sys
 import pytest as pytest
 
-from ripper import context
 from ripper.context import Context
 from ripper.common import get_ipv4
 from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses, construct_request_url

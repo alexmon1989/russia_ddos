@@ -12,6 +12,7 @@ import urllib.request
 
 from ripper.constants import *
 
+
 # Prepare static patterns once at start.
 IPv4_PATTERN = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
 
@@ -22,10 +23,18 @@ def get_no_successful_connection_die_msg() -> str:
            f"Your attack is ineffective."
 
 
+def get_no_more_proxies_msg() -> str:
+    return f"There are no more operational proxies to work with host."
+
+
 def readfile(filename: str) -> list[str]:
     """Read string from file"""
     with open(filename, 'r') as file:
         return file.readlines()
+
+
+def strip_lines(lines: list[str]) -> list[str]:
+    return list(map(lambda line: line.strip(), lines))
 
 
 def get_random_string(len_from: int, len_to: int) -> str:
@@ -49,6 +58,10 @@ def get_current_ip() -> str:
         pass
 
     return current_ip if is_ipv4(current_ip) else DEFAULT_CURRENT_IP_VALUE
+
+
+def ns2s(time_nano: int):
+    return time_nano / 1000000 / 1000
 
 
 def format_dt(dt: datetime, fmt=DATE_TIME_FULL) -> str:
@@ -111,7 +124,7 @@ def isCloudFlareProtected(link: str, user_agents: list) -> bool:
         conn = http.client.HTTPSConnection('www.cloudflare.com', timeout=1)
         headers = {
             'Cookie': '__cf_bm=OnRKNQTGoxsvaPnhUpTwRi4UGosW61HHYDZ0KratigY-1646567348-0-AXoOT+WpLyPZuVwGPE2Zb1FxFR2oB18wPkJE1UUXfAEbJDKtsZB0X3O8ED29koUfldx63GwHg/sm4TtEkk4hBL3ET83DUUTWCKrb6Z0ZSlcP',
-            'User-Agent': str(random.choice(user_agents)).strip('\n')
+            'User-Agent': str(random.choice(user_agents))
         }
         conn.request('GET', '/ips-v4', '', headers)
         iprange = conn.getresponse().read().decode('utf-8')

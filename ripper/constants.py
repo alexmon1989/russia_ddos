@@ -1,10 +1,9 @@
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-
-VERSION = 'v2.0.4'
-USAGE = 'Usage: %prog [options] arg'
-EPILOG = 'Example: dripper -s 192.168.0.1 -p 80 -t 100'
+VERSION = 'v2.1.0-dev'
+USAGE = 'Usage: python %prog [options] arg'
+EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 
 LOGO_COLOR = f'''[deep_sky_blue1]
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
@@ -41,10 +40,12 @@ BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine\n'
 
 # ==== Error messages ====
 GETTING_SERVER_IP_ERROR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
-NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = 'There are no successful connections more than 2 min. ' \
+NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG = 'There are no successful connections more than 2 min. ' \
                                       'Check your VPN or change host/port.'
+NO_SUCCESSFUL_CONNECTIONS_ERROR_PROXY_MSG = 'There are no successful connections more than 2 min. ' \
+                                      'Looking for successful proxies.'
 YOUR_IP_WAS_CHANGED = 'Your IP was changed!!! Check VPN connection.'
-CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not response.'
+CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not respond.'
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
 HOST_FAILED_STATUS = 'HOST_FAILED'
@@ -63,3 +64,7 @@ MIN_SCREEN_WIDTH = 80
 MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
 NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC = 180
+
+# ==== Sockets ====
+PROXY_MAX_FAILURE_RATIO = 0.8
+PROXY_MIN_VALIDATION_REQUESTS = 8
