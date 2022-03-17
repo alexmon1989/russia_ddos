@@ -289,7 +289,7 @@ def init_context(_ctx: Context, args):
     _ctx.health_check_method = 'ping' if _ctx.attack_method == 'udp' else _ctx.attack_method
     _ctx.is_health_check = False if args[0].health_check == 0 else True
 
-    if args[0].proxy_list:
+    if args[0].proxy_list and _ctx.attack_method != 'udp':
         proxy_list = read_proxy_list(args[0].proxy_list)
         _ctx.proxy_manager.set_proxy_list(proxy_list)
 

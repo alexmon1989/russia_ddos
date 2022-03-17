@@ -209,7 +209,7 @@ def main():
     context.init_context(_ctx, args)
     go_home(_ctx)
     # Proxies should be validated during the runtime
-    connect_host_loop(_ctx, retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 else 5))
+    connect_host_loop(_ctx, retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or _ctx.attack_method == 'udp' else 5))
     _ctx.validate()
 
     time.sleep(.5)

