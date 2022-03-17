@@ -1,9 +1,9 @@
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-VERSION = 'v2.1.0-dev'
-USAGE = 'Usage: python %prog [options] arg'
-EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
+VERSION = 'v2.1.0'
+USAGE = 'Usage: %prog [options] arg'
+EPILOG = 'Example: dripper -s 192.168.0.1 -p 80 -t 100'
 
 LOGO_COLOR = f'''[deep_sky_blue1]
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
@@ -46,6 +46,7 @@ NO_SUCCESSFUL_CONNECTIONS_ERROR_PROXY_MSG = 'There are no successful connections
                                       'Looking for successful proxies.'
 YOUR_IP_WAS_CHANGED = 'Your IP was changed!!! Check VPN connection.'
 CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not respond.'
+NO_MORE_PROXIES_MSG = 'There are no more operational proxies to work with host.'
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
 HOST_FAILED_STATUS = 'HOST_FAILED'

@@ -173,8 +173,8 @@ def refresh(_ctx: Context) -> None:
         exit(common.get_no_successful_connection_die_msg())
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        _ctx.add_error(Errors('Host does not respond', common.get_no_more_proxies_msg()))
-        exit(common.get_no_more_proxies_msg())
+        _ctx.add_error(Errors('Host does not respond', NO_MORE_PROXIES_MSG))
+        exit(NO_MORE_PROXIES_MSG)
 
 
 def render_statistic(_ctx: Context) -> None:

@@ -6,15 +6,19 @@ on:
 
 defaults:
   run:
-    shell: bash
+    shell: pwsh
 
 env:
   IMAGE_NAME: alexmon1989/dripper
 
 jobs:
   build:
-    name: Build Docker image
-    runs-on: ubuntu-20.04
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-20.04, macos-10.15, windows-2019 ]
 
     steps:
       - name: Checkout
@@ -25,25 +29,44 @@ jobs:
         with:
           python-version: 3.x
 
+      - name: Set environment variables
+        shell: bash
+        run: |
+          # Short name for current branch. For PRs, use target branch (base ref)
+          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
+
+      - name: Patch github repo link inside Dockerfile for CI
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sed -i "s|\.git|\.git@$GIT_BRANCH|g" Dockerfile
+
       - name: Setup Python packages
         run: |
-          pip install -r requirements.txt
-          pip install pytest
+          python3 -m pip install -r requirements.txt
+          python3 -m pip install pytest
+          python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git@${{ env.GIT_BRANCH }}
 
       - name: Minimalistic CLI check
-        run: python -u DRipper.py
+        shell: bash
+        run: |
+          dripper --help
 
       - name: Run Tests
         run: python3 -m pytest tests/
 
       - name: Set up QEMU
+        if: runner.os == 'Linux'
         uses: docker/setup-qemu-action@v1
 
       - name: Set up Docker Buildx
+        if: runner.os == 'Linux'
         id: buildx
         uses: docker/setup-buildx-action@v1
 
       - name: Configure Docker metadata
+        if: runner.os == 'Linux'
         id: meta
         uses: docker/metadata-action@v3
         with:
@@ -56,42 +79,43 @@ jobs:
             type=semver,pattern={{major}}
 
       - name: Login to Docker Hub
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux'
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
+        if: runner.os == 'Linux'
         uses: docker/build-push-action@v2
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/386,linux/arm/v7,linux/arm/v6
-          push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+          push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Update Docker Hub Description
-        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux' }}
         uses: peter-evans/dockerhub-description@v2
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          DOCKERHUB_REPOSITORY: alexmon1989/dripper
+          DOCKERHUB_REPOSITORY: ${{ env.IMAGE_NAME }}
 
       - name: Get the release version
-        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux' }}
         id: get-version
         run: |
           echo ::set-output name=version::${GITHUB_REF#refs/tags/}
 
       - name: Prepare Release Notes
-        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux' }}
         run: |
           ./.github/release-notes.sh ./CHANGELOG.md > ./release-notes.md
 
       - name: Update Release notes
-        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux' }}
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

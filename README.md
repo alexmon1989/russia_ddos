@@ -67,7 +67,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
 DRipper can run on Windows/Linux/macOS from command line.
 We recommend to use `PowerShell` for Windows users to run the script, Linux/macOS users can use any shell.
 
-Run `python DRipper --help` to see detailed params description.
+Run `dripper --help` to see detailed params description.
 
 ```bash
 
@@ -84,7 +84,7 @@ It is just like a server testing script and Your IP is visible.
 
 Please, make sure you are ANONYMOUS!
 
-Usage: python DRipper.py [options] arg
+Usage: dripper [options] arg
 
 Options:
   -h, --help            show this help message and exit
@@ -110,7 +110,7 @@ Options:
   -o SOCKET_TIMEOUT, --socket_timeout=SOCKET_TIMEOUT (default: 10 without proxy, 20 with proxy)
                         Timeout in seconds for socket connection is seconds.
 
-Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100
+Example: dripper -s 192.168.0.1 -p 80 -t 100
 ```
 
 ## How to Run
@@ -136,13 +136,18 @@ Ensure you have Python 3.9 or better installed. Then clone this repo and run DRi
 git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
 
+# Install dependencies
+python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git
+# Run script
+dripper -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+
+
+# ===== Alternative variant =====
+
 # Install python dependencies:
 pip install -r requirements.txt
-
 # Run script
-python -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
-# OR
-python3 -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+python3 -m ripper.services -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 ```
 
 #### Kubernetes
