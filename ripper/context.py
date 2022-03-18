@@ -3,6 +3,7 @@ import time
 import hashlib
 from datetime import datetime
 from collections import defaultdict
+from typing import Tuple
 
 from rich.console import Console
 
@@ -205,6 +206,8 @@ class Context:
     health_check_method: str = ''
     host_statuses = {}
 
+    target: Tuple[str, int]
+
     def get_target_url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
         return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
@@ -269,6 +272,8 @@ def init_context(_ctx: Context, args):
         _ctx.max_random_packet_len = 0
     elif _ctx.attack_method == 'tcp':
         _ctx.max_random_packet_len = 1024
+
+    _ctx.target = [_ctx.host_ip, _ctx.port]
 
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
