@@ -33,14 +33,14 @@ class TcpFlood:
 
     def send(self, sock: socket) -> bool:
         try:
-            sock.send(randbytes(self._ctx.max_random_packet_len))
+            sent = sock.send(randbytes(self._ctx.max_random_packet_len))
         except ProxyError:
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
             self._ctx.add_error(Errors('TCP send Err', e))
             sock.close()
         else:
-            self._ctx.Statistic.packets.status_sent(sent_bytes=self._ctx.max_random_packet_len)
+            self._ctx.Statistic.packets.status_sent(sent_bytes=sent)
             self._proxy.report_success() if self._proxy is not None else 0
             return True
 
