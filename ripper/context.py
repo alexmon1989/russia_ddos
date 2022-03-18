@@ -11,7 +11,6 @@ from ripper.common import is_ipv4, strip_lines
 from ripper.constants import DEFAULT_CURRENT_IP_VALUE, MIN_SCREEN_WIDTH
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-from ripper.proxy import read_proxy_list
 
 
 def get_headers_dict(base_headers: list[str]):
@@ -290,8 +289,7 @@ def init_context(_ctx: Context, args):
     _ctx.is_health_check = False if args[0].health_check == 0 else True
 
     if args[0].proxy_list and _ctx.attack_method != 'udp':
-        proxy_list = read_proxy_list(args[0].proxy_list)
-        _ctx.proxy_manager.set_proxy_list(proxy_list)
+        _ctx.proxy_manager.update_proxy_list_from_file(args[0].proxy_list)
 
     if args[0].http_method:
         _ctx.http_method = args[0].http_method.upper()

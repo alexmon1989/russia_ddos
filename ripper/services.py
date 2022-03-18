@@ -10,7 +10,7 @@ from ripper.attacks import *
 from ripper.constants import *
 from ripper.common import get_current_ip, format_dt, ns2s
 from ripper.health_check import fetch_host_statuses
-from ripper.proxy import Socks5Proxy
+from ripper.proxy import Proxy
 
 _ctx = Context()
 
@@ -133,7 +133,7 @@ def update_host_statuses(_ctx: Context):
         _ctx.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context, proxy: Socks5Proxy = None) -> bool:
+def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
     _ctx.Statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket(proxy)
