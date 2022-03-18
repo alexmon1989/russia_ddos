@@ -1,1 +1,4 @@
-print('Deprecated. Please, call "dripper ..." instead of "python DRipper.py ..."')
+from ripper.services import cli
+
+if __name__ == '__main__':
+    cli()
