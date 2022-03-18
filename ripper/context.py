@@ -43,7 +43,7 @@ class PacketsStats:
     def status_sent(self, sent_bytes: int = 0):
         """
         Collect sent packets statistic.
-        @:parameter size - sent packet size in bytes
+        :param sent_bytes sent packet size in bytes
         """
         self.total_sent += 1
         self.total_sent_bytes += sent_bytes

