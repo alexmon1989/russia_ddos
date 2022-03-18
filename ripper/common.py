@@ -101,7 +101,9 @@ def get_country_by_ipv4(host_ip: str) -> str:
 
     country = GEOIP_NOT_DEFINED
     try:
-        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}', timeout=1).read().decode('utf8')
+        # Sometimes ends up in HTTP Error 429: Too Many Requests
+        # TODO support multiple services
+        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}', timeout=3).read().decode('utf8')
         response_data = json.loads(response_body)
         country = response_data['country']
     except:
