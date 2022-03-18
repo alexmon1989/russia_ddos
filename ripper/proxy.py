@@ -6,7 +6,7 @@ from typing import List
 from ripper.common import readfile, ns2s
 
 
-class Sock5Proxy:
+class Socks5Proxy:
     def __init__(self, host: str, port: int, username: str = None, password: str = None, rdns: bool = True):
         self.host = host
         self.port = int(port)
@@ -53,7 +53,7 @@ class Sock5Proxy:
             return f'SOCKS5:{self.host}:{self.port}:{self.rdns}'
 
     def __eq__(self, other):
-        if not isinstance(other, Sock5Proxy):
+        if not isinstance(other, Socks5Proxy):
             # don't attempt to compare against unrelated types
             return NotImplemented
 
@@ -75,7 +75,7 @@ class Sock5Proxy:
         return True
 
 
-def read_proxy_list(filename: str) -> List[Sock5Proxy]:
+def read_proxy_list(filename: str) -> List[Socks5Proxy]:
     proxy_list = []
     lines = readfile(filename)
     for line in lines:
@@ -83,6 +83,6 @@ def read_proxy_list(filename: str) -> List[Sock5Proxy]:
         args = line.strip().split(':')
         if len(args) not in [2, 4]:
             raise ValueError(args)
-        proxy = Sock5Proxy(*args)
+        proxy = Socks5Proxy(*args)
         proxy_list.append(proxy)
     return proxy_list
