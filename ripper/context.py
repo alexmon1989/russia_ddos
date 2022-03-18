@@ -40,6 +40,14 @@ class PacketsStats:
         """Sync previous packets sent stats with current packets sent stats."""
         self.total_sent_prev = self.total_sent
 
+    def status_sent(self, sent_bytes: int = 0):
+        """
+        Collect sent packets statistic.
+        @:parameter size - sent packet size in bytes
+        """
+        self.total_sent += 1
+        self.total_sent_bytes += sent_bytes
+
 
 class ConnectionStats:
     """Class for Connection statistic"""
@@ -73,6 +81,14 @@ class ConnectionStats:
         """Set connection State - is connected."""
         self.in_progress = False
 
+    def status_success(self):
+        """Collect successful connections."""
+        self.success += 1
+
+    def status_failed(self):
+        """Collect failed connections."""
+        self.failed += 1
+
 
 class Statistic:
     """Collect all statistics."""
@@ -84,6 +100,10 @@ class Statistic:
     """Collect all the Connections stats via Socket or HTTP Client."""
     start_time: datetime = None
     """Script start time."""
+
+    def collect_packets_success(self, sent_bytes: int = 0):
+        self.packets.total_sent += 1
+        self.packets.total_sent_bytes += sent_bytes
 
 
 class IpInfo:
@@ -273,7 +293,7 @@ def init_context(_ctx: Context, args):
     elif _ctx.attack_method == 'tcp':
         _ctx.max_random_packet_len = 1024
 
-    _ctx.target = [_ctx.host_ip, _ctx.port]
+    _ctx.target = (_ctx.host_ip, _ctx.port)
 
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
