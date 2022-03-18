@@ -17,7 +17,7 @@ class SocketManager:
 
     def create_udp_socket(self) -> socket:
         """Creates udp socket."""
-        # There is issues with UDP protocol vie PySock library
+        # There is issues with UDP protocol via PySock library
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         return udp_socket
 
