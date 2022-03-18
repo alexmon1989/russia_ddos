@@ -289,6 +289,7 @@ def init_context(_ctx: Context, args):
     _ctx.is_health_check = False if args[0].health_check == 0 else True
 
     if args[0].proxy_list and _ctx.attack_method != 'udp':
+        _ctx.proxy_manager.set_proxy_type(args[0].proxy_type)
         _ctx.proxy_manager.update_proxy_list_from_file(args[0].proxy_list)
 
     if args[0].http_method:

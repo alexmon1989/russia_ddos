@@ -176,11 +176,15 @@ def validate_input(args) -> bool:
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
-        print(f'Wrong http method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
+        print(f'Wrong HTTP method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         return False
 
     if args.http_path and not args.http_path.startswith('/'):
-        print(f'Http path should start with /.')
+        print(f'HTTP path should start with /.')
+        return False
+
+    if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
+        print(f'Wrong proxy type. Possible options: http, socks5, socks4.')
         return False
 
     return True

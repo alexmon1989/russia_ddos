@@ -21,6 +21,17 @@ class ProxyManager:
     proxy_type: ProxyType = ProxyType.SOCKS5
     """Type of proxy (SOCKS5, SOCKS4, HTTP)"""
 
+    def set_proxy_type(self, proxy_type: str):
+        proxy_type_lc = proxy_type.lower()
+        if proxy_type_lc == 'socks5':
+            self.proxy_type = ProxyType.SOCKS5
+        elif proxy_type_lc == 'socks4':
+            self.proxy_type = ProxyType.SOCKS4
+        elif proxy_type_lc == 'http':
+            self.proxy_type = ProxyType.HTTP
+        else:
+            self.proxy_type = None
+
     def set_proxy_list(self, proxy_list: list[Proxy]):
         self.proxy_list = proxy_list
         self.proxy_list_initial_len = len(proxy_list)
