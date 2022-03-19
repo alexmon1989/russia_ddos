@@ -4,7 +4,7 @@ import socks
 import socket
 from urllib.parse import urlparse
 
-from ripper.proxy import Sock5Proxy
+from ripper.proxy import Proxy
 
 
 ###############################################
@@ -64,7 +64,7 @@ class Response:
         self.full_response = full_response
 
 
-def create_http_socket(proxy: Sock5Proxy = None, socket_timeout: int = None) -> socket:
+def create_http_socket(proxy: Proxy = None, socket_timeout: int = None) -> socket:
     """Returns http socket."""
     http_socket = socks.socksocket(socket.AF_INET, socket.SOCK_STREAM)
     proxy.decorate_socket(http_socket) if proxy is not None else 0
@@ -73,7 +73,7 @@ def create_http_socket(proxy: Sock5Proxy = None, socket_timeout: int = None) -> 
     return http_socket
 
 
-def http_request(url: str, headers={}, extra_data=None, read_resp_size=32, http_method: str = None, proxy: Sock5Proxy = None, socket_timeout: int = None):
+def http_request(url: str, headers={}, extra_data=None, read_resp_size=32, http_method: str = None, proxy: Proxy = None, socket_timeout: int = None):
     url_data = urlparse(url)
     hostname = url_data.hostname
     scheme = url_data.scheme

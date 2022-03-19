@@ -10,7 +10,7 @@ from ripper.attacks import *
 from ripper.constants import *
 from ripper.common import get_current_ip, format_dt, ns2s
 from ripper.health_check import fetch_host_statuses
-from ripper.proxy import Sock5Proxy
+from ripper.proxy import Proxy
 
 _ctx = Context()
 
@@ -133,7 +133,7 @@ def update_host_statuses(_ctx: Context):
         _ctx.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context, proxy: Sock5Proxy = None) -> bool:
+def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
     _ctx.Statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket(proxy)
@@ -176,11 +176,15 @@ def validate_input(args) -> bool:
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
-        print(f'Wrong http method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
+        print(f'Wrong HTTP method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         return False
 
     if args.http_path and not args.http_path.startswith('/'):
-        print(f'Http path should start with /.')
+        print(f'HTTP path should start with /.')
+        return False
+
+    if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
+        print(f'Wrong proxy type. Possible options: http, socks5, socks4.')
         return False
 
     return True

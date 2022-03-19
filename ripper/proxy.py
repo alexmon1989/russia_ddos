@@ -1,18 +1,25 @@
 import socket
 import socks
 import time
-from typing import List
+from enum import Enum
 
-from ripper.common import readfile, ns2s
+from ripper.common import ns2s
 
 
-class Sock5Proxy:
-    def __init__(self, host: str, port: int, username: str = None, password: str = None, rdns: bool = True):
+class ProxyType(Enum):
+    SOCKS4 = 'SOCKS4'
+    SOCKS5 = 'SOCKS5'
+    HTTP = 'HTTP'
+
+
+class Proxy:
+    def __init__(self, host: str, port: int, username: str = None, password: str = None, proxy_type: ProxyType = ProxyType.SOCKS5, rdns: bool = True):
         self.host = host
         self.port = int(port)
         self.username = username
         self.password = password
         self.rdns = rdns
+        self.proxy_type = proxy_type
         
         self.last_success_time = 0
         self.success_cnt = 0
@@ -53,7 +60,7 @@ class Sock5Proxy:
             return f'SOCKS5:{self.host}:{self.port}:{self.rdns}'
 
     def __eq__(self, other):
-        if not isinstance(other, Sock5Proxy):
+        if not isinstance(other, Proxy):
             # don't attempt to compare against unrelated types
             return NotImplemented
 
@@ -73,16 +80,3 @@ class Sock5Proxy:
         except:
             return False
         return True
-
-
-def read_proxy_list(filename: str) -> List[Sock5Proxy]:
-    proxy_list = []
-    lines = readfile(filename)
-    for line in lines:
-        # ip:port:username:password or ip:port
-        args = line.strip().split(':')
-        if len(args) not in [2, 4]:
-            raise ValueError(args)
-        proxy = Sock5Proxy(*args)
-        proxy_list.append(proxy)
-    return proxy_list

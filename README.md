@@ -101,8 +101,10 @@ Options:
   -s HOST, --server=HOST
                         Attack to server IP.
   -y FILENAME, --proxy_list=FILENAME
-                        File with sock5 proxies in ip:port:username:password or ip:port line format.
+                        File with proxies in ip:port:username:password or ip:port line format.
                         Proxies will be ignored in udp attack!
+  -k PROXY_TYPE, --proxy_type=PROXY_TYPE (default socks5)
+                        Type of proxy to work with. Supported types: socks5, socks4, http.
   -c STATE, --health_check=STATE (default: 1)
                         Controls health check availability. Turn on: 1, turn off: 0.
   -e HTTP_METHOD, --http_method=HTTP_METHOD (default: GET)

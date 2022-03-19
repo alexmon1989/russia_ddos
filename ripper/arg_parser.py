@@ -35,7 +35,10 @@ def parser_add_options(parser: OptionParser) -> None:
                       help='Attack to server IP')
     parser.add_option('-y', '--proxy_list',
                       dest='proxy_list',
-                      help='File with sock5 proxies in ip:port:username:password line format. Proxies will be ignored in udp attack!')
+                      help='File with proxies in ip:port:username:password line format. Proxies will be ignored in udp attack!')
+    parser.add_option('-k', '--proxy_type',
+                      dest='proxy_type', type='str', default='socks5',
+                      help='Type of proxy to work with. Supported types: socks5, socks4, http. Default: socks5')
     parser.add_option('-c', '--health_check',
                       dest='health_check', type='int', default=1,
                       help='Controls health check availability. Turn on: 1, turn off: 0. Default: 1')
