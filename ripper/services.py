@@ -1,7 +1,6 @@
 import datetime
 import signal
 import sys
-import random
 import time
 from base64 import b64decode
 

@@ -6,7 +6,7 @@ from ripper.constants import *
 
 def create_parser() -> OptionParser:
     """Initialize parser with options."""
-    parser = OptionParser(usage=USAGE, epilog=EPILOG)
+    parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}')
     parser_add_options(parser)
 
     return parser
