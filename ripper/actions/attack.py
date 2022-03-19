@@ -1,6 +1,7 @@
 from threading import Thread
 from typing import Tuple, Any
 
+from ripper.actions.HttpFlood import HttpFlood
 from ripper.actions.TcpFlood import TcpFlood
 from ripper.actions.UdpFlood import UdpFlood
 from ripper.context import Context
@@ -35,5 +36,7 @@ class Attack(Thread):
         """Create attack for specified method."""
         if method == 'udp':
             self.ATTACK = UdpFlood(self._target, self._ctx)
+        elif method == 'http':
+            self.ATTACK = HttpFlood(self._target, self._ctx)
         else:  # TCP by default
             self.ATTACK = TcpFlood(self._target, self._ctx)

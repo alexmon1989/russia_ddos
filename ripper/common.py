@@ -42,6 +42,14 @@ def get_random_string(len_from: int, len_to: int) -> str:
     return result_str
 
 
+def generate_random_bytes(random_packet_len: bool, max_random_packet_len: int) -> bytes:
+    """Generate Random packet bytes."""
+    if random_packet_len:
+        return get_random_string(1, max_random_packet_len).encode('utf-8')
+    else:
+        return random.randbytes(max_random_packet_len)
+
+
 def get_current_ip() -> str:
     """Gets user IP with external service."""
     current_ip = DEFAULT_CURRENT_IP_VALUE

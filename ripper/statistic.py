@@ -84,7 +84,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row(f'[cyan][bold]{_ctx.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
         Row('Duration',                  f'{str(datetime.now() - _ctx.Statistic.start_time).split(".", 2)[0]}'),
-        Row('Sent Bytes',                f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)}', visible=_ctx.attack_method.lower() != 'http'),
+        Row('Sent Bytes',                f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)}'),
         Row(f'Sent {sent_units}',        f'{_ctx.Statistic.packets.total_sent:,}'),
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connection Success',        f'[green]{_ctx.Statistic.connect.success}'),

