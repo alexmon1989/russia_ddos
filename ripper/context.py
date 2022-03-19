@@ -20,7 +20,7 @@ def get_headers_dict(base_headers: list[str]):
     headers_dict = {}
     for line in base_headers:
         parts = line.split(':')
-        headers_dict[parts[0]] = parts[1]
+        headers_dict[parts[0]] = parts[1].strip()
 
     return headers_dict
 
@@ -327,59 +327,3 @@ class Context:
         # proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:
             self.sock_manager.socket_timeout *= 2
-
-
-def init_context(_ctx: Context, args):
-    """Initialize Context from Input args."""
-    _ctx.host = args[0].host
-    _ctx.host_ip = common.get_ipv4(args[0].host)
-    _ctx.port = args[0].port
-    _ctx.protocol = 'https://' if args[0].port == 443 else 'http://'
-    _ctx.threads = args[0].threads
-
-    _ctx.attack_method = str(args[0].attack_method).lower()
-    _ctx.random_packet_len = bool(args[0].random_packet_len)
-    if args[0].max_random_packet_len:
-        _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
-    elif _ctx.attack_method == 'http':
-        _ctx.random_packet_len = False
-        _ctx.max_random_packet_len = 0
-    elif _ctx.attack_method == 'tcp':
-        _ctx.max_random_packet_len = 1024
-
-    _ctx.target = (_ctx.host_ip, _ctx.port)
-
-    _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
-
-    # Get required data from files
-    _ctx.user_agents = strip_lines(common.readfile(os.path.dirname(__file__) + '/useragents.txt'))
-    _ctx.base_headers = strip_lines(common.readfile(os.path.dirname(__file__) + '/headers.txt'))
-    _ctx.headers = get_headers_dict(_ctx.base_headers)
-
-    # Get initial info from external services
-    _ctx.IpInfo.my_start_ip = common.get_current_ip()
-    _ctx.IpInfo.my_current_ip = _ctx.IpInfo.my_start_ip
-    _ctx.IpInfo.my_country = common.get_country_by_ipv4(_ctx.IpInfo.my_start_ip)
-    _ctx.IpInfo.target_country = common.get_country_by_ipv4(_ctx.host_ip)
-    _ctx.IpInfo.isCloudflareProtected = common.isCloudFlareProtected(_ctx.host, _ctx.user_agents)
-
-    _ctx.Statistic.start_time = datetime.now()
-    _ctx.connections_check_time = time.time_ns()
-    _ctx.health_check_method = 'ping' if _ctx.attack_method == 'udp' else _ctx.attack_method
-    _ctx.is_health_check = False if args[0].health_check == 0 else True
-
-    if args[0].proxy_list and _ctx.attack_method != 'udp':
-        proxy_list = read_proxy_list(args[0].proxy_list)
-        _ctx.proxy_manager.set_proxy_list(proxy_list)
-
-    if args[0].http_method:
-        _ctx.http_method = args[0].http_method.upper()
-    if args[0].http_path:
-        _ctx.http_path = args[0].http_path.lower()
-
-    if args[0].socket_timeout:
-        _ctx.sock_manager.socket_timeout = args[0].socket_timeout
-    else:
-        # proxies are slower
-        socket_timeout_factor = 2 if _ctx.proxy_manager.proxy_list_initial_len else 1
-        _ctx.sock_manager.socket_timeout = 10 * socket_timeout_factor
