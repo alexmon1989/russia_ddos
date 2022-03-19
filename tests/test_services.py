@@ -8,9 +8,10 @@ from ripper.services import check_successful_tcp_attack, check_successful_connec
 
 class TestServices:
     def test_check_successful_tcp_attack(self):
-        context = Context()
+        context = Context(args=None)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.Statistic.packets.connections_check_time = init_check_time
+        context.Statistic.start_time = None
         uuid = Errors('Check TCP attack', NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG).uuid
 
         # Case when no attack
@@ -34,9 +35,10 @@ class TestServices:
         assert len(context.errors) == 0
 
     def test_check_successful_connections(self):
-        context = Context()
+        context = Context(args=None)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.Statistic.connect.last_check_time = init_check_time
+        context.Statistic.start_time = None
         uuid = Errors('Check connection', no_successful_connections_error_msg(context)).uuid
 
         # Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec

@@ -6,13 +6,14 @@ import time
 from base64 import b64decode
 
 from ripper import context, common, statistic, arg_parser
+from ripper.actions.attack import Attack
 from ripper.attacks import *
 from ripper.constants import *
 from ripper.common import get_current_ip, format_dt, ns2s
 from ripper.health_check import fetch_host_statuses
 from ripper.proxy import Sock5Proxy
 
-_ctx = Context()
+_ctx: Context
 
 ###############################################
 # Connection validators
@@ -207,7 +208,9 @@ def main():
         arg_parser.print_usage()
 
     # Init context
-    context.init_context(_ctx, args)
+    global _ctx
+    _ctx = Context(args[0])
+    # context.init_context(_ctx, args)
     go_home(_ctx)
     # Proxies should be validated during the runtime
     connect_host_loop(_ctx, retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or _ctx.attack_method == 'udp' else 5))

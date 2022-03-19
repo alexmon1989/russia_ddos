@@ -12,7 +12,7 @@ from ripper.common import is_ipv4, strip_lines
 from ripper.constants import DEFAULT_CURRENT_IP_VALUE, MIN_SCREEN_WIDTH
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-from ripper.proxy import read_proxy_list
+from ripper.proxy import read_proxy_list, Sock5Proxy
 
 
 def get_headers_dict(base_headers: list[str]):
@@ -183,6 +183,14 @@ class Context:
     """Is Random Packet Length enabled."""
     attack_method: str = None
     """Current attack method."""
+    proxy_list: list[Sock5Proxy]
+    """File with proxies in ip:port:username:password or ip:port line format."""
+    proxy_type: str
+    """Type of proxy to work with. Supported types: socks5, socks4, http."""
+    http_method: str
+    """HTTP method used in HTTP packets"""
+    http_path: str
+    """HTTP path used in HTTP packets"""
 
     # ==== Statistic ====
     Statistic: Statistic = Statistic()
@@ -212,14 +220,9 @@ class Context:
     proxy_manager: ProxyManager = ProxyManager()
     logger: Console = Console(width=MIN_SCREEN_WIDTH)
 
-    # HTTP-related
-    http_method: str = None
-    """HTTP method used in HTTP packets"""
-    http_path: str = '/'
-    """HTTP path used in HTTP packets"""
-
     # Health-check
     is_health_check: bool = True
+    """Controls health check availability. Turn on: 1, turn off: 0."""
     connections_check_time: int = 0
     fetching_host_statuses_in_progress: bool = False
     last_host_statuses_update: datetime = None
@@ -268,11 +271,62 @@ class Context:
             self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
 
-    def __new__(cls):
+    def __new__(cls, args):
         """Singleton realization."""
         if not hasattr(cls, 'instance'):
             cls.instance = super().__new__(cls)
         return cls.instance
+
+    def __init__(self, args):
+        self.host = getattr(args, 'host', '')
+        self.port = getattr(args, 'port', 80)
+        self.threads = getattr(args, 'threads', 100)
+        self.attack_method = getattr(args, 'attack_method', 'tcp').lower()
+        self.random_packet_len = bool(getattr(args, 'random_packet_len', 0))
+        self.max_random_packet_len = int(getattr(args, 'max_random_packet_length', 0))
+        self.is_health_check = bool(getattr(args, 'health_check', 0))
+        self.http_method = getattr(args, 'http_method', 'GET').upper()
+        self.http_path = getattr(args, 'http_path', '/').lower()
+        self.sock_manager.socket_timeout = getattr(args, 'socket_timeout', 10)
+
+        self.host_ip = common.get_ipv4(self.host)
+        self.protocol = 'https://' if self.port == 443 else 'http://'
+
+        if self.random_packet_len and not self.max_random_packet_len:
+            self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', 1))
+        elif self.attack_method == 'http':
+            self.random_packet_len = False
+            self.max_random_packet_len = 0
+        elif self.attack_method == 'tcp':
+            self.max_random_packet_len = 1024
+
+        self.target = (self.host_ip, self.port)
+
+        self.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
+
+        # Get required data from files
+        self.user_agents = strip_lines(common.readfile(os.path.dirname(__file__) + '/useragents.txt'))
+        self.base_headers = strip_lines(common.readfile(os.path.dirname(__file__) + '/headers.txt'))
+        self.headers = get_headers_dict(self.base_headers)
+
+        # Get initial info from external services
+        self.IpInfo.my_start_ip = common.get_current_ip()
+        self.IpInfo.my_current_ip = self.IpInfo.my_start_ip
+        self.IpInfo.my_country = common.get_country_by_ipv4(self.IpInfo.my_start_ip)
+        self.IpInfo.target_country = common.get_country_by_ipv4(self.host_ip)
+        self.IpInfo.isCloudflareProtected = common.isCloudFlareProtected(self.host, self.user_agents)
+
+        self.Statistic.start_time = datetime.now()
+        self.connections_check_time = time.time_ns()
+        self.health_check_method = 'ping' if self.attack_method == 'udp' else self.attack_method
+
+        if getattr(args, 'proxy_list', False) and self.attack_method != 'udp':
+            self.proxy_list = read_proxy_list(getattr(args, 'proxy_list', ''))
+            self.proxy_manager.set_proxy_list(self.proxy_list)
+
+        # proxies are slower, so wee needs to increase timeouts 2x times
+        if self.proxy_manager.proxy_list_initial_len:
+            self.sock_manager.socket_timeout *= 2
 
 
 def init_context(_ctx: Context, args):
