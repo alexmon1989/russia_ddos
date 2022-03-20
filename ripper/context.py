@@ -272,8 +272,8 @@ def init_context(_ctx: Context, args):
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
     # Get required data from files
-    _ctx.user_agents = strip_lines(common.readfile(os.path.dirname(__file__) + '/useragents.txt'))
-    _ctx.base_headers = strip_lines(common.readfile(os.path.dirname(__file__) + '/headers.txt'))
+    _ctx.user_agents = strip_lines(common.read_file_lines_fs(os.path.dirname(__file__) + '/useragents.txt'))
+    _ctx.base_headers = strip_lines(common.read_file_lines_fs(os.path.dirname(__file__) + '/headers.txt'))
     _ctx.headers = get_headers_dict(_ctx.base_headers)
 
     # Get initial info from external services
@@ -290,7 +290,10 @@ def init_context(_ctx: Context, args):
 
     if args[0].proxy_list and _ctx.attack_method != 'udp':
         _ctx.proxy_manager.set_proxy_type(args[0].proxy_type)
-        _ctx.proxy_manager.update_proxy_list_from_file(args[0].proxy_list)
+        try:
+            _ctx.proxy_manager.update_proxy_list_from_file(args[0].proxy_list)
+        except Exception as e:
+             _ctx.add_error(Errors('Proxy list read operation failed', e))
 
     if args[0].http_method:
         _ctx.http_method = args[0].http_method.upper()
