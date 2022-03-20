@@ -23,10 +23,23 @@ def get_no_successful_connection_die_msg() -> str:
            f"Your attack is ineffective."
 
 
-def readfile(filename: str) -> list[str]:
+def read_file_lines(filename: str) -> list[str]:
+    """Read string from fs or http"""
+    if filename.startswith('http'):
+        return read_file_lines_http(filename)
+    return read_file_lines_fs(filename)
+
+
+def read_file_lines_fs(filename: str) -> list[str]:
     """Read string from file"""
     with open(filename, 'r') as file:
         return file.readlines()
+
+
+def read_file_lines_http(url: str) -> list[str]:
+    """Read string from http"""
+    data =  urllib.request.urlopen(url).read().decode('utf8')
+    return data.splitlines()
 
 
 def strip_lines(lines: list[str]) -> list[str]:

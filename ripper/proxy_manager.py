@@ -2,7 +2,7 @@ import random
 import threading
 from typing import List
 
-from ripper.common import readfile
+from ripper.common import read_file_lines
 from ripper.proxy import Proxy, ProxyType
 from ripper.constants import PROXY_MAX_FAILURE_RATIO, PROXY_MIN_VALIDATION_REQUESTS
 
@@ -80,15 +80,21 @@ class ProxyManager:
             self.proxy_list = new_proxy_list
         return cnt
 
-    def update_proxy_list_from_file(self, filename: str) -> List[Proxy]:
+    def __parse_proxy_line(self, line: str) -> Proxy:
+        # ip:port:username:password or ip:port
+        args = line.strip().split(':')
+        if len(args) not in [2, 4]:
+            raise ValueError(args)
+        return Proxy(*args, proxy_type=self.proxy_type)
+
+    def __parse_proxy_lines(self, lines: list[str]) -> Proxy:
         proxy_list = []
-        lines = readfile(filename)
         for line in lines:
-            # ip:port:username:password or ip:port
-            args = line.strip().split(':')
-            if len(args) not in [2, 4]:
-                raise ValueError(args)
-            proxy = Proxy(*args, proxy_type=self.proxy_type)
-            proxy_list.append(proxy)
+            proxy_list.append(self.__parse_proxy_line(line))
+        return proxy_list
+
+    def update_proxy_list_from_file(self, filename: str) -> List[Proxy]:
+        lines = read_file_lines(filename)
+        proxy_list = self.__parse_proxy_lines(lines)
         self.set_proxy_list(proxy_list)
         return proxy_list
