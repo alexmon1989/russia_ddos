@@ -41,7 +41,7 @@ class SocketManager:
 
         return self._socket
 
-    def get_tcp_socket(self, proxy: Sock5Proxy = None) -> socket:
+    def get_tcp_socket(self, proxy: Proxy = None) -> socket:
         """Returns shared TCP socket."""
         if self._socket is None:
             self._socket = self.create_tcp_socket(proxy)

@@ -12,7 +12,6 @@ from ripper.common import is_ipv4, strip_lines
 from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-from ripper.proxy import read_proxy_list, Sock5Proxy
 
 
 def get_headers_dict(base_headers: list[str]):
@@ -183,7 +182,7 @@ class Context:
     """Is Random Packet Length enabled."""
     attack_method: str
     """Current attack method."""
-    proxy_list: list[Sock5Proxy]
+    proxy_list: str
     """File with proxies in ip:port:username:password or ip:port line format."""
     proxy_type: str
     """Type of proxy to work with. Supported types: socks5, socks4, http."""
@@ -294,6 +293,8 @@ class Context:
         self.http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper()
         self.http_path = getattr(args, 'http_path', ARGS_DEFAULT_HTTP_REQUEST_PATH)
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
+        self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
+        self.proxy_list = getattr(args, 'proxy_list', None)
 
         self.host_ip = common.get_ipv4(self.host)
         self.protocol = 'https://' if self.port == 443 else 'http://'
@@ -313,12 +314,6 @@ class Context:
         self.base_headers = strip_lines(common.read_file_lines_fs(os.path.dirname(__file__) + '/headers.txt'))
         self.headers = get_headers_dict(self.base_headers)
 
-    if args[0].proxy_list and _ctx.attack_method != 'udp':
-        _ctx.proxy_manager.set_proxy_type(args[0].proxy_type)
-        try:
-            _ctx.proxy_manager.update_proxy_list_from_file(args[0].proxy_list)
-        except Exception as e:
-             _ctx.add_error(Errors('Proxy list read operation failed', e))
         # Get initial info from external services
         self.IpInfo.my_start_ip = common.get_current_ip()
         self.IpInfo.my_current_ip = self.IpInfo.my_start_ip
@@ -330,9 +325,12 @@ class Context:
         self.connections_check_time = time.time_ns()
         self.health_check_method = 'ping' if self.attack_method == 'udp' else self.attack_method
 
-        if getattr(args, 'proxy_list', False) and self.attack_method != 'udp':
-            self.proxy_list = read_proxy_list(getattr(args, 'proxy_list', ''))
-            self.proxy_manager.set_proxy_list(self.proxy_list)
+        if self.proxy_list and self.attack_method != 'udp':
+            self.proxy_manager.set_proxy_type(self.proxy_type)
+            try:
+                self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
+            except Exception as e:
+                self.add_error(Errors('Proxy list read operation failed', e))
 
         # proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:
