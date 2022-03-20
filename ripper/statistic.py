@@ -76,7 +76,8 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Load Method',               _ctx.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
-        Row('Proxies count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} / {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
+        Row('Proxies Count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} / {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
+        Row('Proxies Type',              f'[cyan]{_ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
         Row('vCPU Count',                f'{_ctx.cpu_count}'),
         Row('Socket Timeout (seconds)',  f'{_ctx.sock_manager.socket_timeout}'),
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),

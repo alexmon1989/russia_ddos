@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### Added
 - Command line Option `--version` to get the current version of script
+- Added support for HTTP and SOCKS4 proxy.
 
 ### Changed
 - UDP/TCP/HTTP attack methods internals

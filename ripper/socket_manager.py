@@ -1,7 +1,7 @@
 import socks
 from socket import socket, AF_INET, SOCK_DGRAM, SOCK_STREAM, SOL_TCP, IPPROTO_TCP, TCP_NODELAY
 
-from ripper.proxy import Sock5Proxy
+from ripper.proxy import Proxy
 
 
 class SocketManager:
@@ -23,7 +23,7 @@ class SocketManager:
 
         return udp_socket
 
-    def create_tcp_socket(self, proxy: Sock5Proxy = None) -> socket:
+    def create_tcp_socket(self, proxy: Proxy = None) -> socket:
         """Returns tcp socket."""
         tcp_socket = socks.socksocket(AF_INET, SOCK_STREAM, SOL_TCP)
 

@@ -23,10 +23,23 @@ def get_no_successful_connection_die_msg() -> str:
            f"Your attack is ineffective."
 
 
-def readfile(filename: str) -> list[str]:
+def read_file_lines(filename: str) -> list[str]:
+    """Read string from fs or http"""
+    if filename.startswith('http'):
+        return read_file_lines_http(filename)
+    return read_file_lines_fs(filename)
+
+
+def read_file_lines_fs(filename: str) -> list[str]:
     """Read string from file"""
     with open(filename, 'r') as file:
         return file.readlines()
+
+
+def read_file_lines_http(url: str) -> list[str]:
+    """Read string from http"""
+    data =  urllib.request.urlopen(url).read().decode('utf8')
+    return data.splitlines()
 
 
 def strip_lines(lines: list[str]) -> list[str]:
@@ -109,7 +122,9 @@ def get_country_by_ipv4(host_ip: str) -> str:
 
     country = GEOIP_NOT_DEFINED
     try:
-        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}', timeout=1).read().decode('utf8')
+        # Sometimes ends up in HTTP Error 429: Too Many Requests
+        # TODO support multiple services
+        response_body = urllib.request.urlopen(f'https://ipinfo.io/{host_ip}', timeout=3).read().decode('utf8')
         response_data = json.loads(response_body)
         country = response_data['country']
     except:
