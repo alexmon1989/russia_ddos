@@ -36,6 +36,9 @@ class UdpFlood:
             while self.sendto(udp_conn):
                 continue
 
+        self._ctx.Statistic.connect.status_failed()
+        self._ctx.sock_manager.close_socket()
+
     def sendto(self, sock: socket) -> bool:
         send_bytes = generate_random_bytes(
             self._ctx.random_packet_len,
@@ -51,7 +54,5 @@ class UdpFlood:
             self._ctx.remove_error(Errors('TCP send Err', GETTING_SERVER_IP_ERROR_MSG).uuid)
             return True
 
-        self._ctx.Statistic.connect.status_failed()
-        self._ctx.sock_manager.close_socket()
         return False
 

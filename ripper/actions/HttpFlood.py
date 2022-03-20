@@ -31,6 +31,9 @@ class HttpFlood:
             while self.send(http_connect):
                 continue
 
+        self._ctx.Statistic.connect.status_failed()
+        self._ctx.sock_manager.close_socket()
+
     def send(self, sock: socket) -> bool:
         payload = self.payload().encode('utf-8')
         try:
@@ -44,8 +47,6 @@ class HttpFlood:
             self._proxy.report_success() if self._proxy is not None else 0
             return True
 
-        self._ctx.Statistic.connect.status_failed()
-        self._ctx.sock_manager.close_socket()
         return False
 
     def headers(self, content: str = '') -> dict[str, str]:
