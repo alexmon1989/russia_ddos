@@ -12,7 +12,7 @@ from ripper.common import get_current_ip, ns2s
 from ripper.health_check import fetch_host_statuses
 from ripper.proxy import Sock5Proxy
 
-_ctx: Context
+_ctx: Context = None
 
 ###############################################
 # Connection validators

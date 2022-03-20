@@ -9,11 +9,11 @@ class SocketManager:
 
     _socket: socket = None
     """Shared socket"""
-    _socket_timeout: int = None
+    socket_timeout: int = None
     """Timeout for socket connection is seconds."""
 
     def __init__(self, socket_timeout: int = None):
-        self._socket_timeout = socket_timeout
+        self.socket_timeout = socket_timeout
 
     def create_udp_socket(self) -> socket:
         """Creates udp socket."""
@@ -29,7 +29,7 @@ class SocketManager:
         proxy.decorate_socket(tcp_socket) if proxy is not None else 0
 
         tcp_socket.setsockopt(IPPROTO_TCP, TCP_NODELAY, 1)
-        tcp_socket.settimeout(self._socket_timeout) if self._socket_timeout is not None else 0
+        tcp_socket.settimeout(self.socket_timeout) if self.socket_timeout is not None else 0
 
         return tcp_socket
 

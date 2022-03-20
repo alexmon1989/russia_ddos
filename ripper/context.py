@@ -9,7 +9,7 @@ from rich.console import Console
 
 from ripper import common
 from ripper.common import is_ipv4, strip_lines
-from ripper.constants import DEFAULT_CURRENT_IP_VALUE, MIN_SCREEN_WIDTH
+from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.proxy import read_proxy_list, Sock5Proxy
@@ -169,19 +169,19 @@ class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
     # ==== Input params ====
-    host: str = ''
+    host: str
     """Original HOST name from input args. Can be domain name or IP address."""
-    host_ip: str = ''
+    host_ip: str
     """HOST IPv4 address."""
-    port: int = 80
+    port: int
     """Destination Port."""
-    threads: int = 100
+    threads: int
     """The number of threads."""
-    max_random_packet_len: int = 48
+    max_random_packet_len: int
     """Limit for Random Packet Length."""
-    random_packet_len: bool = False
+    random_packet_len: bool
     """Is Random Packet Length enabled."""
-    attack_method: str = None
+    attack_method: str
     """Current attack method."""
     proxy_list: list[Sock5Proxy]
     """File with proxies in ip:port:username:password or ip:port line format."""
@@ -202,15 +202,15 @@ class Context:
 
     # ==========================================================================
 
-    cpu_count: int = 1
+    cpu_count: int
     """vCPU cont of current machine."""
-    protocol: str = 'http://'
+    protocol: str
     """HTTP protocol. Can be http/https."""
 
     # ==== Internal variables ====
-    user_agents: list = None
+    user_agents: list
     """User-Agent list. RAW data for random choice."""
-    base_headers: list = None
+    base_headers: list
     """Base HTTP headers list for HTTP Client. RAW data for internal usage."""
     headers: dict[str, str] = defaultdict(dict[str, str])
     """HTTP Headers used to make Requests."""
@@ -221,12 +221,12 @@ class Context:
     logger: Console = Console(width=MIN_SCREEN_WIDTH)
 
     # Health-check
-    is_health_check: bool = True
+    is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
-    connections_check_time: int = 0
+    connections_check_time: int
     fetching_host_statuses_in_progress: bool = False
     last_host_statuses_update: datetime = None
-    health_check_method: str = ''
+    health_check_method: str
     host_statuses = {}
 
     target: Tuple[str, int]
@@ -277,27 +277,31 @@ class Context:
             cls.instance = super().__new__(cls)
         return cls.instance
 
+    @staticmethod
+    def _getattr(obj, name: str, default):
+        value = getattr(obj, name, default)
+
+        return value if value is not None else default
+
     def __init__(self, args):
         self.host = getattr(args, 'host', '')
-        self.port = getattr(args, 'port', 80)
-        self.threads = getattr(args, 'threads', 100)
-        self.attack_method = getattr(args, 'attack_method', 'tcp').lower()
-        self.random_packet_len = bool(getattr(args, 'random_packet_len', 0))
-        self.max_random_packet_len = int(getattr(args, 'max_random_packet_length', 0))
-        self.is_health_check = bool(getattr(args, 'health_check', 0))
-        self.http_method = getattr(args, 'http_method', 'GET').upper()
-        self.http_path = getattr(args, 'http_path', '/').lower()
-        self.sock_manager.socket_timeout = getattr(args, 'socket_timeout', 10)
+        self.port = getattr(args, 'port', ARGS_DEFAULT_PORT)
+        self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
+        self.attack_method = getattr(args, 'attack_method', ARGS_DEFAULT_ATTACK_METHOD).lower()
+        self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
+        self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', ARGS_DEFAULT_MAX_RND_PACKET_LEN))
+        self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
+        self.http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper()
+        self.http_path = getattr(args, 'http_path', ARGS_DEFAULT_HTTP_REQUEST_PATH)
+        self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
 
         self.host_ip = common.get_ipv4(self.host)
         self.protocol = 'https://' if self.port == 443 else 'http://'
 
-        if self.random_packet_len and not self.max_random_packet_len:
-            self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', 1))
-        elif self.attack_method == 'http':
+        if self.attack_method == 'http':
             self.random_packet_len = False
             self.max_random_packet_len = 0
-        elif self.attack_method == 'tcp':
+        elif self.random_packet_len and not self.max_random_packet_len:
             self.max_random_packet_len = 1024
 
         self.target = (self.host_ip, self.port)
