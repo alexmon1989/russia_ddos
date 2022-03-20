@@ -32,8 +32,8 @@ class TcpFlood:
             while self.send(tcp_conn):
                 continue
 
-        self._ctx.Statistic.connect.status_failed()
-        self._ctx.sock_manager.close_socket()
+            self._ctx.Statistic.connect.status_failed()
+            self._ctx.sock_manager.close_socket()
 
     def send(self, sock: socket) -> bool:
         send_bytes = generate_random_bytes(

@@ -19,6 +19,7 @@ class SocketManager:
         """Creates udp socket."""
         # There is issues with UDP protocol via PySock library
         udp_socket = socket(AF_INET, SOCK_DGRAM)
+        udp_socket.settimeout(self.socket_timeout) if self.socket_timeout is not None else 0
 
         return udp_socket
 

