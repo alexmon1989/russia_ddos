@@ -6,8 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...HEAD)
 
+### Added
+- Command line Option `--version` to get the current version of script
+
+### Changed
+- UDP/TCP/HTTP attack methods internals
 
 ## [v2.1.0](https://github.com/alexmon1989/russia_ddos/compare/2.0.4...2.1.0)
+
 
 ### Added
 - Added support for SOCKS5 proxies. (HTTP/TCP only)
