@@ -16,7 +16,6 @@ class DescribeHttpFloodAttackMethod:
         with_content = http_flood_am.headers('{"test": 1}')
         assert with_content.get('Content-Length') == '11'
 
-
     def it_has_payload(self):
         args = lambda: None
         args.host = 'localhost'
@@ -37,7 +36,6 @@ class DescribeHttpFloodAttackMethod:
         headers_with_body = '\r\n'.join([f'{key}: {value}' for (key, value) in http_flood_am.headers(body).items()])
         expected_with_body = 'POST / HTTP/1.1\r\nHost: localhost\r\n' + headers_with_body + '\r\n' + f'{body}\r\n\r\n'
         assert payload_with_body.split('\r\n') == expected_with_body.split('\r\n')
-
 
     def it_has_correct_name(self):
         ctx = Context(args=None)
