@@ -6,8 +6,8 @@ from ripper.services import check_successful_tcp_attack, check_successful_connec
     no_successful_connections_error_msg
 
 
-class TestServices:
-    def test_check_successful_tcp_attack(self):
+class DescribeServices:
+    def it_checks_successful_tcp_attack(self):
         context = Context(args=None)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.Statistic.packets.connections_check_time = init_check_time
@@ -34,7 +34,7 @@ class TestServices:
         assert context.Statistic.packets.total_sent == 100
         assert len(context.errors) == 0
 
-    def test_check_successful_connections(self):
+    def it_checks_successful_connections(self):
         context = Context(args=None)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.Statistic.connect.last_check_time = init_check_time

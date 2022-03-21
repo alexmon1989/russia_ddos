@@ -7,7 +7,7 @@ test_target = ('localhost', 80)
 
 
 class DescribeTcpFloodAttackMethod:
-    def it_has_correct_name():
+    def it_has_correct_name(self):
         ctx = Context(args=None)
         tcp_flood_am = TcpFlood(test_target, ctx)
         assert tcp_flood_am.name == 'TCP Flood'

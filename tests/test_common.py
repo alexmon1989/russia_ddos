@@ -3,7 +3,7 @@ import pytest as pytest
 from ripper.common import convert_size, is_my_ip_changed
 
 
-class TestCommon:
+class DescribeCommonMethods:
     @pytest.mark.parametrize('actual, expected', [
         (0, '0.00 B'),
         (100, '100.00 B'),
@@ -12,10 +12,10 @@ class TestCommon:
         (32256798429, '30.04 GB'),
         (620832256798429, '564.64 TB'),
     ])
-    def test_convert_size(self, actual, expected):
+    def it_has_convert_size(self, actual, expected):
         assert convert_size(actual) == expected
 
-    def test_is_my_ip_changed(self):
+    def it_has_my_ip_changed(self):
         my_start_ip = '192.168.0.1'
         my_current_ip = '10.20.0.1'
 

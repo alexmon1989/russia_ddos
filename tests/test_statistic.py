@@ -6,7 +6,7 @@ import pytest as pytest
 from ripper import context, statistic
 
 
-class TestStatistic:
+class DescribeStatistic:
     @pytest.mark.parametrize('actual, expected', [
         (0,  '[red]'),
         (15, '[red]'),
@@ -17,10 +17,10 @@ class TestStatistic:
         (85, '[yellow4]'),
         (95, '[green1]'),
     ])
-    def test_rate_color(self, actual, expected):
+    def it_applied_different_colors_depending_on_rate(self, actual, expected):
         assert statistic.rate_color(actual) == expected
 
-    def test_build_http_codes_distribution(self):
+    def it_builds_http_codes_distribution(self):
         http_status_codes = {
             200: 1,
             300: 2,
