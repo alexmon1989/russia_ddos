@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest as pytest
 
 from ripper.context import *
@@ -61,4 +63,16 @@ class TestContext:
         context.IpInfo.my_start_ip = actual_ip
 
         assert context.IpInfo.my_ip_masked() == expected_result
+
+    def test_check_time_interval(self):
+        context = Context(args=None)
+        last_2mins = datetime.now() - timedelta(minutes=2)
+        context.Statistic.start_time = last_2mins
+
+        assert datetime.now() > context.Statistic.start_time
+        assert context.check_timer(5) is True
+        assert context.check_timer(5) is False
+        time.sleep(2)
+        assert context.check_timer(5) is False
+        assert context.check_timer(1) is True
 

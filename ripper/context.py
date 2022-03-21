@@ -230,6 +230,24 @@ class Context:
 
     target: Tuple[str, int]
 
+    _stopwatch: datetime = None
+    """Internal stopwatch."""
+
+    def check_timer(self, sec: int) -> bool:
+        """
+        Check if time in seconds elapsed from last check.
+        :param sec: Amount of seconds which needs to check
+        :return: True if specified seconds elapsed, False - if not elapsed
+        """
+        if not self._stopwatch:
+            self._stopwatch = self.Statistic.start_time
+        delta = (datetime.now() - self._stopwatch).total_seconds()
+        if int(delta) < sec:
+            return False
+        else:
+            self._stopwatch = datetime.now()
+            return True
+
     def get_target_url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
         return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
