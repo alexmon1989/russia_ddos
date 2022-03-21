@@ -17,7 +17,7 @@ class DescribeStatistic:
         (85, '[yellow4]'),
         (95, '[green1]'),
     ])
-    def it_applied_different_colors_depending_on_rate(self, actual, expected):
+    def it_applies_different_colors_depending_on_rate(self, actual, expected):
         assert statistic.rate_color(actual) == expected
 
     def it_builds_http_codes_distribution(self):
