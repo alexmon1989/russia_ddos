@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...HEAD)
 
 ### Added
+- Command line Option `--version` to get the current version of script
 - Added support for HTTP and SOCKS4 proxy.
+- Added the possibility to read proxies from HTTP/HTTPS location. It helps organize multiple peers.
+
+### Changed
+- UDP/TCP/HTTP attack methods internals
+- HTTP Status code check method now support periodical check
 
 
 ## [v2.1.0](https://github.com/alexmon1989/russia_ddos/compare/2.0.4...2.1.0)
+
 
 ### Added
 - Added support for SOCKS5 proxies. (HTTP/TCP only)

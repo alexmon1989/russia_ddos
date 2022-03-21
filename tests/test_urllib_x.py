@@ -9,7 +9,7 @@ from ripper.context import Context
     ('https://www.google.com/', 200),
 ])
 def test_http_request(url, status):
-    _ctx = Context()
+    _ctx = Context(args=None)
     response = http_request(
         url=url,
         headers=_ctx.headers,

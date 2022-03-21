@@ -63,6 +63,10 @@ def collect_stats(_ctx: Context) -> list[Row]:
     is_proxy_list = _ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list)
     your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
 
+    duration = datetime.now() - _ctx.Statistic.start_time
+    packets_rps = int(_ctx.Statistic.packets.total_sent / duration.total_seconds())
+    data_rps = int(_ctx.Statistic.packets.total_sent_bytes / duration.total_seconds())
+
     full_stats: list[Row] = [
         #   Description                  Status
         Row('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
@@ -84,9 +88,9 @@ def collect_stats(_ctx: Context) -> list[Row]:
         # ===================================
         Row(f'[cyan][bold]{_ctx.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
-        Row('Duration',                  f'{str(datetime.now() - _ctx.Statistic.start_time).split(".", 2)[0]}'),
-        Row('Sent Bytes',                f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)}', visible=_ctx.attack_method.lower() != 'http'),
-        Row(f'Sent {sent_units}',        f'{_ctx.Statistic.packets.total_sent:,}'),
+        Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
+        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)} / {common.convert_size(data_rps)}/s'),
+        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.Statistic.packets.total_sent:,} / {packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connection Success',        f'[green]{_ctx.Statistic.connect.success}'),
         Row('Connection Failed',         f'[red]{_ctx.Statistic.connect.failed}'),

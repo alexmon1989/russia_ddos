@@ -46,7 +46,7 @@ jobs:
         run: |
           python3 -m pip install -r requirements.txt
           python3 -m pip install pytest
-          python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git@${{ env.GIT_BRANCH }}
+          python3 -m pip install --upgrade pip -e .
 
       - name: Minimalistic CLI check
         shell: bash

@@ -29,17 +29,3 @@ class TestStatistic:
         }
         actual = statistic.build_http_codes_distribution(http_status_codes)
         assert actual == '200: 1 (7%), 300: 2 (13%), 400: 10 (67%), 500: 2 (13%)'
-
-    # def test_default_collect_stats(self):
-    #     ctx = context.Context()
-    #     self.__create_default_context(ctx)
-    #
-    #     actual = statistic.collect_stats(ctx)
-    #
-    #     assert actual.count()
-    #
-    # def __create_default_context(self, ctx: context.Context) -> context.Context:
-    #     ctx.attack_method = 'http'
-    #     ctx.Statistic.start_time = datetime.datetime.now()
-    #
-    #     return ctx
