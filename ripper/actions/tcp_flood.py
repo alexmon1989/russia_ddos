@@ -17,7 +17,7 @@ class TcpFlood(AttackMethod):
 
     @property
     def name(self):
-        return 'HTTP Flood'
+        return 'TCP Flood'
 
     def __init__(self, target: Tuple[str, int], context: Context):
         self._target = target
