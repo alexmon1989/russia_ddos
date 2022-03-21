@@ -1,9 +1,9 @@
 from threading import Thread
 from typing import Tuple, Any
 
-from ripper.actions.HttpFlood import HttpFlood
-from ripper.actions.TcpFlood import TcpFlood
-from ripper.actions.UdpFlood import UdpFlood
+from ripper.actions.http_flood import HttpFlood
+from ripper.actions.tcp_flood import TcpFlood
+from ripper.actions.udp_flood import UdpFlood
 from ripper.context import Context
 
 

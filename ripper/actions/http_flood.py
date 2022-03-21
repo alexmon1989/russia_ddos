@@ -8,7 +8,7 @@ from socks import ProxyError
 
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
 from ripper.context import Context, Errors
-from ripper.actions.AttackMethod import AttackMethod
+from ripper.actions.attack_method import AttackMethod
 
 HTTP_STATUS_PATTERN = re.compile(r" (\d{3}) ")
 
