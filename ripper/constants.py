@@ -1,7 +1,7 @@
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-VERSION = 'v2.1.0'
+VERSION = 'v2.2.0'
 USAGE = 'Usage: %prog [options] arg'
 EPILOG = 'Example: dripper -s 192.168.0.1 -p 80 -t 100'
 
