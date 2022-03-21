@@ -5,7 +5,7 @@ from ripper.actions.http_flood import HttpFlood
 from ripper.actions.tcp_flood import TcpFlood
 from ripper.actions.udp_flood import UdpFlood
 from ripper.context import Context
-
+from ripper.actions.attack_method import AttackMethod
 
 class Attack(Thread):
     """This class creates threads with specified attack method."""
@@ -15,7 +15,7 @@ class Attack(Thread):
     """Attack method."""
     _ctx: Context
     """Context to collect Statistic."""
-    ATTACK: Any
+    attack_method: AttackMethod
 
     def __init__(self, target: Tuple[str, int], method: str = 'tcp', context: Context = None):
         """
@@ -30,13 +30,13 @@ class Attack(Thread):
     def run(self):
         self.create_attack(self._method)
         while True:
-            self.ATTACK()
+            self.attack_method()
 
     def create_attack(self, method: str):
         """Create attack for specified method."""
         if method == 'udp':
-            self.ATTACK = UdpFlood(self._target, self._ctx)
+            self.attack_method = UdpFlood(self._target, self._ctx)
         elif method == 'http':
-            self.ATTACK = HttpFlood(self._target, self._ctx)
+            self.attack_method = HttpFlood(self._target, self._ctx)
         else:  # TCP by default
-            self.ATTACK = TcpFlood(self._target, self._ctx)
+            self.attack_method = TcpFlood(self._target, self._ctx)
