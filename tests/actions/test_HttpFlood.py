@@ -26,13 +26,13 @@ class TestHttpFlood:
         http = HttpFlood(test_target, ctx)
 
         body = '{"test":1}'
-        headers = '\n'.join([f'{key}: {value}' for (key, value) in http.headers().items()])
-        expected = 'POST / HTTP/1.1\nHost: localhost\n' + headers + '\n'
+        headers = '\r\n'.join([f'{key}: {value}' for (key, value) in http.headers().items()])
+        expected = 'POST / HTTP/1.1\r\nHost: localhost\r\n' + headers + '\r\n\r\n'
 
         payload = http.payload()
-        assert payload.split('\n') == expected.split('\n')
+        assert payload.split('\r\n') == expected.split('\r\n')
 
         payload_with_body = http.payload(body)
-        headers_with_body = '\n'.join([f'{key}: {value}' for (key, value) in http.headers(body).items()])
-        expected_with_body = 'POST / HTTP/1.1\nHost: localhost\n' + headers_with_body + '\n' + f'{body}\n'
-        assert payload_with_body.split('\n') == expected_with_body.split('\n')
+        headers_with_body = '\r\n'.join([f'{key}: {value}' for (key, value) in http.headers(body).items()])
+        expected_with_body = 'POST / HTTP/1.1\r\nHost: localhost\r\n' + headers_with_body + '\r\n' + f'{body}\r\n\r\n'
+        assert payload_with_body.split('\r\n') == expected_with_body.split('\r\n')
