@@ -8,16 +8,21 @@ from socks import ProxyError
 
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
 from ripper.context import Context, Errors
+from ripper.actions.AttackMethod import AttackMethod
 
 HTTP_STATUS_PATTERN = re.compile(r" (\d{3}) ")
 
 
-class HttpFlood:
+class HttpFlood(AttackMethod):
     _http_method: str
     _target: Tuple[str, int]
     _ctx: Context
     _proxy: Any = None
     _http_connect: socket = None
+
+    @property
+    def name(self):
+        return 'HTTP Flood'
 
     def __init__(self, target: Tuple[str, int], context: Context):
         self._target = target

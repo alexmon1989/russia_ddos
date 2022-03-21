@@ -7,13 +7,17 @@ from socks import ProxyError
 
 from ripper.context import Context, Errors
 from ripper.common import generate_random_bytes
+from ripper.actions.AttackMethod import AttackMethod
 
-
-class TcpFlood:
+class TcpFlood(AttackMethod):
     _sock: socket
     _target: Tuple[str, int]
     _ctx: Context
     _proxy: Any = None
+
+    @property
+    def name(self):
+        return 'HTTP Flood'
 
     def __init__(self, target: Tuple[str, int], context: Context):
         self._target = target

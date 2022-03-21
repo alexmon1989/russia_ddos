@@ -5,19 +5,23 @@ from typing import Tuple, Any
 from ripper.common import generate_random_bytes
 from ripper.context import Context, Errors
 from ripper.constants import *
-
+from ripper.actions.AttackMethod import AttackMethod
 
 # TODO add support for SOCKS5 proxy if proxy supports associate request
 # https://stackoverflow.com/a/47079318/2628125
 # https://datatracker.ietf.org/doc/html/rfc1928
 # https://blog.birost.com/a?ID=00100-38682fbb-83c3-49d7-8cfc-406b05bf086c
 # PySocks has issues with basic implementation
-class UdpFlood:
+class UdpFlood(AttackMethod):
     """UDP Flood method."""
     _sock: socket
     _target: Tuple[str, int]
     _ctx: Context
     _proxy: Any = None
+
+    @property
+    def name(self):
+        return 'UDP Flood'
 
     def __init__(self, target: Tuple[str, int], context: Context):
         self._target = target
@@ -54,4 +58,3 @@ class UdpFlood:
             return True
 
         return False
-

@@ -182,7 +182,13 @@ def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY,
 
 def main():
     """The main function to run the script from the command line."""
-    args = arg_parser.create_parser().parse_args()
+    # args = arg_parser.create_parser().parse_args()
+    args = [{
+        "host": "google.com",
+        "port": 80,
+        "threads": 1,
+        "attack_method": "http"
+    }]
 
     if len(sys.argv) < 2 or not validate_input(args[0]):
         arg_parser.print_usage()

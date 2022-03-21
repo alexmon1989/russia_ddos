@@ -20,12 +20,19 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-p', '--port',
                       dest='port', type='int', default=ARGS_DEFAULT_PORT,
                       help=f'port. Default: {ARGS_DEFAULT_PORT}')
-    parser.add_option('-t', '--threads',
-                      dest='threads', type='int', default=ARGS_DEFAULT_THREADS,
-                      help=f'threads. Default: {ARGS_DEFAULT_THREADS}')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default=ARGS_DEFAULT_ATTACK_METHOD,
                       help=f'Attack method: {ARGS_DEFAULT_ATTACK_METHOD} (default), tcp, http')
+    parser.add_option('-e', '--http_method',
+                      dest='http_method', type='str', default=ARGS_DEFAULT_HTTP_ATTACK_METHOD,
+                      help=f'HTTP method. Default: {ARGS_DEFAULT_HTTP_ATTACK_METHOD}')
+    parser.add_option('-a', '--http_path',
+                      dest='http_path', type='str', default=ARGS_DEFAULT_HTTP_REQUEST_PATH,
+                      help=f'HTTP path. Default: {ARGS_DEFAULT_HTTP_REQUEST_PATH}')
+
+    parser.add_option('-t', '--threads',
+                      dest='threads', type='int', default=ARGS_DEFAULT_THREADS,
+                      help=f'threads. Default: {ARGS_DEFAULT_THREADS}')
     parser.add_option('-r', '--random_len',
                       dest='random_packet_len', type='int', default=ARGS_DEFAULT_RND_PACKET_LEN,
                       help=f'Send random packets with random length. Default: {ARGS_DEFAULT_RND_PACKET_LEN}')
@@ -41,12 +48,6 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-c', '--health_check',
                       dest='health_check', type='int', default=ARGS_DEFAULT_HEALTH_CHECK,
                       help=f'Controls health check availability. Turn on: 1, turn off: 0. Default: {ARGS_DEFAULT_HEALTH_CHECK}')
-    parser.add_option('-e', '--http_method',
-                      dest='http_method', type='str', default=ARGS_DEFAULT_HTTP_ATTACK_METHOD,
-                      help=f'HTTP method. Default: {ARGS_DEFAULT_HTTP_ATTACK_METHOD}')
-    parser.add_option('-a', '--http_path',
-                      dest='http_path', type='str', default=ARGS_DEFAULT_HTTP_REQUEST_PATH,
-                      help=f'HTTP path. Default: {ARGS_DEFAULT_HTTP_REQUEST_PATH}')
     parser.add_option('-o', '--socket_timeout',
                       # default value is not set here to keep dynamic logic during initialization
                       dest='socket_timeout', type='int', default=ARGS_DEFAULT_SOCK_TIMEOUT,
