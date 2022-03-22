@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...HEAD)
 
 
-## [v.2.2.0](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...2.2.0)
+## [v2.2.0](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...2.2.0)
 
 ### Added
 - Command line Option `--version` to get the current version of script
