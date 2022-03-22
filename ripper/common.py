@@ -133,7 +133,7 @@ def get_country_by_ipv4(host_ip: str) -> str:
     return country
 
 
-def isCloudFlareProtected(link: str, user_agents: list) -> bool:
+def check_cloud_flare_protection(link: str, user_agents: list) -> bool:
     """Check if the site is under CloudFlare protection."""
 
     parsed_uri = urllib.request.urlparse(link)

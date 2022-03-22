@@ -82,7 +82,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Socket Timeout (seconds)',  f'{_ctx.sock_manager.socket_timeout}'),
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
-        Row('CloudFlare DNS Protection', ('[red]' if _ctx.target.isCloudflareProtected else '[green]') + _ctx.target.cloudflare_status(), end_section=not _ctx.is_health_check),
+        Row('CloudFlare DNS Protection', ('[red]' if _ctx.target.is_cloud_flare_protection else '[green]') + _ctx.target.cloudflare_status(), end_section=not _ctx.is_health_check),
         Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.host_statuses.values()))),
         Row('Host Availability',         f'{get_health_status(_ctx)}', visible=_ctx.is_health_check, end_section=True),
         # ===================================

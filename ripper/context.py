@@ -40,7 +40,7 @@ class Target:
     """Destination Port."""
     country: str = None
     """Country code based on target public IPv4 address."""
-    isCloudflareProtected: bool = False
+    is_cloud_flare_protection: bool = False
     """Is Host protected by CloudFlare."""
     protocol: str
     """HTTP protocol. Can be http/https."""
@@ -67,8 +67,9 @@ class Target:
 
         self.host_ip = common.get_ipv4(self.host)
         self.country = common.get_country_by_ipv4(self.host_ip)
-        self.isCloudflareProtected = common.isCloudFlareProtected(self.host, headers_provider.user_agents)
+        self.is_cloud_flare_protection = common.check_cloud_flare_protection(self.host, headers_provider.user_agents)
 
+        # XXX Technically it is not a protocol
         self.protocol = 'https://' if self.port == 443 else 'http://'
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
@@ -82,7 +83,7 @@ class Target:
 
     def cloudflare_status(self) -> str:
         """Get human-readable status for CloudFlare target HOST protection."""
-        return 'Protected' if self.isCloudflareProtected else 'Not protected'
+        return 'Protected' if self.is_cloud_flare_protection else 'Not protected'
 
     def url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
