@@ -31,7 +31,7 @@ def default_scheme_port(scheme: str):
 # {protocol}://{hostname}[:{port}][{path}]
 class Target:
     scheme: str
-    """Connection protocol"""
+    """Connection scheme"""
     host: str
     """Original HOST name from input args. Can be domain name or IP address."""
     host_ip: str
@@ -42,8 +42,6 @@ class Target:
     """Country code based on target public IPv4 address."""
     is_cloud_flare_protection: bool = False
     """Is Host protected by CloudFlare."""
-    protocol: str
-    """HTTP protocol. Can be http/https."""
 
     @staticmethod
     def validate_format(target_url: str) -> bool:
@@ -69,9 +67,6 @@ class Target:
         self.country = common.get_country_by_ipv4(self.host_ip)
         self.is_cloud_flare_protection = common.check_cloud_flare_protection(self.host, headers_provider.user_agents)
 
-        # XXX Technically it is not a protocol
-        self.protocol = 'https://' if self.port == 443 else 'http://'
-
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)
 
@@ -87,7 +82,9 @@ class Target:
 
     def url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
-        return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
+        http_protocol = 'https://' if self.port == 443 else 'http://'
+
+        return f"{http_protocol}{self.host}:{self.port}{self.http_path}"
 
 
 class PacketsStats:
