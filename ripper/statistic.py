@@ -19,7 +19,7 @@ def build_http_codes_distribution(http_codes_counter) -> str:
     for code in http_codes_counter.keys():
         count = http_codes_counter[code]
         percent = round(count * 100 / total)
-        codes_distribution.append(f'{code}: {count} ({percent}%)')
+        codes_distribution.append(f'{code}: {percent}%')
     return ', '.join(codes_distribution)
 
 
@@ -89,8 +89,8 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row(f'[cyan][bold]{_ctx.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
         Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
-        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)} / {common.convert_size(data_rps)}/s'),
-        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.Statistic.packets.total_sent:,} / {packets_rps} {sent_units.lower()}/s'),
+        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
+        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.Statistic.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connection Success',        f'[green]{_ctx.Statistic.connect.success}'),
         Row('Connection Failed',         f'[red]{_ctx.Statistic.connect.failed}'),
