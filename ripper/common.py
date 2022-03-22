@@ -177,3 +177,10 @@ def get_cpu_load() -> str:
         cpu_usage = (load15 / os.cpu_count()) * 100
 
         return f"{cpu_usage:.2f}%"
+
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]

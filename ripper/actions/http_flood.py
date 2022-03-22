@@ -84,8 +84,8 @@ class HttpFlood(AttackMethod):
 
         request = '{} {} HTTP/1.1\r\nHost: {}\r\n{}\r\n{}'.format(
             self._http_method.upper(),
-            self._ctx.http_path,
-            self._ctx.host,
+            self._ctx.target.http_path,
+            self._ctx.target.host,
             headers,
             body_content
         )

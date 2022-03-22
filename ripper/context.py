@@ -9,24 +9,16 @@ from xmlrpc.client import Boolean
 from rich.console import Console
 
 from ripper import common
+from ripper import headers_provider
 from ripper.common import is_ipv4, strip_lines
 from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-
-
-def get_headers_dict(base_headers: list[str]):
-    """Set headers for the request"""
-    headers_dict = {}
-    for line in base_headers:
-        parts = line.split(':')
-        headers_dict[parts[0]] = parts[1].strip()
-
-    return headers_dict
+from ripper.headers_provider import HeadersProvider, get_headers_dict
 
 
 def default_scheme_port(scheme: str):
-    scheme_lc = scheme.lower
+    scheme_lc = scheme.lower()
     if scheme_lc == 'http' or scheme_lc == 'tcp':
         return 80
     if scheme_lc == 'https':
@@ -62,6 +54,8 @@ class Target:
             return False
 
     def __init__(self, target_str: str):
+        headers_provider = HeadersProvider()
+
         parts = urlparse(target_str)
         self.scheme = parts.scheme
         # TODO rename host to hostname
@@ -73,7 +67,7 @@ class Target:
 
         self.host_ip = common.get_ipv4(self.host)
         self.country = common.get_country_by_ipv4(self.host_ip)
-        self.isCloudflareProtected = common.isCloudFlareProtected(self.host, self.user_agents)
+        self.isCloudflareProtected = common.isCloudFlareProtected(self.host, headers_provider.user_agents)
 
         self.protocol = 'https://' if self.port == 443 else 'http://'
 

@@ -129,7 +129,9 @@ def fetch_host_statuses(_ctx: Context) -> dict:
     statuses = {}
     try:
         request_url = construct_request_url(_ctx)
+        print('request_url', request_url)
         body = fetch_zipped_body(_ctx, request_url)
+        print('body', body)
         # request_code is some sort of trace_id which is provided on every request to master node
         request_code = re.search(STATUS_PATTERN, body)[1]
         # it takes time to poll all information from slave nodes
