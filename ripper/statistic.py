@@ -71,8 +71,8 @@ def collect_stats(_ctx: Context) -> list[Row]:
         #   Description                  Status
         Row('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
         Row('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
-        Row('Host IP / Country',         f'[cyan]{_ctx.host_ip}:{_ctx.port} / [red]{_ctx.IpInfo.target_country}'),
-        Row('HTTP Request',              f'[cyan]{_ctx.http_method}: {_ctx.get_target_url()}', visible=_ctx.attack_method.lower() == 'http'),
+        Row('Host IP / Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} / [red]{_ctx.target.country}'),
+        Row('HTTP Request',              f'[cyan]{_ctx.http_method}: {_ctx.target.url()}', visible=_ctx.attack_method.lower() == 'http'),
         Row('Load Method',               _ctx.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
@@ -82,7 +82,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Socket Timeout (seconds)',  f'{_ctx.sock_manager.socket_timeout}'),
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
-        Row('CloudFlare DNS Protection', ('[red]' if _ctx.IpInfo.isCloudflareProtected else '[green]') + _ctx.IpInfo.cloudflare_status(), end_section=not _ctx.is_health_check),
+        Row('CloudFlare DNS Protection', ('[red]' if _ctx.target.isCloudflareProtected else '[green]') + _ctx.target.cloudflare_status(), end_section=not _ctx.is_health_check),
         Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.host_statuses.values()))),
         Row('Host Availability',         f'{get_health_status(_ctx)}', visible=_ctx.is_health_check, end_section=True),
         # ===================================
@@ -164,8 +164,8 @@ def refresh(_ctx: Context) -> None:
 
     if _ctx.IpInfo.my_country == GEOIP_NOT_DEFINED:
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.IpInfo.my_current_ip]).start()
-    if _ctx.IpInfo.target_country == GEOIP_NOT_DEFINED:
-        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.host_ip]).start()
+    if _ctx.target.country == GEOIP_NOT_DEFINED:
+        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.target.host_ip]).start()
 
     lock.release()
 

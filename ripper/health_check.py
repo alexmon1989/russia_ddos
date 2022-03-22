@@ -37,6 +37,15 @@ def get_health_status(_ctx: Context):
     return accessible_message
 
 
+def fetch_zipped_body(_ctx: Context, url: str) -> str:
+    """Fetches response body in text of the resource with gzip"""
+    http_headers = dict(_ctx.headers)
+    http_headers['User-Agent'] = random.choice(_ctx.user_agents)
+    compressed_resp = urllib.request.urlopen(
+        urllib.request.Request(url, headers=http_headers)).read()
+    return gzip.decompress(compressed_resp).decode('utf8')
+
+
 def classify_host_status(node_response):
     """Classifies the status of the host based on the regional node information from check-host.net"""
     if node_response is None:
@@ -87,15 +96,6 @@ def count_host_statuses(distribution) -> dict[int]:
     return host_statuses
 
 
-def fetch_zipped_body(_ctx: Context, url: str) -> str:
-    """Fetches response body in text of the resource with gzip"""
-    http_headers = dict(_ctx.headers)
-    http_headers['User-Agent'] = random.choice(_ctx.user_agents)
-    compressed_resp = urllib.request.urlopen(
-        urllib.request.Request(url, headers=http_headers)).read()
-    return gzip.decompress(compressed_resp).decode('utf8')
-
-
 def get_health_check_method(attack_method: str) -> str:
     if attack_method == 'http':
         return 'http'
@@ -108,17 +108,17 @@ def get_health_check_method(attack_method: str) -> str:
 
 
 def construct_request_url(_ctx: Context) -> str:
-    host = f'{_ctx.host_ip}:{_ctx.port}'
+    host = f'{_ctx.target.host_ip}:{_ctx.target.port}'
     if _ctx.health_check_method == 'http':
         # https connection will not be established
         # the plain http request will be sent to https port
         # in some cases it will lead to false negative
-        if _ctx.port == 443:
-            host = f'{_ctx.host}'
+        if _ctx.target.port == 443:
+            host = f'{_ctx.target.host}'
         else:
-            host = f'{_ctx.host}:{_ctx.port}'
+            host = f'{_ctx.target.host}:{_ctx.target.port}'
     elif _ctx.health_check_method == 'ping':
-        host = _ctx.host_ip
+        host = _ctx.target.host_ip
 
     path = f'/check-{_ctx.health_check_method}'
     return f'https://check-host.net{path}?host={host}'

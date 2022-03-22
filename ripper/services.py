@@ -7,7 +7,7 @@ from base64 import b64decode
 from ripper import common, statistic, arg_parser
 from ripper.actions.attack import Attack
 from ripper.constants import *
-from ripper.context import Context, Errors
+from ripper.context import Context, Errors, Target
 from ripper.common import get_current_ip, ns2s
 from ripper.health_check import fetch_host_statuses
 from ripper.proxy import Proxy
@@ -98,7 +98,7 @@ def update_host_statuses(_ctx: Context):
         return
     _ctx.fetching_host_statuses_in_progress = True
     try:
-        if _ctx.host_ip:
+        if _ctx.target.host_ip:
             host_statuses = fetch_host_statuses(_ctx)
             # API in some cases returns 403, so we can't update statuses
             if len(host_statuses.values()):
@@ -129,24 +129,28 @@ def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
 def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules"""
     home_code = b64decode('dWE=').decode('utf-8')
-    if _ctx.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.host_ip) in home_code.upper():
-        _ctx.host_ip = _ctx.host = 'localhost'
-        _ctx.host += '*'
+    if _ctx.target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.host_ip) in home_code.upper():
+        _ctx.target.host_ip = _ctx.target.host = 'localhost'
+        _ctx.target.host += '*'
 
 
 def validate_input(args) -> bool:
     """Validates input params."""
-    if int(args.port) < 0:
-        print(f'Wrong port number.')
+    if not Target.validate_format(args.target):
+        print(f'Wrong target format.')
         return False
+
+    # if int(args.port) < 0:
+    #     print(f'Wrong port number.')
+    #     return False
 
     if int(args.threads) < 1:
         print(f'Wrong threads number.')
         return False
 
-    if args.host is None or not args.host:
-        print(f'Host wasn\'t detected')
-        return False
+    # if args.host is None or not args.host:
+    #     print(f'Host wasn\'t detected')
+    #     return False
 
     if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
         print(f'Wrong attack type. Possible options: udp, tcp, http.')
@@ -156,9 +160,9 @@ def validate_input(args) -> bool:
         print(f'Wrong HTTP method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         return False
 
-    if args.http_path and not args.http_path.startswith('/'):
-        print(f'HTTP path should start with /.')
-        return False
+    # if args.http_path and not args.http_path.startswith('/'):
+    #     print(f'HTTP path should start with /.')
+    #     return False
 
     if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
         print(f'Wrong proxy type. Possible options: http, socks5, socks4.')
@@ -172,7 +176,7 @@ def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY,
     i = 0
     _ctx.logger.rule('[bold]Starting DRipper')
     while i < retry_cnt:
-        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.host}:{_ctx.port}...')
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.target.host}:{_ctx.target.port}...')
         if connect_host(_ctx):
             _ctx.logger.rule()
             break
@@ -182,13 +186,7 @@ def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY,
 
 def main():
     """The main function to run the script from the command line."""
-    # args = arg_parser.create_parser().parse_args()
-    args = [{
-        "host": "google.com",
-        "port": 80,
-        "threads": 1,
-        "attack_method": "http"
-    }]
+    args = arg_parser.create_parser().parse_args()
 
     if len(sys.argv) < 2 or not validate_input(args[0]):
         arg_parser.print_usage()
@@ -205,7 +203,7 @@ def main():
 
     time.sleep(.5)
     for _ in range(_ctx.threads):
-        Attack(_ctx.target, _ctx.attack_method, _ctx).start()
+        Attack(_ctx.target.hostip_port_tuple(), _ctx.attack_method, _ctx).start()
 
     statistic.render_statistic(_ctx)
 

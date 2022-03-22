@@ -18,7 +18,7 @@ class DescribeHttpFloodAttackMethod:
 
     def it_has_payload(self):
         args = lambda: None
-        args.host = 'localhost'
+        args.target = 'http://localhost'
         args.http_method = 'POST'
 
         ctx = Context(args)

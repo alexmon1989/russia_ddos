@@ -1,10 +1,11 @@
 import os
 import time
 import hashlib
+from urllib.parse import urlparse
 from datetime import datetime
 from collections import defaultdict
 from typing import Tuple
-
+from xmlrpc.client import Boolean
 from rich.console import Console
 
 from ripper import common
@@ -22,6 +23,76 @@ def get_headers_dict(base_headers: list[str]):
         headers_dict[parts[0]] = parts[1].strip()
 
     return headers_dict
+
+
+def default_scheme_port(scheme: str):
+    scheme_lc = scheme.lower
+    if scheme_lc == 'http' or scheme_lc == 'tcp':
+        return 80
+    if scheme_lc == 'https':
+        return 443
+    if scheme_lc == 'udp':
+        return 53
+    return None
+
+
+# {protocol}://{hostname}[:{port}][{path}]
+class Target:
+    scheme: str
+    """Connection protocol"""
+    host: str
+    """Original HOST name from input args. Can be domain name or IP address."""
+    host_ip: str
+    """HOST IPv4 address."""
+    port: int
+    """Destination Port."""
+    country: str = None
+    """Country code based on target public IPv4 address."""
+    isCloudflareProtected: bool = False
+    """Is Host protected by CloudFlare."""
+    protocol: str
+    """HTTP protocol. Can be http/https."""
+
+    @staticmethod
+    def validate_format(target_url: str) -> bool:
+        try:
+            result = urlparse(target_url)
+            return all([result.scheme, result.netloc])
+        except:
+            return False
+
+    def __init__(self, target_str: str):
+        parts = urlparse(target_str)
+        self.scheme = parts.scheme
+        # TODO rename host to hostname
+        self.host = parts.hostname
+        self.port = parts.port if parts.port is not None else default_scheme_port(parts.scheme)
+        path = parts.path if parts.path else '/'
+        query = parts.query if parts.query else ''
+        self.http_path = path if not query else f'{path}?{query}'
+
+        self.host_ip = common.get_ipv4(self.host)
+        self.country = common.get_country_by_ipv4(self.host_ip)
+        self.isCloudflareProtected = common.isCloudFlareProtected(self.host, self.user_agents)
+
+        self.protocol = 'https://' if self.port == 443 else 'http://'
+
+    def hostip_port_tuple(self) -> Tuple[str, int]:
+        return (self.host_ip, self.port)
+
+    def validate(self):
+        """Validates target"""
+        if self.host_ip is None or not is_ipv4(self.host_ip):
+            raise Exception(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
+        return True
+
+    def cloudflare_status(self) -> str:
+        """Get human-readable status for CloudFlare target HOST protection."""
+        return 'Protected' if self.isCloudflareProtected else 'Not protected'
+
+    def url(self) -> str:
+        """Get fully qualified URI for target HOST - schema://host:port"""
+        return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
 
 
 class PacketsStats:
@@ -109,18 +180,10 @@ class IpInfo:
     """All the info about IP addresses and Geo info."""
     my_country: str = None
     """Country code based on your public IPv4 address."""
-    target_country: str = None
-    """Country code based on target public IPv4 address."""
     my_start_ip: str = None
     """My IPv4 address within script starting."""
     my_current_ip: str = None
     """My current IPv4 address. It can be changed during script run."""
-    isCloudflareProtected: bool = False
-    """Is Host protected by CloudFlare."""
-
-    def cloudflare_status(self) -> str:
-        """Get human-readable status for CloudFlare target HOST protection."""
-        return 'Protected' if self.isCloudflareProtected else 'Not protected'
 
     def my_ip_masked(self) -> str:
         """
@@ -167,13 +230,9 @@ class Errors:
 class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
+    target: Target
+
     # ==== Input params ====
-    host: str
-    """Original HOST name from input args. Can be domain name or IP address."""
-    host_ip: str
-    """HOST IPv4 address."""
-    port: int
-    """Destination Port."""
     threads: int
     """The number of threads."""
     max_random_packet_len: int
@@ -188,8 +247,6 @@ class Context:
     """Type of proxy to work with. Supported types: socks5, socks4, http."""
     http_method: str
     """HTTP method used in HTTP packets"""
-    http_path: str
-    """HTTP path used in HTTP packets"""
 
     # ==== Statistic ====
     Statistic: Statistic = Statistic()
@@ -203,8 +260,6 @@ class Context:
 
     cpu_count: int
     """vCPU cont of current machine."""
-    protocol: str
-    """HTTP protocol. Can be http/https."""
 
     # ==== Internal variables ====
     user_agents: list
@@ -228,8 +283,6 @@ class Context:
     health_check_method: str
     host_statuses = {}
 
-    target: Tuple[str, int]
-
     _stopwatch: datetime = None
     """Internal stopwatch."""
 
@@ -247,10 +300,6 @@ class Context:
         else:
             self._stopwatch = datetime.now()
             return True
-
-    def get_target_url(self) -> str:
-        """Get fully qualified URI for target HOST - schema://host:port"""
-        return f"{self.protocol}{self.host}:{self.port}{self.http_path}"
 
     def get_start_time_ns(self) -> int:
         """Get start time in nanoseconds."""
@@ -280,8 +329,10 @@ class Context:
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
-        if self.host_ip is None or not is_ipv4(self.host_ip):
-            self.logger.log(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
+        try:
+            self.target.validate()
+        except Exception as e:
+            self.logger.log(str(e))
             exit(1)
 
         if self.IpInfo.my_start_ip is None or not is_ipv4(self.IpInfo.my_start_ip):
@@ -301,11 +352,13 @@ class Context:
         return value if value is not None else default
 
     def __init__(self, args):
-        self.host = getattr(args, 'host', '')
-        self.port = getattr(args, 'port', ARGS_DEFAULT_PORT)
+        # self.host = getattr(args, 'host', '')
+        # self.port = getattr(args, 'port', ARGS_DEFAULT_PORT)
+        # self.http_path = getattr(args, 'http_path', ARGS_DEFAULT_HTTP_REQUEST_PATH)
+        if args and getattr(args, 'target', ''):
+            self.target = Target(getattr(args, 'target', ''))
         self.attack_method = getattr(args, 'attack_method', ARGS_DEFAULT_ATTACK_METHOD).lower()
         self.http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper()
-        self.http_path = getattr(args, 'http_path', ARGS_DEFAULT_HTTP_REQUEST_PATH)
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
@@ -316,16 +369,11 @@ class Context:
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        self.host_ip = common.get_ipv4(self.host)
-        self.protocol = 'https://' if self.port == 443 else 'http://'
-
         if self.attack_method == 'http':
             self.random_packet_len = False
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:
             self.max_random_packet_len = 1024
-
-        self.target = (self.host_ip, self.port)
 
         self.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
@@ -338,8 +386,6 @@ class Context:
         self.IpInfo.my_start_ip = common.get_current_ip()
         self.IpInfo.my_current_ip = self.IpInfo.my_start_ip
         self.IpInfo.my_country = common.get_country_by_ipv4(self.IpInfo.my_start_ip)
-        self.IpInfo.target_country = common.get_country_by_ipv4(self.host_ip)
-        self.IpInfo.isCloudflareProtected = common.isCloudFlareProtected(self.host, self.user_agents)
 
         self.Statistic.start_time = datetime.now()
         self.connections_check_time = time.time_ns()
