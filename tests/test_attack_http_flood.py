@@ -2,8 +2,10 @@ import pytest
 
 from ripper.actions.http_flood import HttpFlood
 from ripper.context.context import Context
+from ripper.context.target import Target
+from ripper.headers_provider import HeadersProvider
 
-test_target = ('localhost', 80)
+test_target = Target('http://localhost')
 
 
 class DescribeHttpFloodAttackMethod:
@@ -42,3 +44,7 @@ class DescribeHttpFloodAttackMethod:
         http_flood_am = HttpFlood(test_target, ctx)
         assert http_flood_am.name == 'HTTP Flood'
         assert http_flood_am.label == 'http-flood'
+
+    @pytest.fixture(scope='session', autouse=True)
+    def refresh_headers_provider(self):
+        HeadersProvider().refresh()

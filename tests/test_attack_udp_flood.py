@@ -2,8 +2,9 @@ import pytest
 
 from ripper.actions.udp_flood import UdpFlood
 from ripper.context.context import Context
+from ripper.context.target import Target
 
-test_target = ('localhost', 80)
+test_target = Target('udp://localhost')
 
 
 class DescribeUdpFloodAttackMethod:

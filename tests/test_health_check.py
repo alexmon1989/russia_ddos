@@ -4,6 +4,7 @@ from ripper.context.context import Context
 from ripper.context.context import Target
 from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses, construct_request_url
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
+from ripper.headers_provider import HeadersProvider
 
 
 class DescribeHealthCheck:
@@ -43,7 +44,7 @@ class DescribeHealthCheck:
 
         _ctx.health_check_method = 'tcp'
         _ctx.headers_provider.user_agents = ['Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)']
-        _ctx.headers['Accept-Encoding'] = 'gzip,deflate'
+        _ctx.headers_provider.headers['Accept-Encoding'] = 'gzip,deflate'
 
         distribution = fetch_host_statuses(_ctx)
         # some nodes have issues with file descriptor or connection
@@ -64,3 +65,7 @@ class DescribeHealthCheck:
         if 'host_ip' in context_data:
             _ctx.target.host_ip = context_data['host_ip']
         assert construct_request_url(_ctx) == url
+
+    @pytest.fixture(scope='session', autouse=True)
+    def refresh_headers_provider(self):
+        HeadersProvider().refresh()

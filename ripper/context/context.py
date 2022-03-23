@@ -6,6 +6,7 @@ from xmlrpc.client import Boolean
 from rich.console import Console
 
 from ripper import common
+from ripper import headers_provider
 from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
@@ -50,7 +51,7 @@ class Context:
     """vCPU cont of current machine."""
 
     # ==== Internal variables ====
-    headers: HeadersProvider = None
+    headers_provider: HeadersProvider = HeadersProvider()
     """HTTP Headers used to make Requests."""
 
     # External API and services info
@@ -175,8 +176,6 @@ class Context:
             self.max_random_packet_len = 1024
 
         self.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
-
-        self.headers_provider = HeadersProvider()
 
         # Get initial info from external services
         self.IpInfo.my_start_ip = common.get_current_ip()

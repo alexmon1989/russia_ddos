@@ -2,8 +2,9 @@ import pytest
 
 from ripper.actions.tcp_flood import TcpFlood
 from ripper.context.context import Context
+from ripper.context.target import Target
 
-test_target = ('localhost', 80)
+test_target = Target('tcp://localhost')
 
 
 class DescribeTcpFloodAttackMethod:
