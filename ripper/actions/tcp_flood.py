@@ -1,32 +1,36 @@
 from socket import socket
 from contextlib import suppress
-from random import randbytes
-from typing import Tuple, Any
-
+from typing import Any
 from socks import ProxyError
 
-from ripper.context import Context, Errors
+from ripper.context.errors import Errors
+from ripper.context.target import Target
 from ripper.common import generate_random_bytes
 from ripper.actions.attack_method import AttackMethod
 
+# Forward Reference
+Context = 'Context'
+
+
 class TcpFlood(AttackMethod):
+    """TCP Flood method."""
+
+    name: str = 'TCP Flood'
+    label: str = 'tcp-flood'
+
     _sock: socket
-    _target: Tuple[str, int]
+    _target: Target
     _ctx: Context
     _proxy: Any = None
 
-    @property
-    def name(self):
-        return 'TCP Flood'
-
-    def __init__(self, target: Tuple[str, int], context: Context):
+    def __init__(self, target: Target, context: Context):
         self._target = target
         self._ctx = context
 
     def create_connection(self) -> socket:
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
         conn = self._ctx.sock_manager.create_tcp_socket(self._proxy)
-        conn.connect(self._target)
+        conn.connect(self._target.hostip_port_tuple())
 
         return conn
 

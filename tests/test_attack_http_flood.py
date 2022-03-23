@@ -1,7 +1,7 @@
 import pytest
 
 from ripper.actions.http_flood import HttpFlood
-from ripper.context import Context
+from ripper.context.context import Context
 
 test_target = ('localhost', 80)
 
@@ -41,3 +41,4 @@ class DescribeHttpFloodAttackMethod:
         ctx = Context(args=None)
         http_flood_am = HttpFlood(test_target, ctx)
         assert http_flood_am.name == 'HTTP Flood'
+        assert http_flood_am.label == 'http-flood'

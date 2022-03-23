@@ -1,7 +1,7 @@
 import pytest as pytest
 
-from ripper.context import Context, Target
-from ripper.common import get_ipv4
+from ripper.context.context import Context
+from ripper.context.context import Target
 from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses, construct_request_url
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 

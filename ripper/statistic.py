@@ -8,7 +8,8 @@ from rich.table import Table
 
 import ripper.common as common
 import ripper.services as services
-from ripper.context import Context, Errors
+from ripper.context.context import Context
+from ripper.context.errors import Errors
 from ripper.constants import *
 from ripper.health_check import get_health_status
 

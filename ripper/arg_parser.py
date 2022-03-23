@@ -2,7 +2,7 @@ import sys
 from optparse import OptionParser
 
 from ripper.constants import *
-
+from ripper.actions.attack import attack_method_labels
 
 def create_parser() -> OptionParser:
     """Initialize parser with options."""
@@ -16,10 +16,10 @@ def parser_add_options(parser: OptionParser) -> None:
     """Add options to a parser."""
     parser.add_option('-s', '--target',
                       dest='target',
-                      help='Attack in {protocol}://{hostname}[:{port}][{path}]')
+                      help='Attack target in {protocol}://{hostname}[:{port}][{path}] format')
     parser.add_option('-m', '--method',
-                      dest='attack_method', type='str', default=ARGS_DEFAULT_ATTACK_METHOD,
-                      help=f'Attack method: {ARGS_DEFAULT_ATTACK_METHOD} (default), tcp, http')
+                      dest='attack_method', type='str',
+                      help=f'Attack method: {", ".join(attack_method_labels)}')
     parser.add_option('-e', '--http_method',
                       dest='http_method', type='str', default=ARGS_DEFAULT_HTTP_ATTACK_METHOD,
                       help=f'HTTP method. Default: {ARGS_DEFAULT_HTTP_ATTACK_METHOD}')

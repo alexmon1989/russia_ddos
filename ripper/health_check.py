@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from urllib import request
 
-from ripper.context import Context
+from ripper.context.context import Context
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 
 # Prepare static patterns once at start.

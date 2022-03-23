@@ -7,12 +7,13 @@ from base64 import b64decode
 from ripper import common, statistic, arg_parser
 from ripper.actions.attack import Attack
 from ripper.constants import *
-from ripper.context import Context, Errors, Target
+from ripper.context.context import Context, Errors, Target
 from ripper.common import get_current_ip, ns2s
 from ripper.health_check import fetch_host_statuses
 from ripper.proxy import Proxy
 
 _ctx: Context = None
+
 
 ###############################################
 # Connection validators
@@ -191,7 +192,7 @@ def main():
 
     time.sleep(.5)
     for _ in range(_ctx.threads):
-        Attack(_ctx.target.hostip_port_tuple(), _ctx.attack_method, _ctx).start()
+        Attack(_ctx).start()
 
     statistic.render_statistic(_ctx)
 

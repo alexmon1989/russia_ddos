@@ -1,8 +1,9 @@
-from datetime import timedelta
-
+from datetime import datetime, timedelta
+import time
 import pytest as pytest
 
-from ripper.context import *
+from ripper.context.context import Context
+from ripper.context.errors import Errors
 
 
 class DescribeContext:
@@ -75,4 +76,3 @@ class DescribeContext:
         time.sleep(2)
         assert context.check_timer(5) is False
         assert context.check_timer(1) is True
-

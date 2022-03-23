@@ -14,6 +14,6 @@ def get_headers_dict(base_headers: list[str]):
 
 class HeadersProvider(metaclass=Singleton):
     def __init__(self):
-        self.user_agents = strip_lines(read_file_lines_fs(os.path.dirname(__file__) + '/useragents.txt'))
-        self.base_headers = strip_lines(read_file_lines_fs(os.path.dirname(__file__) + '/headers.txt'))
+        self.user_agents = strip_lines(read_file_lines_fs(os.path.dirname(__file__) + '/assets/useragents.txt'))
+        self.base_headers = strip_lines(read_file_lines_fs(os.path.dirname(__file__) + '/assets/headers.txt'))
         self.headers = get_headers_dict(self.base_headers)
