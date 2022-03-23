@@ -22,7 +22,7 @@ class DescribeHttpFloodAttackMethod:
         args.http_method = 'POST'
 
         ctx = Context(args)
-        ctx.user_agents = ['Mozilla/5.0 (Windows NT 6.3; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0']
+        ctx.headers_provider.user_agents = ['Mozilla/5.0 (Windows NT 6.3; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0']
         http_flood_am = HttpFlood(test_target, ctx)
 
         body = '{"test":1}'

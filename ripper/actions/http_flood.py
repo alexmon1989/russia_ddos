@@ -74,9 +74,9 @@ class HttpFlood(AttackMethod):
 
     def headers(self, content: str = '') -> dict[str, str]:
         """Prepare headers."""
-        headers = self._ctx.headers
+        headers = self._ctx.headers_provider.headers
         headers['Content-Length'] = str(len(content))
-        headers['User-Agent'] = random.choice(self._ctx.user_agents)
+        headers['User-Agent'] = random.choice(self._ctx.headers_provider.user_agents)
 
         return headers
 

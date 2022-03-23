@@ -39,8 +39,8 @@ def get_health_status(_ctx: Context):
 
 def fetch_zipped_body(_ctx: Context, url: str) -> str:
     """Fetches response body in text of the resource with gzip"""
-    http_headers = dict(_ctx.headers)
-    http_headers['User-Agent'] = random.choice(_ctx.user_agents)
+    http_headers = dict(_ctx.headers_provider.headers)
+    http_headers['User-Agent'] = random.choice(_ctx.headers_provider.user_agents)
     compressed_resp = urllib.request.urlopen(
         urllib.request.Request(url, headers=http_headers)).read()
     return gzip.decompress(compressed_resp).decode('utf8')

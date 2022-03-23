@@ -42,7 +42,7 @@ class DescribeHealthCheck:
         assert len(_ctx.target.host_ip) > 0
 
         _ctx.health_check_method = 'tcp'
-        _ctx.user_agents = ['Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)']
+        _ctx.headers_provider.user_agents = ['Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)']
         _ctx.headers['Accept-Encoding'] = 'gzip,deflate'
 
         distribution = fetch_host_statuses(_ctx)
