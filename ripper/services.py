@@ -5,11 +5,11 @@ import time
 from base64 import b64decode
 
 from ripper import common, statistic, arg_parser
-from ripper.actions.attack import Attack
+from ripper.actions.attack import Attack, attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context, Errors, Target
 from ripper.common import get_current_ip, ns2s
-from ripper.health_check import fetch_host_statuses
+from ripper.health_check_manager import fetch_host_statuses
 from ripper.proxy import Proxy
 
 _ctx: Context = None
@@ -145,8 +145,8 @@ def validate_input(args) -> bool:
         print(f'Wrong threads number.')
         return False
 
-    if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
-        print(f'Wrong attack type. Possible options: udp, tcp, http.')
+    if args.attack_method is not None and args.attack_method.lower() not in attack_method_labels:
+        print(f'Wrong attack type. Possible options: {", ".join(attack_method_labels)}.')
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):

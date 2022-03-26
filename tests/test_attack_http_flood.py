@@ -1,17 +1,23 @@
 import pytest
+from collections import namedtuple
 
 from ripper.actions.http_flood import HttpFlood
 from ripper.context.context import Context
 from ripper.context.target import Target
 from ripper.headers_provider import HeadersProvider
 
-test_target = Target('http://localhost')
+Args = namedtuple('Args', 'target http_method')
 
 
 class DescribeHttpFloodAttackMethod:
+    target: str = 'tcp://localhost'
+
     def it_has_some_headers(self):
-        ctx = Context(args=None)
-        http_flood_am = HttpFlood(test_target, ctx)
+        ctx = Context(Args(
+            target=self.target,
+            http_method='GET',
+        ))
+        http_flood_am = HttpFlood(context=ctx, target=ctx.target)
 
         actual = http_flood_am.headers()
         assert actual.get('Content-Length') == '0'
@@ -19,13 +25,12 @@ class DescribeHttpFloodAttackMethod:
         assert with_content.get('Content-Length') == '11'
 
     def it_has_payload(self):
-        args = lambda: None
-        args.target = 'http://localhost'
-        args.http_method = 'POST'
-
-        ctx = Context(args)
+        ctx = Context(Args(
+            target=self.target,
+            http_method='POST',
+        ))
         ctx.headers_provider.user_agents = ['Mozilla/5.0 (Windows NT 6.3; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0']
-        http_flood_am = HttpFlood(test_target, ctx)
+        http_flood_am = HttpFlood(context=ctx, target=ctx.target)
 
         body = '{"test":1}'
         headers = '\r\n'.join([f'{key}: {value}' for (key, value) in http_flood_am.headers().items()])
@@ -40,8 +45,11 @@ class DescribeHttpFloodAttackMethod:
         assert payload_with_body.split('\r\n') == expected_with_body.split('\r\n')
 
     def it_has_correct_name(self):
-        ctx = Context(args=None)
-        http_flood_am = HttpFlood(test_target, ctx)
+        ctx = Context(Args(
+            target=self.target,
+            http_method='GET',
+        ))
+        http_flood_am = HttpFlood(target=ctx.target, context=ctx)
         assert http_flood_am.name == 'HTTP Flood'
         assert http_flood_am.label == 'http-flood'
 

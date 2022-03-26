@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from collections import namedtuple
 import time
 import pytest as pytest
 
@@ -76,3 +77,14 @@ class DescribeContext:
         time.sleep(2)
         assert context.check_timer(5) is False
         assert context.check_timer(1) is True
+
+    @pytest.mark.parametrize('target_str, attack_method', [
+        ('http://google.com', 'http-flood'),
+        ('tcp://google.com', 'tcp-flood'),
+        ('udp://google.com', 'udp-flood'),
+    ])
+    def it_detects_attack_by_target_in_context(self, target_str, attack_method):
+        Args = namedtuple('Args', 'target')
+        assert Context(args=Args(
+            target=target_str,
+        )).attack_method == attack_method

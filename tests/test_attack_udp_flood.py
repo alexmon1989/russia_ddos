@@ -1,17 +1,19 @@
 import pytest
+from collections import namedtuple
 
 from ripper.actions.udp_flood import UdpFlood
 from ripper.context.context import Context
-from ripper.context.target import Target
 
-test_target = Target('udp://localhost')
+Args = namedtuple('Args', 'target')
 
 
-class DescribeUdpFloodAttackMethod:
+class DescribeTcpFloodAttackMethod:
     def it_has_correct_name(self):
-        ctx = Context(args=None)
-        udp_flood_am = UdpFlood(test_target, ctx)
-        assert udp_flood_am.name == 'UDP Flood'
-        assert udp_flood_am.label == 'udp-flood'
+        ctx = Context(args=Args(
+            target='udp://localhost',
+        ))
+        tcp_flood_am = UdpFlood(ctx, ctx.target)
+        assert tcp_flood_am.name == 'UDP Flood'
+        assert tcp_flood_am.label == 'udp-flood'
 
 # TODO Add more tests

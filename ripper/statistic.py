@@ -11,7 +11,7 @@ import ripper.services as services
 from ripper.context.context import Context
 from ripper.context.errors import Errors
 from ripper.constants import *
-from ripper.health_check import get_health_status
+from ripper.health_check_manager import get_health_status
 
 
 def build_http_codes_distribution(http_codes_counter) -> str:
@@ -74,7 +74,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
         Row('Host IP / Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} / [red]{_ctx.target.country}'),
         Row('HTTP Request',              f'[cyan]{_ctx.http_method}: {_ctx.target.url()}', visible=_ctx.attack_method.lower() == 'http'),
-        Row('Load Method',               _ctx.attack_method.upper(), end_section=True),
+        Row('Attack Method',             _ctx.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
         Row('Proxies Count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} / {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),

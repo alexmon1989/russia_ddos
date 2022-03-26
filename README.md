@@ -38,7 +38,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
   Start Time                        2022-02-24 04:00:00                         
   Your Public IP / Country          131.*.*.* / AR                              
   Host IP / Country                 192.168.0.1:80 / RU                        
-  Load Method                       UDP                                         
+  Attack Method                     UDP-FLOOD                                         
  ────────────────────────────────────────────────────────────────────────────── 
   Threads                           50                                          
   vCPU Count                        16                                          

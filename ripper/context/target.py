@@ -1,8 +1,11 @@
 from typing import Tuple
 from urllib.parse import urlparse
+from ripper import health_check_manager
 
 from ripper.headers_provider import HeadersProvider
+from ripper.health_check_manager import HealthCheckManager
 from ripper import common
+from ripper.constants import *
 
 
 def default_scheme_port(scheme: str):
@@ -29,19 +32,36 @@ class Target:
     """Country code based on target public IPv4 address."""
     is_cloud_flare_protection: bool = False
     """Is Host protected by CloudFlare."""
+    attack_method: str
+    """Current attack method."""
+    http_method: str
+    """HTTP method used in HTTP packets"""
+
+    health_check_manager: HealthCheckManager = None
 
     @staticmethod
-    def validate_format(target_url: str) -> bool:
+    def validate_format(target_uri: str) -> bool:
         try:
-            result = urlparse(target_url)
+            result = urlparse(target_uri)
             return all([result.scheme, result.netloc])
         except:
             return False
 
-    def __init__(self, target_str: str):
+    def guess_attack_method(self):
+        if self.scheme == 'http' or self.scheme == 'https':
+            return 'http-flood'
+        elif self.scheme == 'tcp':
+            return 'tcp-flood'
+        elif self.scheme == 'udp':
+            return 'udp-flood'
+        return None
+
+    def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD):
+        self.http_method = http_method
+
         headers_provider = HeadersProvider()
 
-        parts = urlparse(target_str)
+        parts = urlparse(target_uri)
         self.scheme = parts.scheme
         # TODO rename host to hostname
         self.host = parts.hostname
@@ -53,6 +73,9 @@ class Target:
         self.host_ip = common.get_ipv4(self.host)
         self.country = common.get_country_by_ipv4(self.host_ip)
         self.is_cloud_flare_protection = common.check_cloud_flare_protection(self.host, headers_provider.user_agents)
+
+        self.health_check_manager = HealthCheckManager(target=self)
+        self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)

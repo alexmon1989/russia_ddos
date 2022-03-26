@@ -16,6 +16,7 @@ from ripper.context.stats import *
 from ripper.context.target import *
 from ripper.actions.attack import attack_method_factory
 
+
 class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
@@ -28,14 +29,10 @@ class Context:
     """Limit for Random Packet Length."""
     random_packet_len: bool
     """Is Random Packet Length enabled."""
-    attack_method: str
-    """Current attack method."""
     proxy_list: str
     """File with proxies in ip:port:username:password or ip:port line format."""
     proxy_type: str
     """Type of proxy to work with. Supported types: socks5, socks4, http."""
-    http_method: str
-    """HTTP method used in HTTP packets"""
 
     # ==== Statistic ====
     Statistic: Statistic = Statistic()
@@ -62,11 +59,7 @@ class Context:
     # Health-check
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
-    connections_check_time: int
-    fetching_host_statuses_in_progress: bool = False
-    last_host_statuses_update: datetime = None
-    health_check_method: str
-    host_statuses = {}
+
 
     _stopwatch: datetime = None
     """Internal stopwatch."""
@@ -136,29 +129,13 @@ class Context:
             cls.instance = super().__new__(cls)
         return cls.instance
 
-    def get_attack_method_from_args(self, args):
-        args_attack_method = getattr(args, 'attack_method', '')
-        if args and args_attack_method:
-            return args_attack_method
-        if self.target:
-            if self.target.scheme == 'http':
-                return 'http-flood'
-            elif self.target.scheme == 'tcp':
-                return 'tcp-flood'
-            elif self.target.scheme == 'udp':
-                return 'udp-flood'
-        return None
-        
     def __init__(self, args):
-        # self.host = getattr(args, 'host', '')
-        # self.port = getattr(args, 'port', ARGS_DEFAULT_PORT)
-        # self.http_path = getattr(args, 'http_path', ARGS_DEFAULT_HTTP_REQUEST_PATH)
         if args and getattr(args, 'target'):
-            self.target = Target(getattr(args, 'target', ''))
-        # if args and 
-        # self.attack_method = getattr(args, 'attack_method', ARGS_DEFAULT_ATTACK_METHOD).lower()
-        self.attack_method = self.get_attack_method_from_args(args)
-        self.http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper()
+            self.target = Target(
+                target_uri = getattr(args, 'target', ''),
+                attack_method = getattr(args, 'attack_method', None),
+                http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+            )
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
@@ -169,7 +146,7 @@ class Context:
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        if self.attack_method == 'http':
+        if self.target.attack_method == 'http-flood':
             self.random_packet_len = False
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:
@@ -184,9 +161,8 @@ class Context:
 
         self.Statistic.start_time = datetime.now()
         self.connections_check_time = time.time_ns()
-        self.health_check_method = 'ping' if self.attack_method == 'udp' else self.attack_method
 
-        if self.proxy_list and self.attack_method != 'udp':
+        if self.proxy_list and self.target.attack_method != 'udp-flood':
             self.proxy_manager.set_proxy_type(self.proxy_type)
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)

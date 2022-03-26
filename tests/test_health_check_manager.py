@@ -1,10 +1,13 @@
 import pytest as pytest
+from collections import namedtuple
 
 from ripper.context.context import Context
 from ripper.context.context import Target
-from ripper.health_check import classify_host_status, count_host_statuses, fetch_host_statuses, construct_request_url
+from ripper.health_check_manager import classify_host_status, count_host_statuses, HealthCheckManager #fetch_host_statuses, construct_request_url
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 from ripper.headers_provider import HeadersProvider
+
+Args = namedtuple('Args', 'target')
 
 
 class DescribeHealthCheck:
@@ -38,33 +41,33 @@ class DescribeHealthCheck:
 
     # slow
     def it_can_fetch_host_statuses(self):
-        _ctx = Context(args=None)
-        _ctx.target = Target('tcp://google.com')
-        assert len(_ctx.target.host_ip) > 0
+        context = Context(args=Args(
+            # TODO expect target_uri in args as well
+            target = 'tcp://google.com',
+        ))
+        assert len(context.target.host_ip) > 0
 
-        _ctx.health_check_method = 'tcp'
-        _ctx.headers_provider.user_agents = ['Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)']
-        _ctx.headers_provider.headers['Accept-Encoding'] = 'gzip,deflate'
-
-        distribution = fetch_host_statuses(_ctx)
+        distribution = context.target.health_check_manager.fetch_host_statuses()
+        print(distribution)
         # some nodes have issues with file descriptor or connection
         assert distribution[HOST_SUCCESS_STATUS] > 17
 
-    @pytest.mark.parametrize('context_data, url', [
-        ({'host': 'google.com', 'port': 443, 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com'),
-        ({'host': 'google.com', 'port': 92, 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com:92'),
-        ({'host': 'google.com', 'host_ip': '172.217.20.206', 'port': 443, 'health_check_method': 'tcp'}, 'https://check-host.net/check-tcp?host=172.217.20.206:443'),
-        ({'host': 'google.com', 'host_ip': '172.217.20.206', 'port': 443, 'health_check_method': 'ping'}, 'https://check-host.net/check-ping?host=172.217.20.206'),
+    @pytest.mark.parametrize('args_data, url', [
+        ({'target_uri': 'https://google.com', 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com'),
+        ({'target_uri': 'https://google.com', 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com'),
+        ({'target_uri': 'http://google.com:92', 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com:92'),
+        ({'target_uri': 'tcp://google.com:443', 'host_ip': '172.217.20.206', 'health_check_method': 'tcp'}, 'https://check-host.net/check-tcp?host=172.217.20.206:443'),
+        ({'target_uri': 'udp://google.com:443', 'host_ip': '172.217.20.206', 'health_check_method': 'ping'}, 'https://check-host.net/check-ping?host=172.217.20.206'),
     ])
-    def it_constructs_request_url(self, context_data, url):
-        _ctx = Context(args=None)
-        host = context_data['host']
-        port = context_data['port']
-        _ctx.health_check_method = context_data['health_check_method']
-        _ctx.target = Target(f'http://{host}:{port}')
-        if 'host_ip' in context_data:
-            _ctx.target.host_ip = context_data['host_ip']
-        assert construct_request_url(_ctx) == url
+    def it_constructs_request_url(self, args_data, url):
+        context = Context(args=Args(
+            # TODO expect target_uri in args as well
+            target = args_data['target_uri'],
+        ))
+        assert context.target.health_check_manager.health_check_method == args_data['health_check_method']
+        if 'host_ip' in args_data:
+            context.target.host_ip = args_data['host_ip']
+        assert context.target.health_check_manager.request_url == url
 
     @pytest.fixture(scope='session', autouse=True)
     def refresh_headers_provider(self):
