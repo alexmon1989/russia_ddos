@@ -9,7 +9,7 @@ from socks import ProxyError
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
 from ripper.context import Context, Errors
 
-HTTP_STATUS_PATTERN = re.compile(r" (\d{3}) ")
+HTTP_STATUS_PATTERN = re.compile(r' (\d{3}) ')
 
 
 class HttpFlood:
@@ -35,6 +35,8 @@ class HttpFlood:
             self._http_connect.connect(self._target)
             self._ctx.Statistic.connect.status_success()
             while self.send(self._http_connect):
+                if self._ctx.dry_run:
+                    break
                 continue
 
     def check_response_status(self, payload: bytes):

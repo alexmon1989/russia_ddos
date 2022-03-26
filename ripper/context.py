@@ -190,6 +190,8 @@ class Context:
     """HTTP method used in HTTP packets"""
     http_path: str
     """HTTP path used in HTTP packets"""
+    dry_run: bool = False
+    """Is dry run mode."""
 
     # ==== Statistic ====
     Statistic: Statistic = Statistic()
@@ -313,6 +315,7 @@ class Context:
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
+        self.dry_run = getattr(args, 'dry_run', False)
 
         self.host_ip = common.get_ipv4(self.host)
         self.protocol = 'https://' if self.port == 443 else 'http://'

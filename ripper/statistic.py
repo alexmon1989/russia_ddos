@@ -60,7 +60,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
     has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
-    is_proxy_list = _ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list)
+    is_proxy_list = bool(_ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list))
     your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
 
     duration = datetime.now() - _ctx.Statistic.start_time
@@ -184,9 +184,11 @@ def refresh(_ctx: Context) -> None:
 
 def render_statistic(_ctx: Context) -> None:
     """Show DRipper runtime statistic."""
-    with Live(generate_stats(_ctx), vertical_overflow='visible') as live:
-        # for _ in range(720):
+    with Live(generate_stats(_ctx), vertical_overflow='visible', redirect_stderr=False) as live:
+        live.start()
         while True:
             time.sleep(0.5)
-            live.update(generate_stats(_ctx))
             refresh(_ctx)
+            live.update(generate_stats(_ctx))
+            if _ctx.dry_run:
+                break

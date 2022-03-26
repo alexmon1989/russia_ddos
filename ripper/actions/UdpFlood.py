@@ -33,6 +33,8 @@ class UdpFlood:
         with suppress(Exception), self.create_connection() as udp_conn:
             self._ctx.Statistic.connect.status_success()
             while self.sendto(udp_conn):
+                if self._ctx.dry_run:
+                    break
                 continue
 
             self._ctx.Statistic.connect.status_failed()

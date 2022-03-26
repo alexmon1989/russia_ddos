@@ -198,7 +198,9 @@ def main():
     _ctx.validate()
 
     time.sleep(.5)
-    for _ in range(_ctx.threads):
+    # Check for dry run mode and runs only 1 thread for dry run mode
+    threads_range = _ctx.threads if not _ctx.dry_run else 1
+    for _ in range(threads_range):
         Attack(_ctx.target, _ctx.attack_method, _ctx).start()
 
     statistic.render_statistic(_ctx)

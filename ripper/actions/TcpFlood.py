@@ -1,6 +1,5 @@
 from socket import socket
 from contextlib import suppress
-from random import randbytes
 from typing import Tuple, Any
 
 from socks import ProxyError
@@ -30,6 +29,8 @@ class TcpFlood:
         with suppress(Exception), self.create_connection() as tcp_conn:
             self._ctx.Statistic.connect.status_success()
             while self.send(tcp_conn):
+                if self._ctx.dry_run:
+                    break
                 continue
 
             self._ctx.Statistic.connect.status_failed()
