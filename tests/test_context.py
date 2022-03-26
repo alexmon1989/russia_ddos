@@ -6,10 +6,16 @@ import pytest as pytest
 from ripper.context.context import Context
 from ripper.context.errors import Errors
 
+Args = namedtuple('Args', 'target')
+
 
 class DescribeContext:
+    args: Args = Args(
+        target='http://localhost'
+    )
+
     def it_can_store_error_details(self):
-        context = Context(args=None)
+        context = Context(self.args)
         context.errors.clear()
 
         actual = Errors(code='send UDP packet', message='Cannot get server ip')
@@ -22,7 +28,7 @@ class DescribeContext:
         assert context.errors.get(uuid).message == 'Cannot get server ip'
 
     def it_can_count_the_same_error(self):
-        context = Context(args=None)
+        context = Context(self.args)
         context.errors.clear()
 
         assert len(context.errors) == 0
@@ -41,7 +47,7 @@ class DescribeContext:
         assert context.errors.get(uuid).count == 2
 
     def it_can_delete_existing_error(self):
-        context = Context(args=None)
+        context = Context(self.args)
         context.errors.clear()
 
         actual = Errors(code='send UDP packet', message='Cannot get server ip')
@@ -61,13 +67,12 @@ class DescribeContext:
         ('...detecting', '...detecting')
     ])
     def it_can_get_my_ip_masked(self, actual_ip, expected_result):
-        context = Context(args=None)
+        context = Context(self.args)
         context.IpInfo.my_start_ip = actual_ip
-
         assert context.IpInfo.my_ip_masked() == expected_result
 
     def it_checks_time_interval(self):
-        context = Context(args=None)
+        context = Context(self.args)
         last_2mins = datetime.now() - timedelta(minutes=2)
         context.Statistic.start_time = last_2mins
 
@@ -84,7 +89,6 @@ class DescribeContext:
         ('udp://google.com', 'udp-flood'),
     ])
     def it_detects_attack_by_target_in_context(self, target_str, attack_method):
-        Args = namedtuple('Args', 'target')
         assert Context(args=Args(
             target=target_str,
-        )).attack_method == attack_method
+        )).target.attack_method == attack_method
