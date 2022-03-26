@@ -9,7 +9,6 @@ from ripper.actions.attack import Attack, attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context, Errors, Target
 from ripper.common import get_current_ip, ns2s
-from ripper.health_check_manager import fetch_host_statuses
 from ripper.proxy import Proxy
 
 _ctx: Context = None
@@ -100,7 +99,7 @@ def update_host_statuses(_ctx: Context):
     _ctx.fetching_host_statuses_in_progress = True
     try:
         if _ctx.target.host_ip:
-            host_statuses = fetch_host_statuses(_ctx)
+            host_statuses = _ctx.target.fetch_host_statuses()
             # API in some cases returns 403, so we can't update statuses
             if len(host_statuses.values()):
                 _ctx.host_statuses = host_statuses

@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from ripper.context.context import Context
 from ripper.context.context import Target
-from ripper.health_check_manager import classify_host_status, count_host_statuses, HealthCheckManager #fetch_host_statuses, construct_request_url
+from ripper.health_check_manager import classify_host_status, count_host_statuses, HealthCheckManager
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 from ripper.headers_provider import HeadersProvider
 

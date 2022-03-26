@@ -1,5 +1,6 @@
 import pytest as pytest
 import time
+from collections import namedtuple
 
 from ripper.context.context import Context
 from ripper.context.errors import Errors
@@ -7,10 +8,16 @@ from ripper.constants import *
 from ripper.services import check_successful_tcp_attack, check_successful_connections, \
     no_successful_connections_error_msg
 
+Args = namedtuple('Args', 'target')
+
 
 class DescribeServices:
+    args: Args = Args(
+        target='http://localhost'
+    )
+
     def it_checks_successful_tcp_attack(self):
-        context = Context(args=None)
+        context = Context(self.args)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.Statistic.packets.connections_check_time = init_check_time
         context.Statistic.start_time = None
@@ -37,7 +44,7 @@ class DescribeServices:
         assert len(context.errors) == 0
 
     def it_checks_successful_connections(self):
-        context = Context(args=None)
+        context = Context(self.args)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.Statistic.connect.last_check_time = init_check_time
         context.Statistic.start_time = None

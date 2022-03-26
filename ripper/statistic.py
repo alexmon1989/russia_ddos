@@ -11,7 +11,6 @@ import ripper.services as services
 from ripper.context.context import Context
 from ripper.context.errors import Errors
 from ripper.constants import *
-from ripper.health_check_manager import get_health_status
 
 
 def build_http_codes_distribution(http_codes_counter) -> str:
@@ -85,7 +84,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         # ===================================
         Row('CloudFlare DNS Protection', ('[red]' if _ctx.target.is_cloud_flare_protection else '[green]') + _ctx.target.cloudflare_status(), end_section=not _ctx.is_health_check),
         Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.host_statuses.values()))),
-        Row('Host Availability',         f'{get_health_status(_ctx)}', visible=_ctx.is_health_check, end_section=True),
+        Row('Host Availability',         f'{_ctx.target.health_check_manager.get_health_status()}', visible=_ctx.is_health_check, end_section=True),
         # ===================================
         Row(f'[cyan][bold]{_ctx.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
