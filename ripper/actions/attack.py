@@ -1,3 +1,4 @@
+import threading
 from threading import Thread
 from typing import Tuple, Any
 
@@ -29,7 +30,12 @@ class Attack(Thread):
 
     def run(self):
         self.create_attack(self._method)
-        while True:
+
+        if self._ctx.dry_run:
+            self.ATTACK()
+            exit(0)
+
+        while not threading.Event().is_set():
             self.ATTACK()
 
     def create_attack(self, method: str):
