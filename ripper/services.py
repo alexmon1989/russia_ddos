@@ -22,7 +22,7 @@ def validate_attack(_ctx: Context) -> bool:
     Attack is valid if target accepted traffic within
     last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
     """
-    if _ctx.attack_method == 'tcp':
+    if _ctx.target.attack_method == 'tcp':
         return check_successful_tcp_attack(_ctx)
     return check_successful_connections(_ctx)
 
@@ -91,23 +91,23 @@ def update_current_ip(_ctx: Context) -> None:
 def update_host_statuses(_ctx: Context):
     """Updates host statuses based on check-host.net nodes"""
     diff = float('inf')
-    if _ctx.last_host_statuses_update is not None:
-        diff = time.time() - datetime.datetime.timestamp(_ctx.last_host_statuses_update)
+    if _ctx.target.health_check_manager.last_host_statuses_update is not None:
+        diff = time.time() - datetime.datetime.timestamp(_ctx.target.health_check_manager.last_host_statuses_update)
 
-    if _ctx.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
+    if _ctx.target.health_check_manager.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
         return
-    _ctx.fetching_host_statuses_in_progress = True
+    _ctx.target.health_check_manager.fetching_host_statuses_in_progress = True
     try:
         if _ctx.target.host_ip:
-            host_statuses = _ctx.target.fetch_host_statuses()
+            host_statuses = _ctx.target.health_check_manager.fetch_host_statuses()
             # API in some cases returns 403, so we can't update statuses
             if len(host_statuses.values()):
-                _ctx.host_statuses = host_statuses
-                _ctx.last_host_statuses_update = datetime.datetime.now()
+                _ctx.target.health_check_manager.host_statuses = host_statuses
+                _ctx.target.health_check_manager.last_host_statuses_update = datetime.datetime.now()
     except:
         pass
     finally:
-        _ctx.fetching_host_statuses_in_progress = False
+        _ctx.target.health_check_manager.fetching_host_statuses_in_progress = False
 
 
 def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
@@ -186,7 +186,7 @@ def main():
     # Proxies should be validated during the runtime
     connect_host_loop(
         _ctx,
-        retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or _ctx.attack_method == 'udp' else 5))
+        retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or _ctx.target.attack_method == 'udp' else 5))
     _ctx.validate()
 
     time.sleep(.5)

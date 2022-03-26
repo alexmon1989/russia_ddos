@@ -21,13 +21,14 @@ attack_method_labels: list[str] = list(map(lambda am: am.label, attack_methods))
 
 def attack_method_factory(context: Context):
     target = context.target
-    attack_method_name = context.attack_method
-    if attack_method_name == 'udp':
+    attack_method_name = target.attack_method
+    if attack_method_name == 'udp-flood':
         return UdpFlood(target, context)
-    elif attack_method_name == 'http':
+    elif attack_method_name == 'http-flood':
         return HttpFlood(target, context)
-    elif attack_method_name == 'tcp':
+    elif attack_method_name == 'tcp-flood':
         return TcpFlood(target, context)
+    # Dangerours, may lead to exception
     return None
 
 

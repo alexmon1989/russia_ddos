@@ -55,7 +55,7 @@ class Row:
 def collect_stats(_ctx: Context) -> list[Row]:
     """Prepare data for Statistic."""
     max_length = f' / Max length: {_ctx.max_random_packet_len}' if _ctx.max_random_packet_len else ''
-    sent_units = 'Requests' if _ctx.attack_method.lower() == 'http' else 'Packets'
+    sent_units = 'Requests' if _ctx.target.attack_method.lower() == 'http' else 'Packets'
     conn_success_rate = _ctx.Statistic.connect.get_success_rate()
     has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
@@ -72,8 +72,8 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
         Row('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
         Row('Host IP / Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} / [red]{_ctx.target.country}'),
-        Row('HTTP Request',              f'[cyan]{_ctx.http_method}: {_ctx.target.url()}', visible=_ctx.attack_method.lower() == 'http'),
-        Row('Attack Method',             _ctx.attack_method.upper(), end_section=True),
+        Row('HTTP Request',              f'[cyan]{_ctx.target.http_method}: {_ctx.target.url()}', visible=_ctx.target.attack_method.lower() == 'http'),
+        Row('Attack Method',             _ctx.target.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
         Row('Proxies Count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} / {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
@@ -83,10 +83,10 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
         Row('CloudFlare DNS Protection', ('[red]' if _ctx.target.is_cloud_flare_protection else '[green]') + _ctx.target.cloudflare_status(), end_section=not _ctx.is_health_check),
-        Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.host_statuses.values()))),
+        Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.target.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.target.health_check_manager.host_statuses.values()))),
         Row('Host Availability',         f'{_ctx.target.health_check_manager.get_health_status()}', visible=_ctx.is_health_check, end_section=True),
         # ===================================
-        Row(f'[cyan][bold]{_ctx.attack_method.upper()} Statistics', '', end_section=True),
+        Row(f'[cyan][bold]{_ctx.target.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
         Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
         Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)} / {common.convert_size(data_rps)}/s'),
@@ -96,7 +96,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Connection Failed',         f'[red]{_ctx.Statistic.connect.failed}'),
         Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', end_section=True),
         # ===================================
-        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.Statistic.http_stats), end_section=has_errors, visible=_ctx.attack_method.lower() == 'http'),
+        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.Statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() == 'http'),
     ]
 
     return full_stats
