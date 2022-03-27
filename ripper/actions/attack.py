@@ -1,3 +1,4 @@
+import threading
 from threading import Thread
 
 from ripper.actions.attack_method import AttackMethod
@@ -49,6 +50,10 @@ class Attack(Thread):
 
     def run(self):
         runner = attack_method_factory(self._ctx)
-        while True:
-            runner()
 
+        if self._ctx.dry_run:
+            runner()
+            exit(0)
+
+        while not threading.Event().is_set():
+            runner()

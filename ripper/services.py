@@ -1,6 +1,7 @@
 import datetime
 import signal
 import sys
+import threading
 import time
 from base64 import b64decode
 
@@ -11,6 +12,7 @@ from ripper.context.context import Context, Errors, Target
 from ripper.common import get_current_ip, ns2s
 from ripper.proxy import Proxy
 
+exit_event = threading.Event()
 _ctx: Context = None
 
 
@@ -190,14 +192,22 @@ def main():
     _ctx.validate()
 
     time.sleep(.5)
-    for _ in range(_ctx.threads):
+    threads_range = _ctx.threads if not _ctx.dry_run else 1
+    for _ in range(threads_range):
         Attack(_ctx).start()
 
     statistic.render_statistic(_ctx)
 
 
+def signal_handler(signum, frame):
+    """Signal handler for gracefully shutdown threads by keyboard interrupting."""
+    exit_event.set()
+    raise KeyboardInterrupt
+
+
 def cli():
     try:
+        signal.signal(signal.SIGINT, signal_handler)
         sys.exit(main())
     except KeyboardInterrupt:  # The user hit Control-C
         sys.stderr.write('\n\nReceived keyboard interrupt, terminating.\n\n')

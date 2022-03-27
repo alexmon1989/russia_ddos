@@ -45,6 +45,9 @@ def parser_add_options(parser: OptionParser) -> None:
                       # default value is not set here to keep dynamic logic during initialization
                       dest='socket_timeout', type='int', default=ARGS_DEFAULT_SOCK_TIMEOUT,
                       help=f'Timeout for socket connection is seconds. Default (seconds): {ARGS_DEFAULT_SOCK_TIMEOUT} without proxy, 20 with proxy')
+    parser.add_option('-d', '--dry-run',
+                      dest='dry_run', action="store_true",
+                      help='Print formatted output without full script running.')
 
 
 def print_usage():

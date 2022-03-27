@@ -21,6 +21,7 @@ class TcpFlood(AttackMethod):
     _sock: socket
     _target: Target
     _ctx: Context
+    # TODO Make concrete
     _proxy: Any = None
 
     def __init__(self, target: Target, context: Context):
@@ -38,6 +39,8 @@ class TcpFlood(AttackMethod):
         with suppress(Exception), self.create_connection() as tcp_conn:
             self._ctx.target.statistic.connect.status_success()
             while self.send(tcp_conn):
+                if self._ctx.dry_run:
+                    break
                 continue
 
             self._ctx.target.statistic.connect.status_failed()

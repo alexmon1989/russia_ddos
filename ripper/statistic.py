@@ -19,7 +19,7 @@ def build_http_codes_distribution(http_codes_counter) -> str:
     for code in http_codes_counter.keys():
         count = http_codes_counter[code]
         percent = round(count * 100 / total)
-        codes_distribution.append(f'{code}: {count} ({percent}%)')
+        codes_distribution.append(f'{code}: {percent}%')
     return ', '.join(codes_distribution)
 
 
@@ -60,7 +60,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
     has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
-    is_proxy_list = _ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list)
+    is_proxy_list = bool(_ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list))
     your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
 
     duration = datetime.now() - _ctx.target.statistic.start_time
@@ -89,8 +89,8 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row(f'[cyan][bold]{_ctx.target.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
         Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
-        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes)} / {common.convert_size(data_rps)}/s'),
-        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.target.statistic.packets.total_sent:,} / {packets_rps} {sent_units.lower()}/s'),
+        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
+        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.target.statistic.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connection Success',        f'[green]{_ctx.target.statistic.connect.success}'),
         Row('Connection Failed',         f'[red]{_ctx.target.statistic.connect.failed}'),
@@ -184,9 +184,11 @@ def refresh(_ctx: Context) -> None:
 
 def render_statistic(_ctx: Context) -> None:
     """Show DRipper runtime statistic."""
-    with Live(generate_stats(_ctx), vertical_overflow='visible') as live:
-        # for _ in range(720):
+    with Live(generate_stats(_ctx), vertical_overflow='visible', redirect_stderr=False) as live:
+        live.start()
         while True:
             time.sleep(0.5)
-            live.update(generate_stats(_ctx))
             refresh(_ctx)
+            live.update(generate_stats(_ctx))
+            if _ctx.dry_run:
+                break

@@ -42,6 +42,8 @@ class UdpFlood(AttackMethod):
         with suppress(Exception), self.create_connection() as udp_conn:
             self._ctx.target.statistic.connect.status_success()
             while self.sendto(udp_conn):
+                if self._ctx.dry_run:
+                    break
                 continue
 
             self._ctx.target.statistic.connect.status_failed()

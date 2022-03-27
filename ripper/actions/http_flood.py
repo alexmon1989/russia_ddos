@@ -41,6 +41,8 @@ class HttpFlood(AttackMethod):
             self._http_connect.connect(self._target.hostip_port_tuple())
             self._ctx.target.statistic.connect.status_success()
             while self.send(self._http_connect):
+                if self._ctx.dry_run:
+                    break
                 continue
 
     def check_response_status(self, payload: bytes):

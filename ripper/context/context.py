@@ -33,6 +33,8 @@ class Context:
     """File with proxies in ip:port:username:password or ip:port line format."""
     proxy_type: str
     """Type of proxy to work with. Supported types: socks5, socks4, http."""
+    dry_run: bool = False
+    """Is dry run mode."""
 
     # ==== Statistic ====
     myIpInfo: IpInfo = IpInfo()
@@ -138,6 +140,7 @@ class Context:
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
         self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', ARGS_DEFAULT_MAX_RND_PACKET_LEN))
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
+        self.dry_run = getattr(args, 'dry_run', False)
 
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)

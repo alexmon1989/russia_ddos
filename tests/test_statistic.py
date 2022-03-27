@@ -25,4 +25,4 @@ class DescribeStatistic:
             500: 2
         }
         actual = statistic.build_http_codes_distribution(http_status_codes)
-        assert actual == '200: 1 (7%), 300: 2 (13%), 400: 10 (67%), 500: 2 (13%)'
+        assert actual == '200: 7%, 300: 13%, 400: 67%, 500: 13%'
