@@ -159,6 +159,7 @@ def refresh(_ctx: Context) -> None:
     Check threads, IPs, VPN status, etc.
     """
     lock.acquire()
+
     threading.Thread(
         target=services.update_current_ip,
         args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC]).start()

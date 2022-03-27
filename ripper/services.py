@@ -21,8 +21,9 @@ _ctx: Context = None
 ###############################################
 def validate_attack(_ctx: Context) -> bool:
     """
-    Checks if there are changes in sent bytes count.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+    Checks if attack is valid.
+    Attack is valid if target accepted traffic within
+    last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
     """
     if _ctx.target.attack_method == 'tcp':
         return check_successful_tcp_attack(_ctx)

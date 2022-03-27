@@ -1,6 +1,5 @@
 from typing import Tuple
 from urllib.parse import urlparse
-from ripper import health_check_manager
 
 from ripper.headers_provider import HeadersProvider
 from ripper.health_check_manager import HealthCheckManager

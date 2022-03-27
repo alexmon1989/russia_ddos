@@ -2,11 +2,9 @@ import os
 import time
 from datetime import datetime
 from collections import defaultdict
-from xmlrpc.client import Boolean
 from rich.console import Console
 
 from ripper import common
-from ripper import headers_provider
 from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
@@ -14,7 +12,6 @@ from ripper.headers_provider import HeadersProvider
 from ripper.context.errors import *
 from ripper.context.stats import *
 from ripper.context.target import *
-from ripper.actions.attack import attack_method_factory
 
 
 class Context:
@@ -43,7 +40,6 @@ class Context:
     """All the errors during script run."""
 
     # ==========================================================================
-
     cpu_count: int
     """vCPU cont of current machine."""
 
