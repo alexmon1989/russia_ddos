@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### Added
 - `dry run` mode for fast testing purposes
+- CloudFlare bypass mode for HTTP flood method
 
 ### Fixed
 - Fixed error with keyboard interrupting and threads shutdown process
