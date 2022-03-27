@@ -20,7 +20,8 @@ _ctx: Context = None
 # Connection validators
 ###############################################
 def validate_attack(_ctx: Context) -> bool:
-    """Checks if attack is valid.
+    """
+    Checks if attack is valid.
     Attack is valid if target accepted traffic within
     last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
     """
@@ -30,7 +31,8 @@ def validate_attack(_ctx: Context) -> bool:
 
 
 def check_successful_connections(_ctx: Context) -> bool:
-    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+    """
+    Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
     Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
     :parameter _ctx: Context
     """
@@ -52,8 +54,10 @@ def check_successful_connections(_ctx: Context) -> bool:
 
 
 def check_successful_tcp_attack(_ctx: Context) -> bool:
-    """Checks if there are changes in sent bytes count.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    """
+    Checks if there are changes in sent bytes count.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+    """
     now_ns = time.time_ns()
     lower_bound = max(_ctx.get_start_time_ns(),
                       _ctx.Statistic.packets.connections_check_time)
@@ -81,11 +85,12 @@ def no_successful_connections_error_msg(_ctx: Context) -> str:
     return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
 
 
-def update_current_ip(_ctx: Context) -> None:
-    """Updates current IPv4 address."""
-    _ctx.Statistic.connect.set_state_in_progress()
-    _ctx.IpInfo.my_current_ip = get_current_ip()
-    _ctx.Statistic.connect.set_state_is_connected()
+def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
+    """
+    Updates current IPv4 address.
+    """
+    if _ctx.check_timer(check_period_sec, 'update_current_ip'):
+        _ctx.IpInfo.my_current_ip = get_current_ip()
     if _ctx.IpInfo.my_start_ip is None:
         _ctx.IpInfo.my_start_ip = _ctx.IpInfo.my_current_ip
 
