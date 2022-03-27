@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### Fixed
 - Fixed error with keyboard interrupting and threads shutdown process
+- Reduced IP address re-checks to avoid redundant API calls
 
 
 ## [v2.2.0](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...2.2.0)
