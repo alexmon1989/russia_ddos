@@ -116,7 +116,7 @@ def get_ipv4(host: str) -> str:
 
 
 def get_country_by_ipv4(host_ip: str) -> str:
-    """Gets country of the target's IPv4"""
+    """Gets country of the target's IPv4."""
     if host_ip is None or not is_ipv4(host_ip):
         return GEOIP_NOT_DEFINED
 

@@ -14,6 +14,7 @@ from ripper.context.stats import *
 from ripper.context.target import *
 
 
+# TODO Make it true singleton
 class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
@@ -68,9 +69,9 @@ class Context:
     def check_timer(self, sec: int, bucket: str = None) -> bool:
         """
         Check if time in seconds elapsed from last check.
-        :param sec: Amount of seconds which needs to check
-        :param bucket: Bucket name to track specific timer
-        :return: True if specified seconds elapsed, False - if not elapsed
+        :param sec: Amount of seconds which needs to check.
+        :param bucket: Bucket name to track specific timer.
+        :return: True if specified seconds elapsed, False - if not elapsed.
         """
         stopwatch = '__stopwatch__' if bucket is None else bucket
 
@@ -129,6 +130,7 @@ class Context:
             self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
 
+    # TODO use Singleton meta class
     def __new__(cls, args):
         """Singleton realization."""
         if not hasattr(cls, 'instance'):
@@ -176,6 +178,6 @@ class Context:
             except Exception as e:
                 self.add_error(Errors('Proxy list read operation failed', e))
 
-        # proxies are slower, so wee needs to increase timeouts 2x times
+        # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:
             self.sock_manager.socket_timeout *= 2

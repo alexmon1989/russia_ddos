@@ -17,9 +17,9 @@ class Errors:
 
     def __init__(self, code: str, message: str, count: int = 1):
         """
-        :param code: Error type
-        :param message: Error message
-        :param count: Error counter
+        :param code: Error type.
+        :param message: Error message.
+        :param count: Error counter.
         """
         self.uuid = hashlib.sha1(f'{code}{message}'.encode()).hexdigest()
         self.time = datetime.now()

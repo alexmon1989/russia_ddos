@@ -84,7 +84,7 @@ class Target:
         return (self.host_ip, self.port)
 
     def validate(self):
-        """Validates target"""
+        """Validates target."""
         if self.host_ip is None or not common.is_ipv4(self.host_ip):
             raise Exception(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
         return True

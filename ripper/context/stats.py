@@ -9,7 +9,7 @@ class PacketsStats:
     total_sent: int = 0
     """Total packets sent by TCP/UDP."""
     total_sent_prev: int = 0
-    """Total packets sent by TCP/UDP (previous state)"""
+    """Total packets sent by TCP/UDP (previous state)."""
     total_sent_bytes: int = 0
     """Total sent bytes by TCP/UDP connect."""
     connections_check_time: int = 0
@@ -22,7 +22,7 @@ class PacketsStats:
     def status_sent(self, sent_bytes: int = 0):
         """
         Collect sent packets statistic.
-        :param sent_bytes sent packet size in bytes
+        :param sent_bytes sent packet size in bytes.
         """
         self.total_sent += 1
         self.total_sent_bytes += sent_bytes

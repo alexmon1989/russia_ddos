@@ -18,7 +18,7 @@ Target = 'Target'
 
 
 def classify_host_status(node_response):
-    """Classifies the status of the host based on the regional node information from check-host.net"""
+    """Classifies the status of the host based on the regional node information from check-host.net."""
     if node_response is None:
         return HOST_IN_PROGRESS_STATUS
     try:
@@ -45,7 +45,7 @@ def classify_host_status(node_response):
 
 # TODO Autodetect gzip and move to utils
 def fetch_zipped_body(url: str) -> str:
-    """Fetches response body in text of the resource with gzip"""
+    """Fetches response body in text of the resource with gzip."""
     headers_provider = HeadersProvider()
     http_headers = dict(headers_provider.headers)
     http_headers['User-Agent'] = random.choice(headers_provider.user_agents)
@@ -70,7 +70,7 @@ def classify_host_status_http(val):
 
 
 def count_host_statuses(distribution) -> dict[int]:
-    """Counter of in progress / failed / successful statuses based on nodes from check-host.net"""
+    """Counter of in progress / failed / successful statuses based on nodes from check-host.net."""
     host_statuses = defaultdict(int)
     for val in distribution.values():
         status = classify_host_status(val)
@@ -79,7 +79,7 @@ def count_host_statuses(distribution) -> dict[int]:
 
 
 class HealthCheckManager:
-    """Tracks hosts availability state using check-host.net"""
+    """Tracks hosts availability state using check-host.net."""
     headers_provider: HeadersProvider = None
     connections_check_time: int
     fetching_host_statuses_in_progress: bool = False
@@ -143,7 +143,7 @@ class HealthCheckManager:
         return accessible_message
 
     def fetch_host_statuses(self) -> dict:
-        """Fetches regional availability statuses"""
+        """Fetches regional availability statuses."""
         statuses = {}
         try:
             body = fetch_zipped_body(self.request_url)

@@ -3,7 +3,7 @@ from ripper.common import Singleton, strip_lines, read_file_lines_fs
 
 
 def get_headers_dict(raw_headers: list[str]):
-    """Set headers for the request"""
+    """Set headers for the request."""
     headers_dict = {}
     for line in raw_headers:
         parts = line.split(':')

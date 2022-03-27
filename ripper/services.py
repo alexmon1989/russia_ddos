@@ -86,9 +86,7 @@ def no_successful_connections_error_msg(_ctx: Context) -> str:
 
 
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
-    """
-    Updates current IPv4 address.
-    """
+    """Updates current IPv4 address."""
     if _ctx.check_timer(check_period_sec, 'update_current_ip'):
         _ctx.myIpInfo.my_current_ip = get_current_ip()
     if _ctx.myIpInfo.my_start_ip is None:
@@ -96,9 +94,7 @@ def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
 
 
 def update_host_statuses(_ctx: Context):
-    """
-    Updates host statuses based on check-host.net nodes
-    """
+    """Updates host statuses based on check-host.net nodes."""
     diff = float('inf')
     if _ctx.target.health_check_manager.last_host_statuses_update is not None:
         diff = time.time() - datetime.datetime.timestamp(_ctx.target.health_check_manager.last_host_statuses_update)
@@ -136,9 +132,7 @@ def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
 
 
 def go_home(_ctx: Context) -> None:
-    """
-    Modifies host to match the rules
-    """
+    """Modifies host to match the rules."""
     home_code = b64decode('dWE=').decode('utf-8')
     if _ctx.target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.target.host_ip) in home_code.upper():
         _ctx.target.host_ip = _ctx.target.host = 'localhost'
@@ -146,9 +140,7 @@ def go_home(_ctx: Context) -> None:
 
 
 def validate_input(args) -> bool:
-    """
-    Validates input params.
-    """
+    """Validates input params."""
     if not Target.validate_format(args.target):
         print(f'Wrong target format.')
         return False
@@ -173,9 +165,7 @@ def validate_input(args) -> bool:
 
 
 def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
-    """
-    Tries to connect host in permanent loop.
-    """
+    """Tries to connect host in permanent loop."""
     i = 0
     _ctx.logger.rule('[bold]Starting DRipper')
     while i < retry_cnt:
@@ -188,9 +178,7 @@ def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY,
 
 
 def main():
-    """
-    The main function to run the script from the command line.
-    """
+    """The main function to run the script from the command line."""
     args = arg_parser.create_parser().parse_args()
 
     if len(sys.argv) < 2 or not validate_input(args[0]):
