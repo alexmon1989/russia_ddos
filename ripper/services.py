@@ -85,11 +85,12 @@ def no_successful_connections_error_msg(_ctx: Context) -> str:
     return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
 
 
-def update_current_ip(_ctx: Context) -> None:
-    """Updates current IPv4 address."""
-    _ctx.Statistic.connect.set_state_in_progress()
-    _ctx.IpInfo.my_current_ip = get_current_ip()
-    _ctx.Statistic.connect.set_state_is_connected()
+def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
+    """
+    Updates current IPv4 address.
+    """
+    if _ctx.check_timer(check_period_sec, 'update_current_ip'):
+        _ctx.IpInfo.my_current_ip = get_current_ip()
     if _ctx.IpInfo.my_start_ip is None:
         _ctx.IpInfo.my_start_ip = _ctx.IpInfo.my_current_ip
 
