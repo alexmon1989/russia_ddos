@@ -39,10 +39,13 @@ class Attack(Thread):
             self.ATTACK()
 
     def create_attack(self, method: str):
-        """Create attack for specified method."""
+        """
+        Create attack for specified method.
+        :param method: Attack method name.
+        """
         if method == 'udp':
             self.ATTACK = UdpFlood(self._target, self._ctx)
-        elif method == 'http':
+        elif method in ['http', 'cfb']:
             self.ATTACK = HttpFlood(self._target, self._ctx)
         else:  # TCP by default
             self.ATTACK = TcpFlood(self._target, self._ctx)

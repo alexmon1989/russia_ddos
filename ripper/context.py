@@ -313,6 +313,14 @@ class Context:
 
         return value if value is not None else default
 
+    @staticmethod
+    def select_health_check_method(method: str) -> str:
+        if method == 'udp':
+            return 'ping'
+        if method == 'cfb':
+            return 'http'
+        return method
+
     def __init__(self, args):
         self.host = getattr(args, 'host', '')
         self.port = getattr(args, 'port', ARGS_DEFAULT_PORT)
@@ -355,7 +363,7 @@ class Context:
 
         self.Statistic.start_time = datetime.now()
         self.connections_check_time = time.time_ns()
-        self.health_check_method = 'ping' if self.attack_method == 'udp' else self.attack_method
+        self.health_check_method = self.select_health_check_method(self.attack_method)
 
         if self.proxy_list and self.attack_method != 'udp':
             self.proxy_manager.set_proxy_type(self.proxy_type)
