@@ -56,4 +56,3 @@ def print_usage():
     create_parser().print_help()
 
     sys.exit()
-

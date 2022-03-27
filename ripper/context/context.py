@@ -138,10 +138,12 @@ class Context:
         return cls.instance
 
     def __init__(self, args):
+        # TODO rename target to target_uri
         if args and getattr(args, 'target'):
             self.target = Target(
                 target_uri = getattr(args, 'target', ''),
                 attack_method = getattr(args, 'attack_method', None),
+                # TODO move http_method to target_uri to allow each target have its own method
                 http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
             )
 
