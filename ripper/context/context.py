@@ -60,7 +60,7 @@ class Context:
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
 
-    _stopwatch: datetime = None
+    _timer_bucket: dict[str, datetime] = defaultdict(dict[str, datetime])
     """Internal stopwatch."""
 
     @staticmethod
@@ -69,20 +69,31 @@ class Context:
 
         return value if value is not None else default
 
-    def check_timer(self, sec: int) -> bool:
+    def check_timer(self, sec: int, bucket: str = None) -> bool:
         """
         Check if time in seconds elapsed from last check.
         :param sec: Amount of seconds which needs to check
+        :param bucket: Bucket name to track specific timer
         :return: True if specified seconds elapsed, False - if not elapsed
         """
-        if not self._stopwatch:
-            self._stopwatch = self.target.statistic.start_time
-        delta = (datetime.now() - self._stopwatch).total_seconds()
+        stopwatch = '__stopwatch__' if bucket is None else bucket
+
+        if not self._timer_bucket[stopwatch]:
+            self._timer_bucket[stopwatch] = self.target.statistic.start_time
+        delta = (datetime.now() - self._timer_bucket[stopwatch]).total_seconds()
         if int(delta) < sec:
             return False
         else:
-            self._stopwatch = datetime.now()
+            self._timer_bucket[stopwatch] = datetime.now()
             return True
+
+    def get_timer_seconds(self, bucket: str = None) -> int:
+         stopwatch = '__stopwatch__' if bucket is None else bucket
+
+         if self._timer_bucket[stopwatch]:
+             return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
+
+         return 0
 
     def get_start_time_ns(self) -> int:
         """Get start time in nanoseconds."""

@@ -20,9 +20,9 @@ _ctx: Context = None
 # Connection validators
 ###############################################
 def validate_attack(_ctx: Context) -> bool:
-    """Checks if attack is valid.
-    Attack is valid if target accepted traffic within
-    last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
+    """
+    Checks if there are changes in sent bytes count.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
     """
     if _ctx.target.attack_method == 'tcp':
         return check_successful_tcp_attack(_ctx)
@@ -30,7 +30,8 @@ def validate_attack(_ctx: Context) -> bool:
 
 
 def check_successful_connections(_ctx: Context) -> bool:
-    """Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+    """
+    Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
     Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
     :parameter _ctx: Context
     """
@@ -52,8 +53,10 @@ def check_successful_connections(_ctx: Context) -> bool:
 
 
 def check_successful_tcp_attack(_ctx: Context) -> bool:
-    """Checks if there are changes in sent bytes count.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
+    """
+    Checks if there are changes in sent bytes count.
+    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+    """
     now_ns = time.time_ns()
     lower_bound = max(_ctx.get_start_time_ns(),
                       _ctx.target.statistic.packets.connections_check_time)
@@ -81,17 +84,20 @@ def no_successful_connections_error_msg(_ctx: Context) -> str:
     return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
 
 
-def update_current_ip(_ctx: Context) -> None:
-    """Updates current IPv4 address."""
-    _ctx.target.statistic.connect.set_state_in_progress()
-    _ctx.myIpInfo.my_current_ip = get_current_ip()
-    _ctx.target.statistic.connect.set_state_is_connected()
+def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
+    """
+    Updates current IPv4 address.
+    """
+    if _ctx.check_timer(check_period_sec, 'update_current_ip'):
+        _ctx.myIpInfo.my_current_ip = get_current_ip()
     if _ctx.myIpInfo.my_start_ip is None:
         _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip
 
 
 def update_host_statuses(_ctx: Context):
-    """Updates host statuses based on check-host.net nodes"""
+    """
+    Updates host statuses based on check-host.net nodes
+    """
     diff = float('inf')
     if _ctx.target.health_check_manager.last_host_statuses_update is not None:
         diff = time.time() - datetime.datetime.timestamp(_ctx.target.health_check_manager.last_host_statuses_update)
@@ -129,7 +135,9 @@ def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
 
 
 def go_home(_ctx: Context) -> None:
-    """Modifies host to match the rules"""
+    """
+    Modifies host to match the rules
+    """
     home_code = b64decode('dWE=').decode('utf-8')
     if _ctx.target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.target.host_ip) in home_code.upper():
         _ctx.target.host_ip = _ctx.target.host = 'localhost'
@@ -137,7 +145,9 @@ def go_home(_ctx: Context) -> None:
 
 
 def validate_input(args) -> bool:
-    """Validates input params."""
+    """
+    Validates input params.
+    """
     if not Target.validate_format(args.target):
         print(f'Wrong target format.')
         return False
@@ -162,7 +172,9 @@ def validate_input(args) -> bool:
 
 
 def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
-    """Tries to connect host in permanent loop."""
+    """
+    Tries to connect host in permanent loop.
+    """
     i = 0
     _ctx.logger.rule('[bold]Starting DRipper')
     while i < retry_cnt:
@@ -175,7 +187,9 @@ def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY,
 
 
 def main():
-    """The main function to run the script from the command line."""
+    """
+    The main function to run the script from the command line.
+    """
     args = arg_parser.create_parser().parse_args()
 
     if len(sys.argv) < 2 or not validate_input(args[0]):

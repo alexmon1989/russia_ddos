@@ -54,7 +54,7 @@ class Row:
 
 def collect_stats(_ctx: Context) -> list[Row]:
     """Prepare data for Statistic."""
-    max_length = f' / Max length: {_ctx.max_random_packet_len}' if _ctx.max_random_packet_len else ''
+    max_length = f' | Max length: {_ctx.max_random_packet_len}' if _ctx.max_random_packet_len else ''
     sent_units = 'Requests' if _ctx.target.attack_method.lower() == 'http' else 'Packets'
     conn_success_rate = _ctx.target.statistic.connect.get_success_rate()
     has_errors = True if len(_ctx.errors) > 0 else False
@@ -70,13 +70,13 @@ def collect_stats(_ctx: Context) -> list[Row]:
     full_stats: list[Row] = [
         #   Description                  Status
         Row('Start Time',                common.format_dt(_ctx.target.statistic.start_time)),
-        Row('Your Public IP / Country',  f'[cyan]{_ctx.myIpInfo.my_ip_masked()} / [green]{_ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
-        Row('Host IP / Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} / [red]{_ctx.target.country}'),
+        Row('Your Public IP | Country',  f'[cyan]{_ctx.myIpInfo.my_ip_masked()} | [green]{_ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
+        Row('Host IP | Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} | [red]{_ctx.target.country}'),
         Row('HTTP Request',              f'[cyan]{_ctx.target.http_method}: {_ctx.target.url()}', visible=_ctx.target.attack_method.lower() == 'http'),
         Row('Attack Method',             _ctx.target.attack_method.upper(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
-        Row('Proxies Count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} / {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
+        Row('Proxies Count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} | {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
         Row('Proxies Type',              f'[cyan]{_ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
         Row('vCPU Count',                f'{_ctx.cpu_count}'),
         Row('Socket Timeout (seconds)',  f'{_ctx.sock_manager.socket_timeout}'),
@@ -89,8 +89,8 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row(f'[cyan][bold]{_ctx.target.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
         Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
-        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
-        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.target.statistic.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
+        Row('Sent Bytes | AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
+        Row(f'Sent {sent_units} | AVG speed', f'{_ctx.target.statistic.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connection Success',        f'[green]{_ctx.target.statistic.connect.success}'),
         Row('Connection Failed',         f'[red]{_ctx.target.statistic.connect.failed}'),
@@ -155,12 +155,16 @@ lock = threading.Lock()
 
 
 def refresh(_ctx: Context) -> None:
-    """Check threads, IPs, VPN status, etc."""
+    """
+    Check threads, IPs, VPN status, etc.
+    """
     lock.acquire()
-    if not _ctx.target.statistic.connect.in_progress:
-        threading.Thread(target=services.update_current_ip, args=[_ctx]).start()
-        if _ctx.is_health_check:
-            threading.Thread(target=services.update_host_statuses, args=[_ctx]).start()
+    threading.Thread(
+        target=services.update_current_ip,
+        args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC]).start()
+
+    if _ctx.is_health_check:
+        threading.Thread(target=services.update_host_statuses, args=[_ctx]).start()
 
     if _ctx.myIpInfo.my_country == GEOIP_NOT_DEFINED:
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.my_current_ip]).start()
