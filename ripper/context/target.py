@@ -6,6 +6,7 @@ from ripper.headers_provider import HeadersProvider
 from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
+from ripper.context.stats import Statistic
 
 
 def default_scheme_port(scheme: str):
@@ -38,6 +39,9 @@ class Target:
     """HTTP method used in HTTP packets"""
 
     health_check_manager: HealthCheckManager = None
+
+    statistic: Statistic = Statistic()
+    """All the statistics collected separately by protocols and operations."""
 
     @staticmethod
     def validate_format(target_uri: str) -> bool:

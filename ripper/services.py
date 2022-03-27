@@ -34,16 +34,16 @@ def check_successful_connections(_ctx: Context) -> bool:
     """
     now_ns = time.time_ns()
     lower_bound = max(_ctx.get_start_time_ns(),
-                      _ctx.Statistic.connect.last_check_time)
+                      _ctx.target.statistic.connect.last_check_time)
     diff_sec = ns2s(now_ns - lower_bound)
 
-    if _ctx.Statistic.connect.success == _ctx.Statistic.connect.success_prev:
+    if _ctx.target.statistic.connect.success == _ctx.target.statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             _ctx.add_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)))
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
-        _ctx.Statistic.connect.last_check_time = now_ns
-        _ctx.Statistic.connect.sync_success()
+        _ctx.target.statistic.connect.last_check_time = now_ns
+        _ctx.target.statistic.connect.sync_success()
         _ctx.remove_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)).uuid)
 
     return True
@@ -54,17 +54,17 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
     Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec."""
     now_ns = time.time_ns()
     lower_bound = max(_ctx.get_start_time_ns(),
-                      _ctx.Statistic.packets.connections_check_time)
+                      _ctx.target.statistic.packets.connections_check_time)
     diff_sec = ns2s(now_ns - lower_bound)
 
-    if _ctx.Statistic.packets.total_sent == _ctx.Statistic.packets.total_sent_prev:
+    if _ctx.target.statistic.packets.total_sent == _ctx.target.statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
             _ctx.add_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)))
 
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
-        _ctx.Statistic.packets.connections_check_time = now_ns
-        _ctx.Statistic.packets.sync_packets_sent()
+        _ctx.target.statistic.packets.connections_check_time = now_ns
+        _ctx.target.statistic.packets.sync_packets_sent()
         _ctx.remove_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)).uuid)
 
     return True
@@ -81,9 +81,9 @@ def no_successful_connections_error_msg(_ctx: Context) -> str:
 
 def update_current_ip(_ctx: Context) -> None:
     """Updates current IPv4 address."""
-    _ctx.Statistic.connect.set_state_in_progress()
+    _ctx.target.statistic.connect.set_state_in_progress()
     _ctx.myIpInfo.my_current_ip = get_current_ip()
-    _ctx.Statistic.connect.set_state_is_connected()
+    _ctx.target.statistic.connect.set_state_is_connected()
     if _ctx.myIpInfo.my_start_ip is None:
         _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip
 
@@ -111,18 +111,18 @@ def update_host_statuses(_ctx: Context):
 
 
 def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
-    _ctx.Statistic.connect.set_state_in_progress()
+    _ctx.target.statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket(proxy)
         sock.connect((_ctx.target.host, _ctx.target.port))
     except:
         res = False
-        _ctx.Statistic.connect.failed += 1
+        _ctx.target.statistic.connect.failed += 1
     else:
         res = True
-        _ctx.Statistic.connect.success += 1
+        _ctx.target.statistic.connect.success += 1
         sock.close()
-    _ctx.Statistic.connect.set_state_is_connected()
+    _ctx.target.statistic.connect.set_state_is_connected()
     return res
 
 

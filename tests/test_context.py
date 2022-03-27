@@ -74,9 +74,9 @@ class DescribeContext:
     def it_checks_time_interval(self):
         context = Context(self.args)
         last_2mins = datetime.now() - timedelta(minutes=2)
-        context.Statistic.start_time = last_2mins
+        context.target.statistic.start_time = last_2mins
 
-        assert datetime.now() > context.Statistic.start_time
+        assert datetime.now() > context.target.statistic.start_time
         assert context.check_timer(5) is True
         assert context.check_timer(5) is False
         time.sleep(2)

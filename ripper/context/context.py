@@ -35,8 +35,6 @@ class Context:
     """Type of proxy to work with. Supported types: socks5, socks4, http."""
 
     # ==== Statistic ====
-    Statistic: Statistic = Statistic()
-    """All the statistics collected separately by protocols and operations."""
     myIpInfo: IpInfo = IpInfo()
     """All the info about IP addresses and GeoIP information."""
     errors: dict[str, Errors] = defaultdict(dict[str, Errors])
@@ -60,7 +58,6 @@ class Context:
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
 
-
     _stopwatch: datetime = None
     """Internal stopwatch."""
 
@@ -77,7 +74,7 @@ class Context:
         :return: True if specified seconds elapsed, False - if not elapsed
         """
         if not self._stopwatch:
-            self._stopwatch = self.Statistic.start_time
+            self._stopwatch = self.target.statistic.start_time
         delta = (datetime.now() - self._stopwatch).total_seconds()
         if int(delta) < sec:
             return False
@@ -87,9 +84,9 @@ class Context:
 
     def get_start_time_ns(self) -> int:
         """Get start time in nanoseconds."""
-        if not self.Statistic.start_time:
+        if not self.target.statistic.start_time:
             return 0
-        return int(self.Statistic.start_time.timestamp() * 1000000 * 1000)
+        return int(self.target.statistic.start_time.timestamp() * 1000000 * 1000)
 
     def add_error(self, error: Errors):
         """
@@ -159,7 +156,7 @@ class Context:
         self.myIpInfo.my_current_ip = self.myIpInfo.my_start_ip
         self.myIpInfo.my_country = common.get_country_by_ipv4(self.myIpInfo.my_start_ip)
 
-        self.Statistic.start_time = datetime.now()
+        self.target.statistic.start_time = datetime.now()
         self.connections_check_time = time.time_ns()
 
         if self.proxy_list and self.target.attack_method != 'udp-flood':

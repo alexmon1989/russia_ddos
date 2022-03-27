@@ -56,20 +56,20 @@ def collect_stats(_ctx: Context) -> list[Row]:
     """Prepare data for Statistic."""
     max_length = f' / Max length: {_ctx.max_random_packet_len}' if _ctx.max_random_packet_len else ''
     sent_units = 'Requests' if _ctx.target.attack_method.lower() == 'http' else 'Packets'
-    conn_success_rate = _ctx.Statistic.connect.get_success_rate()
+    conn_success_rate = _ctx.target.statistic.connect.get_success_rate()
     has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
     is_proxy_list = _ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list)
     your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
 
-    duration = datetime.now() - _ctx.Statistic.start_time
-    packets_rps = int(_ctx.Statistic.packets.total_sent / duration.total_seconds())
-    data_rps = int(_ctx.Statistic.packets.total_sent_bytes / duration.total_seconds())
+    duration = datetime.now() - _ctx.target.statistic.start_time
+    packets_rps = int(_ctx.target.statistic.packets.total_sent / duration.total_seconds())
+    data_rps = int(_ctx.target.statistic.packets.total_sent_bytes / duration.total_seconds())
 
     full_stats: list[Row] = [
         #   Description                  Status
-        Row('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
+        Row('Start Time',                common.format_dt(_ctx.target.statistic.start_time)),
         Row('Your Public IP / Country',  f'[cyan]{_ctx.myIpInfo.my_ip_masked()} / [green]{_ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
         Row('Host IP / Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} / [red]{_ctx.target.country}'),
         Row('HTTP Request',              f'[cyan]{_ctx.target.http_method}: {_ctx.target.url()}', visible=_ctx.target.attack_method.lower() == 'http'),
@@ -89,14 +89,14 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row(f'[cyan][bold]{_ctx.target.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
         Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
-        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.Statistic.packets.total_sent_bytes)} / {common.convert_size(data_rps)}/s'),
-        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.Statistic.packets.total_sent:,} / {packets_rps} {sent_units.lower()}/s'),
+        Row('Sent Bytes / AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes)} / {common.convert_size(data_rps)}/s'),
+        Row(f'Sent {sent_units} / AVG speed', f'{_ctx.target.statistic.packets.total_sent:,} / {packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
-        Row('Connection Success',        f'[green]{_ctx.Statistic.connect.success}'),
-        Row('Connection Failed',         f'[red]{_ctx.Statistic.connect.failed}'),
+        Row('Connection Success',        f'[green]{_ctx.target.statistic.connect.success}'),
+        Row('Connection Failed',         f'[red]{_ctx.target.statistic.connect.failed}'),
         Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', end_section=True),
         # ===================================
-        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.Statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() == 'http'),
+        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() == 'http'),
     ]
 
     return full_stats
@@ -157,7 +157,7 @@ lock = threading.Lock()
 def refresh(_ctx: Context) -> None:
     """Check threads, IPs, VPN status, etc."""
     lock.acquire()
-    if not _ctx.Statistic.connect.in_progress:
+    if not _ctx.target.statistic.connect.in_progress:
         threading.Thread(target=services.update_current_ip, args=[_ctx]).start()
         if _ctx.is_health_check:
             threading.Thread(target=services.update_host_statuses, args=[_ctx]).start()
