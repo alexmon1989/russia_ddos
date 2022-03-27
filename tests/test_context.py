@@ -68,8 +68,8 @@ class DescribeContext:
     ])
     def it_can_get_my_ip_masked(self, actual_ip, expected_result):
         context = Context(self.args)
-        context.IpInfo.my_start_ip = actual_ip
-        assert context.IpInfo.my_ip_masked() == expected_result
+        context.myIpInfo.my_start_ip = actual_ip
+        assert context.myIpInfo.my_ip_masked() == expected_result
 
     def it_checks_time_interval(self):
         context = Context(self.args)

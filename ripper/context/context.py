@@ -37,7 +37,7 @@ class Context:
     # ==== Statistic ====
     Statistic: Statistic = Statistic()
     """All the statistics collected separately by protocols and operations."""
-    IpInfo: IpInfo = IpInfo()
+    myIpInfo: IpInfo = IpInfo()
     """All the info about IP addresses and GeoIP information."""
     errors: dict[str, Errors] = defaultdict(dict[str, Errors])
     """All the errors during script run."""
@@ -119,7 +119,7 @@ class Context:
             self.logger.log(str(e))
             exit(1)
 
-        if self.IpInfo.my_start_ip is None or not common.is_ipv4(self.IpInfo.my_start_ip):
+        if self.myIpInfo.my_start_ip is None or not common.is_ipv4(self.myIpInfo.my_start_ip):
             self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
 
@@ -155,9 +155,9 @@ class Context:
         self.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
         # Get initial info from external services
-        self.IpInfo.my_start_ip = common.get_current_ip()
-        self.IpInfo.my_current_ip = self.IpInfo.my_start_ip
-        self.IpInfo.my_country = common.get_country_by_ipv4(self.IpInfo.my_start_ip)
+        self.myIpInfo.my_start_ip = common.get_current_ip()
+        self.myIpInfo.my_current_ip = self.myIpInfo.my_start_ip
+        self.myIpInfo.my_country = common.get_country_by_ipv4(self.myIpInfo.my_start_ip)
 
         self.Statistic.start_time = datetime.now()
         self.connections_check_time = time.time_ns()

@@ -58,7 +58,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
     sent_units = 'Requests' if _ctx.target.attack_method.lower() == 'http' else 'Packets'
     conn_success_rate = _ctx.Statistic.connect.get_success_rate()
     has_errors = True if len(_ctx.errors) > 0 else False
-    check_my_ip = common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip)
+    check_my_ip = common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
     is_proxy_list = _ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list)
     your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
@@ -70,7 +70,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
     full_stats: list[Row] = [
         #   Description                  Status
         Row('Start Time',                common.format_dt(_ctx.Statistic.start_time)),
-        Row('Your Public IP / Country',  f'[cyan]{_ctx.IpInfo.my_ip_masked()} / [green]{_ctx.IpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
+        Row('Your Public IP / Country',  f'[cyan]{_ctx.myIpInfo.my_ip_masked()} / [green]{_ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
         Row('Host IP / Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} / [red]{_ctx.target.country}'),
         Row('HTTP Request',              f'[cyan]{_ctx.target.http_method}: {_ctx.target.url()}', visible=_ctx.target.attack_method.lower() == 'http'),
         Row('Attack Method',             _ctx.target.attack_method.upper(), end_section=True),
@@ -162,15 +162,15 @@ def refresh(_ctx: Context) -> None:
         if _ctx.is_health_check:
             threading.Thread(target=services.update_host_statuses, args=[_ctx]).start()
 
-    if _ctx.IpInfo.my_country == GEOIP_NOT_DEFINED:
-        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.IpInfo.my_current_ip]).start()
+    if _ctx.myIpInfo.my_country == GEOIP_NOT_DEFINED:
+        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.my_current_ip]).start()
     if _ctx.target.country == GEOIP_NOT_DEFINED:
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.target.host_ip]).start()
 
     lock.release()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
-    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.IpInfo.my_start_ip, _ctx.IpInfo.my_current_ip):
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip):
         _ctx.add_error(Errors('IP was changed', YOUR_IP_WAS_CHANGED))
 
     if not services.validate_attack(_ctx):
