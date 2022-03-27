@@ -16,7 +16,7 @@ def parser_add_options(parser: OptionParser) -> None:
     """Add options to a parser."""
     parser.add_option('-s', '--target',
                       dest='target',
-                      help='Attack target in {protocol}://{hostname}[:{port}][{path}] format')
+                      help='Attack target in {scheme}://{hostname}[:{port}][{path}] format')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str',
                       help=f'Attack method: {", ".join(attack_method_labels)}')
