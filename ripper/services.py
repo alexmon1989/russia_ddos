@@ -155,8 +155,8 @@ def validate_input(args) -> bool:
         print(f'Host wasn\'t detected')
         return False
 
-    if args.attack_method.lower() not in ('udp', 'tcp', 'http'):
-        print(f'Wrong attack type. Possible options: udp, tcp, http.')
+    if args.attack_method.lower() not in ('udp', 'tcp', 'http', 'cfb'):
+        print(f'Wrong attack type. Possible options: udp, tcp, http, cfb.')
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):

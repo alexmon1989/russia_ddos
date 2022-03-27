@@ -25,7 +25,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       help=f'threads. Default: {ARGS_DEFAULT_THREADS}')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str', default=ARGS_DEFAULT_ATTACK_METHOD,
-                      help=f'Attack method: {ARGS_DEFAULT_ATTACK_METHOD} (default), tcp, http')
+                      help=f'Attack method: {ARGS_DEFAULT_ATTACK_METHOD} (default), tcp, http, cfb')
     parser.add_option('-r', '--random_len',
                       dest='random_packet_len', type='int', default=ARGS_DEFAULT_RND_PACKET_LEN,
                       help=f'Send random packets with random length. Default: {ARGS_DEFAULT_RND_PACKET_LEN}')
