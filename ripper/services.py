@@ -13,7 +13,7 @@ from ripper.common import get_current_ip, ns2s
 from ripper.proxy import Proxy
 
 exit_event = threading.Event()
-_ctx: Context = None
+_global_ctx: Context = None
 
 
 ###############################################
@@ -197,21 +197,21 @@ def main():
         arg_parser.print_usage()
 
     # Init context
-    global _ctx
-    _ctx = Context(args[0])
-    go_home(_ctx)
+    global _global_ctx
+    _global_ctx = Context(args[0])
+    go_home(_global_ctx)
     # Proxies should be validated during the runtime
     connect_host_loop(
-        _ctx,
-        retry_cnt=(1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or _ctx.target.attack_method == 'udp' else 5))
-    _ctx.validate()
+        _global_ctx,
+        retry_cnt=(1 if _global_ctx.proxy_manager.proxy_list_initial_len > 0 or _global_ctx.target.attack_method == 'udp' else 5))
+    _global_ctx.validate()
 
     time.sleep(.5)
-    threads_range = _ctx.threads if not _ctx.dry_run else 1
+    threads_range = _global_ctx.threads if not _global_ctx.dry_run else 1
     for _ in range(threads_range):
-        Attack(_ctx).start()
+        Attack(_global_ctx).start()
 
-    statistic.render_statistic(_ctx)
+    statistic.render_statistic(_global_ctx)
 
 
 def signal_handler(signum, frame):
