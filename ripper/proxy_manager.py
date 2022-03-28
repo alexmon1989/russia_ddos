@@ -17,7 +17,7 @@ class ProxyManager:
     proxy_list_initial_len: int = 0
     """Count of proxies during the last application."""
     __proxy_extract_counter: int = 0
-    """Vacuum operation is called automatically on every PROXY_MIN_VALIDATION_REQUESTS proxy extractions"""
+    """Vacuum operation is called automatically on every PROXY_MIN_VALIDATION_REQUESTS proxy extractions."""
     proxy_type: ProxyType = ProxyType.SOCKS5
     """Type of proxy (SOCKS5, SOCKS4, HTTP)"""
 
@@ -46,7 +46,7 @@ class ProxyManager:
         return random.choice(self.proxy_list)
 
     def find_proxy_index(self, proxy: Proxy) -> int:
-        """returns -1 if not found"""
+        """Returns -1 if not found."""
         try:
             return self.proxy_list.index(proxy)
         # except ValueError:
@@ -73,7 +73,7 @@ class ProxyManager:
         return failure_ratio < PROXY_MAX_FAILURE_RATIO
 
     def vacuum(self) -> int:
-        """Removes proxies which are not valid"""
+        """Removes proxies which are not valid."""
         new_proxy_list = list(filter(lambda proxy: self.__validate_proxy(proxy), self.proxy_list))
         cnt = len(self.proxy_list) - len(new_proxy_list)
         if cnt > 0:

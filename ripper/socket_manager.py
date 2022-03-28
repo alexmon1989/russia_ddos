@@ -8,7 +8,7 @@ class SocketManager:
     """Manager for creating and closing sockets."""
 
     _socket: socket = None
-    """Shared socket"""
+    """Shared socket."""
     socket_timeout: int = None
     """Timeout for socket connection is seconds."""
 

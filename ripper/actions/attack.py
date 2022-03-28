@@ -1,51 +1,59 @@
 import threading
 from threading import Thread
-from typing import Tuple, Any
 
-from ripper.actions.HttpFlood import HttpFlood
-from ripper.actions.TcpFlood import TcpFlood
-from ripper.actions.UdpFlood import UdpFlood
-from ripper.context import Context
+from ripper.actions.attack_method import AttackMethod
+from ripper.actions.http_flood import HttpFlood
+from ripper.actions.tcp_flood import TcpFlood
+from ripper.actions.udp_flood import UdpFlood
+
+# Forward Reference
+Context = 'Context'
+Target = 'Target'
+
+
+attack_methods: list[AttackMethod] = [
+    UdpFlood,
+    TcpFlood,
+    HttpFlood,
+]
+
+attack_method_labels: list[str] = list(map(lambda am: am.label, attack_methods))
+
+
+def attack_method_factory(context: Context):
+    target = context.target
+    attack_method_name = target.attack_method
+    if attack_method_name == 'udp-flood':
+        return UdpFlood(target, context)
+    elif attack_method_name == 'http-flood':
+        return HttpFlood(target, context)
+    elif attack_method_name == 'tcp-flood':
+        return TcpFlood(target, context)
+    # Dangerours, may lead to exception
+    return None
 
 
 class Attack(Thread):
     """This class creates threads with specified attack method."""
-    _target: Tuple[str, int]
-    """Target IPv4 address and destination port."""
     _method: str
     """Attack method."""
     _ctx: Context
     """Context to collect Statistic."""
-    ATTACK: Any
 
-    def __init__(self, target: Tuple[str, int], method: str = 'tcp', context: Context = None):
+    def __init__(self, context: Context = None):
         """
         :param target: Target IPv4 address and destination port.
         :param method: Attack method.
         """
         Thread.__init__(self, daemon=True)
-        self._target = target
-        self._method = method
         self._ctx = context
 
     def run(self):
-        self.create_attack(self._method)
+        runner = attack_method_factory(self._ctx)
 
         if self._ctx.dry_run:
-            self.ATTACK()
+            runner()
             exit(0)
 
         while not threading.Event().is_set():
-            self.ATTACK()
-
-    def create_attack(self, method: str):
-        """
-        Create attack for specified method.
-        :param method: Attack method name.
-        """
-        if method == 'udp':
-            self.ATTACK = UdpFlood(self._target, self._ctx)
-        elif method in ['http', 'cfb']:
-            self.ATTACK = HttpFlood(self._target, self._ctx)
-        else:  # TCP by default
-            self.ATTACK = TcpFlood(self._target, self._ctx)
+            runner()
