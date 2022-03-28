@@ -4,6 +4,7 @@ from optparse import OptionParser
 from ripper.constants import *
 from ripper.actions.attack import attack_method_labels
 
+
 def create_parser() -> OptionParser:
     """Initialize parser with options."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}')
