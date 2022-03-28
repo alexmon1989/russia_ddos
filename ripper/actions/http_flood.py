@@ -64,7 +64,7 @@ class HttpFlood(AttackMethod):
         except ProxyError:
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            self._ctx.add_error(Errors('HTTP send Err', e))
+            self._ctx.add_error(Errors(type(e).__name__, e.__str__()[:128]))
             self._ctx.target.statistic.connect.status_failed()
         else:
             self._ctx.target.statistic.packets.status_sent(sent)

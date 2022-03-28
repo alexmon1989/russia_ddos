@@ -56,12 +56,11 @@ class UdpFlood(AttackMethod):
         try:
             sent = sock.sendto(send_bytes, self._target.hostip_port_tuple())
         except socket.gaierror as e:
-            self._ctx.add_error(Errors('Send UDP packet', GETTING_SERVER_IP_ERROR_MSG))
+            self._ctx.add_error(Errors(type(e).__name__, GETTING_SERVER_IP_ERROR_MSG))
         except Exception as e:
-            self._ctx.add_error(Errors('TCP send Err', e))
+            self._ctx.add_error(Errors(type(e).__name__, e.__str__()[:128]))
         else:
             self._ctx.target.statistic.packets.status_sent(sent_bytes=sent)
-            self._ctx.remove_error(Errors('TCP send Err', GETTING_SERVER_IP_ERROR_MSG).uuid)
             return True
 
         return False
