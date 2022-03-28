@@ -116,7 +116,7 @@ def get_ipv4(host: str) -> str:
 
 
 def get_country_by_ipv4(host_ip: str) -> str:
-    """Gets country of the target's IPv4"""
+    """Gets country of the target's IPv4."""
     if host_ip is None or not is_ipv4(host_ip):
         return GEOIP_NOT_DEFINED
 
@@ -133,7 +133,7 @@ def get_country_by_ipv4(host_ip: str) -> str:
     return country
 
 
-def isCloudFlareProtected(link: str, user_agents: list) -> bool:
+def check_cloud_flare_protection(link: str, user_agents: list) -> bool:
     """Check if the site is under CloudFlare protection."""
 
     parsed_uri = urllib.request.urlparse(link)
@@ -177,3 +177,10 @@ def get_cpu_load() -> str:
         cpu_usage = (load15 / os.cpu_count()) * 100
 
         return f"{cpu_usage:.2f}%"
+
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
