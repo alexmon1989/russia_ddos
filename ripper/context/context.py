@@ -1,14 +1,9 @@
 import os
 import time
-from datetime import datetime
-from collections import defaultdict
 from rich.console import Console
 
-from ripper import common
-from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-from ripper.headers_provider import HeadersProvider
 from ripper.context.errors import *
 from ripper.context.stats import *
 from ripper.context.target import *
@@ -85,12 +80,12 @@ class Context:
             return True
 
     def get_timer_seconds(self, bucket: str = None) -> int:
-         stopwatch = '__stopwatch__' if bucket is None else bucket
+        stopwatch = '__stopwatch__' if bucket is None else bucket
 
-         if self._timer_bucket[stopwatch]:
-             return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
+        if self._timer_bucket[stopwatch]:
+            return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
 
-         return 0
+        return 0
 
     def get_start_time_ns(self) -> int:
         """Get start time in nanoseconds."""
@@ -157,7 +152,7 @@ class Context:
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        if self.target.attack_method == 'http-flood':
+        if self.target.attack_method in ['http-flood', 'cloudflare-bypass']:
             self.random_packet_len = False
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:
