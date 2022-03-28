@@ -3,6 +3,7 @@
 [![Build status][actions build badge]][actions build link]
 [![Docker Pulls][docker pulls badge]][docker pulls link]
 [![Docker Image Version (latest semver)][dockerhub badge]][dockerhub link]
+[![License: MIT][license badge]][license link]
 
 DESCRIPTION
 -----------
@@ -186,3 +187,6 @@ This project is distributed under the MIT License, see [LICENSE](./LICENSE) for 
 
 [kube-dripper-link]:   https://github.com/denismakogon/kube-dripper
 [kube-dripper-readme]: https://github.com/denismakogon/kube-dripper/blob/main/README.md
+
+[license badge]:       https://img.shields.io/badge/License-MIT-yellow.svg
+[license link]:        ./LICENSE
