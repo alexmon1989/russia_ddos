@@ -95,7 +95,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Connection Failed',         f'[red]{_ctx.target.statistic.connect.failed}'),
         Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', end_section=True),
         # ===================================
-        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() == 'http'),
+        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() in ['http', 'cfb']),
     ]
 
     return full_stats

@@ -2,6 +2,7 @@ import threading
 from threading import Thread
 
 from ripper.actions.attack_method import AttackMethod
+from ripper.actions.cloudflare_bypass import CloudFlareBypass
 from ripper.actions.http_flood import HttpFlood
 from ripper.actions.tcp_flood import TcpFlood
 from ripper.actions.udp_flood import UdpFlood
@@ -15,6 +16,7 @@ attack_methods: list[AttackMethod] = [
     UdpFlood,
     TcpFlood,
     HttpFlood,
+    CloudFlareBypass,
 ]
 
 attack_method_labels: list[str] = list(map(lambda am: am.label, attack_methods))
@@ -29,7 +31,9 @@ def attack_method_factory(context: Context):
         return HttpFlood(target, context)
     elif attack_method_name == 'tcp-flood':
         return TcpFlood(target, context)
-    # Dangerours, may lead to exception
+    elif attack_method_name == 'cloudflare-bypass':
+        return CloudFlareBypass(target, context)
+    # Dangerous, may lead to exception
     return None
 
 
@@ -41,10 +45,6 @@ class Attack(Thread):
     """Context to collect Statistic."""
 
     def __init__(self, context: Context = None):
-        """
-        :param target: Target IPv4 address and destination port.
-        :param method: Attack method.
-        """
         Thread.__init__(self, daemon=True)
         self._ctx = context
 
