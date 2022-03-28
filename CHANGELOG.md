@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Fixed error with keyboard interrupting and threads shutdown process
 - Reduced IP address re-checks to avoid redundant API calls
 
+### Changed
+- Isolated target. The target contains a full server description, statistics, and health check. It is an intermediate step towards multiple targets.
+- Formalized attack_method, added names and labels for attacks.
+- Isolated assets.
+- Split context on components.
+- Changed health check to be target-dependant.
+- Reduced awareness about the entire context structure.
+- Unified tests format. Classes should represent "Describe" blocks, and test methods should start with "it."
+- Other minor refactorings.
+
 
 ## [v2.2.0](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...2.2.0)
 
