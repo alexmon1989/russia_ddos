@@ -9,7 +9,7 @@ from rich.table import Table
 import ripper.common as common
 import ripper.services as services
 from ripper.context.context import Context
-from ripper.context.errors import Errors
+from ripper.context.errors import *
 from ripper.constants import *
 
 
@@ -58,7 +58,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
     conn_success_rate = _ctx.target.statistic.connect.get_success_rate()
     has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip)
-    your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
+    your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED_ERR_MSG}' if check_my_ip else ''
     is_proxy_list = bool(_ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list))
     your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
 
@@ -175,15 +175,15 @@ def refresh(_ctx: Context) -> None:
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip):
-        _ctx.add_error(Errors('IP was changed', YOUR_IP_WAS_CHANGED))
+        _ctx.add_error(IPWasChangedError())
 
     if not services.validate_attack(_ctx):
-        _ctx.add_error(Errors('Host does not respond', common.get_no_successful_connection_die_msg()))
+        _ctx.add_error(Error('Host does not respond', common.get_no_successful_connection_die_msg()))
         exit(common.get_no_successful_connection_die_msg())
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        _ctx.add_error(Errors('Host does not respond', NO_MORE_PROXIES_MSG))
-        exit(NO_MORE_PROXIES_MSG)
+        _ctx.add_error(Error('Host does not respond', NO_MORE_PROXIES_ERR_MSG))
+        exit(NO_MORE_PROXIES_ERR_MSG)
 
 
 def render_statistic(_ctx: Context) -> None:

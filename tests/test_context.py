@@ -4,21 +4,21 @@ import time
 import pytest as pytest
 
 from ripper.context.context import Context
-from ripper.context.errors import Errors
+from ripper.context.errors import Error
 
-Args = namedtuple('Args', 'target')
+Args = namedtuple('Args', 'targets')
 
 
 class DescribeContext:
     args: Args = Args(
-        target='http://localhost'
+        targets=['http://localhost']
     )
 
     def it_can_store_error_details(self):
         context = Context(self.args)
         context.errors.clear()
 
-        actual = Errors(code='send UDP packet', message='Cannot get server ip')
+        actual = Error(code='send UDP packet', message='Cannot get server ip')
         uuid = actual.uuid
         context.errors[uuid] = actual
 
@@ -33,7 +33,7 @@ class DescribeContext:
 
         assert len(context.errors) == 0
 
-        actual = Errors(code='send UDP packet', message='Cannot get server ip')
+        actual = Error(code='send UDP packet', message='Cannot get server ip')
         uuid = actual.uuid
         context.add_error(actual)
 
@@ -50,7 +50,7 @@ class DescribeContext:
         context = Context(self.args)
         context.errors.clear()
 
-        actual = Errors(code='send UDP packet', message='Cannot get server ip')
+        actual = Error(code='send UDP packet', message='Cannot get server ip')
         uuid = actual.uuid
         context.add_error(actual)
 
@@ -90,5 +90,5 @@ class DescribeContext:
     ])
     def it_detects_attack_by_target_in_context(self, target_str, attack_method):
         assert Context(args=Args(
-            target=target_str,
+            targets=[target_str],
         )).target.attack_method == attack_method

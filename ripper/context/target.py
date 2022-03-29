@@ -1,3 +1,4 @@
+import time
 from typing import Tuple
 from urllib.parse import urlparse
 
@@ -6,6 +7,7 @@ from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
 from ripper.context.stats import Statistic
+from ripper.context.context import Error
 
 
 def default_scheme_port(scheme: str):
@@ -98,3 +100,67 @@ class Target:
         http_protocol = 'https://' if self.port == 443 else 'http://'
 
         return f"{http_protocol}{self.host}:{self.port}{self.http_path}"
+
+    def get_start_time_ns(self) -> int:
+        """Get start time in nanoseconds."""
+        if not self.statistic.start_time:
+            return 0
+        return common.s2ns(self.statistic.start_time)
+
+    ###############################################
+    # Connection validators
+    ###############################################
+    def validate_attack(self) -> bool:
+        """
+        Checks if attack is valid.
+        Attack is valid if target accepted traffic within
+        last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
+        """
+        if self.attack_method == 'tcp':
+            return self.check_successful_tcp_attack()
+        return self.check_successful_connections()
+
+
+    def check_successful_connections(self) -> bool:
+        """
+        Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+        Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+        """
+        now_ns = time.time_ns()
+        lower_bound = max(self.get_start_time_ns(),
+                        self.statistic.connect.last_check_time)
+        diff_sec = common.ns2s(now_ns - lower_bound)
+
+        if self.statistic.connect.success == self.statistic.connect.success_prev:
+            if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+                _ctx.add_error(Error('Check connection', no_successful_connections_error_msg(_ctx)))
+                return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+        else:
+            _ctx.target.statistic.connect.last_check_time = now_ns
+            _ctx.target.statistic.connect.sync_success()
+            _ctx.remove_error(Error('Check connection', no_successful_connections_error_msg(_ctx)).uuid)
+
+        return True
+
+
+    def check_successful_tcp_attack(_ctx: Context) -> bool:
+        """
+        Checks if there are changes in sent bytes count.
+        Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+        """
+        now_ns = time.time_ns()
+        lower_bound = max(_ctx.get_start_time_ns(),
+                        _ctx.target.statistic.packets.connections_check_time)
+        diff_sec = common.ns2s(now_ns - lower_bound)
+
+        if _ctx.target.statistic.packets.total_sent == _ctx.target.statistic.packets.total_sent_prev:
+            if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+                _ctx.add_error(Error('Check TCP attack', no_successful_connections_error_msg(_ctx)))
+
+                return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+        else:
+            _ctx.target.statistic.packets.connections_check_time = now_ns
+            _ctx.target.statistic.packets.sync_packets_sent()
+            _ctx.remove_error(Error('Check TCP attack', no_successful_connections_error_msg(_ctx)).uuid)
+
+        return True

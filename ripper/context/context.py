@@ -18,7 +18,7 @@ from ripper.context.target import *
 class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
-    target: Target = None
+    targets: list[Target] = []
 
     # ==== Input params ====
     threads: int
@@ -37,7 +37,7 @@ class Context:
     # ==== Statistic ====
     myIpInfo: IpInfo = IpInfo()
     """All the info about IP addresses and GeoIP information."""
-    errors: dict[str, Errors] = defaultdict(dict[str, Errors])
+    errors: dict[str, Error] = defaultdict(dict[str, Error])
     """All the errors during script run."""
 
     # ==========================================================================
@@ -66,6 +66,11 @@ class Context:
 
         return value if value is not None else default
 
+    def min_targets_start_time(self):
+        if not self.targets or len(self.targets) < 1:
+            return 0
+        return min(map(lambda target: target.statistic.start_time, self.targets))
+
     def check_timer(self, sec: int, bucket: str = None) -> bool:
         """
         Check if time in seconds elapsed from last check.
@@ -76,7 +81,7 @@ class Context:
         stopwatch = '__stopwatch__' if bucket is None else bucket
 
         if not self._timer_bucket[stopwatch]:
-            self._timer_bucket[stopwatch] = self.target.statistic.start_time
+            self._timer_bucket[stopwatch] = self.min_targets_start_time()
         delta = (datetime.now() - self._timer_bucket[stopwatch]).total_seconds()
         if int(delta) < sec:
             return False
@@ -94,13 +99,14 @@ class Context:
 
     def get_start_time_ns(self) -> int:
         """Get start time in nanoseconds."""
-        if not self.target.statistic.start_time:
+        min_start_time = self.min_targets_start_time()
+        if not min_start_time:
             return 0
-        return int(self.target.statistic.start_time.timestamp() * 1000000 * 1000)
+        return common.s2ns(min_start_time)
 
-    def add_error(self, error: Errors):
+    def add_error(self, error: Error):
         """
-        Add Error to Errors collection without duplication.
+        Add Error to Error collection without duplication.
         If Error exists in collection - it updates the error counter.
         """
         if self.errors.__contains__(error.uuid):
@@ -121,7 +127,8 @@ class Context:
     def validate(self):
         """Validates context before Run script. Order is matter!"""
         try:
-            self.target.validate()
+            for target in self.targets:
+                target.validate()
         except Exception as e:
             self.logger.log(str(e))
             exit(1)
@@ -139,13 +146,14 @@ class Context:
 
     def __init__(self, args):
         # TODO rename target to target_uri
-        if args and getattr(args, 'target'):
-            self.target = Target(
-                target_uri = getattr(args, 'target', ''),
-                attack_method = getattr(args, 'attack_method', None),
-                # TODO move http_method to target_uri to allow each target have its own method
-                http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
-            )
+        if args and getattr(args, 'targets', None):
+            for target_uri in getattr(args, 'targets', []):
+                self.targets.append(Target(
+                    target_uri = target_uri,
+                    attack_method = getattr(args, 'attack_method', None),
+                    # TODO move http_method to target_uri to allow each target have its own method
+                    http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+                ))
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
@@ -178,7 +186,7 @@ class Context:
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-                self.add_error(Errors('Proxy list read operation failed', e))
+                self.add_error(Error('Proxy list read operation failed', e))
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:

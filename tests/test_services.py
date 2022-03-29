@@ -3,7 +3,7 @@ import time
 from collections import namedtuple
 
 from ripper.context.context import Context
-from ripper.context.errors import Errors
+from ripper.context.errors import Error
 from ripper.constants import *
 from ripper.services import check_successful_tcp_attack, check_successful_connections, \
     no_successful_connections_error_msg
@@ -21,7 +21,7 @@ class DescribeServices:
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.target.statistic.packets.connections_check_time = init_check_time
         context.target.statistic.start_time = None
-        uuid = Errors('Check TCP attack', NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG).uuid
+        uuid = Error('Check TCP attack', NO_SUCCESSFUL_CONNECTIONS_VPN_ERR_MSG).uuid
 
         # Case when no attack
         assert check_successful_tcp_attack(context) is False
@@ -31,7 +31,7 @@ class DescribeServices:
         assert len(context.errors) == 1
         assert context.errors[uuid].code == 'Check TCP attack'
         assert context.errors[uuid].count == 1
-        assert context.errors[uuid].message == NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
+        assert context.errors[uuid].message == NO_SUCCESSFUL_CONNECTIONS_VPN_ERR_MSG
 
         # Case when we have successful attack after some failed attacks
         context.target.statistic.packets.total_sent = 100
@@ -48,7 +48,7 @@ class DescribeServices:
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         context.target.statistic.connect.last_check_time = init_check_time
         context.target.statistic.start_time = None
-        uuid = Errors('Check connection', no_successful_connections_error_msg(context)).uuid
+        uuid = Error('Check connection', no_successful_connections_error_msg(context)).uuid
 
         # Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec
         assert check_successful_connections(context) is False
@@ -58,7 +58,7 @@ class DescribeServices:
         assert len(context.errors) == 1
         assert context.errors[uuid].code == 'Check connection'
         assert context.errors[uuid].count == 1
-        assert context.errors[uuid].message == NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
+        assert context.errors[uuid].message == NO_SUCCESSFUL_CONNECTIONS_VPN_ERR_MSG
 
         # Checks if we have successful connections after connections fail
         context.target.statistic.connect.success = 1

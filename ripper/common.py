@@ -81,6 +81,10 @@ def ns2s(time_nano: int):
     return time_nano / 1000000 / 1000
 
 
+def s2ns(time_seconds: int):
+    return int(time_seconds * 1000000 * 1000)
+
+
 def format_dt(dt: datetime, fmt=DATE_TIME_FULL) -> str:
     """Convert datetime to string using specified format pattern."""
     if dt is None:

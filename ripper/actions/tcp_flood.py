@@ -3,7 +3,7 @@ from contextlib import suppress
 from typing import Any
 from socks import ProxyError
 
-from ripper.context.errors import Errors
+from ripper.context.errors import Error
 from ripper.context.target import Target
 from ripper.common import generate_random_bytes
 from ripper.actions.attack_method import AttackMethod
@@ -55,7 +55,7 @@ class TcpFlood(AttackMethod):
         except ProxyError:
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            self._ctx.add_error(Errors('TCP send Err', e))
+            self._ctx.add_error(Error('TCP send Err', e))
         else:
             self._ctx.target.statistic.packets.status_sent(sent_bytes=sent)
             self._proxy.report_success() if self._proxy is not None else 0
