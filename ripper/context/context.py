@@ -136,10 +136,10 @@ class Context:
         # TODO rename target to target_uri
         if args and getattr(args, 'target'):
             self.target = Target(
-                target_uri = getattr(args, 'target', ''),
-                attack_method = getattr(args, 'attack_method', None),
+                target_uri=getattr(args, 'target', ''),
+                attack_method=getattr(args, 'attack_method', None),
                 # TODO move http_method to target_uri to allow each target have its own method
-                http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+                http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
             )
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
@@ -152,7 +152,7 @@ class Context:
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        if self.target.attack_method in ['http-flood', 'cloudflare-bypass']:
+        if self.target.attack_method in ['http-flood', 'http-bypass']:
             self.random_packet_len = False
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:

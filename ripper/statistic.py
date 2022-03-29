@@ -24,7 +24,7 @@ def build_http_codes_distribution(http_codes_counter) -> str:
     return ', '.join(codes_distribution)
 
 
-def rate_color(rate: int) -> str:
+def rate_color(rate: int, units: str = '') -> str:
     """
     Get color schema for percentage value.
     Color schema looks like red-yellow-green scale for values 0-50-100.
@@ -41,7 +41,7 @@ def rate_color(rate: int) -> str:
     if rate >= 90:
         color = '[green1]'
 
-    return color
+    return f'{color}{rate}{units}[default]'
 
 
 class Row:
@@ -92,9 +92,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Sent Bytes | AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
         Row(f'Sent {sent_units} | AVG speed', f'{_ctx.target.statistic.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
-        Row('Connection Success',        f'[green]{_ctx.target.statistic.connect.success}'),
-        Row('Connection Failed',         f'[red]{_ctx.target.statistic.connect.failed}'),
-        Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', end_section=True),
+        Row('Connections',               f'success - [green]{_ctx.target.statistic.connect.success}[default], failed - [red]{_ctx.target.statistic.connect.failed}[default], success rate - {rate_color(conn_success_rate, " %")}', end_section=True),
         # ===================================
         Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() in ['http-flood', 'cloudflare-bypass']),
     ]

