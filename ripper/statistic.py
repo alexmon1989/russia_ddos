@@ -20,6 +20,7 @@ def build_http_codes_distribution(http_codes_counter) -> str:
         count = http_codes_counter[code]
         percent = round(count * 100 / total)
         codes_distribution.append(f'{code}: {percent}%')
+    codes_distribution.sort()
     return ', '.join(codes_distribution)
 
 
@@ -188,11 +189,10 @@ def refresh(_ctx: Context) -> None:
 
 def render_statistic(_ctx: Context) -> None:
     """Show DRipper runtime statistic."""
-    with Live(generate_stats(_ctx), vertical_overflow='visible', redirect_stderr=False) as live:
-        live.start()
+    with Live(generate_stats(_ctx), vertical_overflow='visible', redirect_stderr=False) as live_table:
         while True:
-            time.sleep(0.5)
+            time.sleep(0.4)
             refresh(_ctx)
-            live.update(generate_stats(_ctx))
+            live_table.update(generate_stats(_ctx))
             if _ctx.dry_run:
                 break
