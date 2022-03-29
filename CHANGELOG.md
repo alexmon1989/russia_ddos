@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Changed health check to be target-dependant.
 - Reduced awareness about the entire context structure.
 - Unified tests format. Classes should represent "Describe" blocks, and test methods should start with "it."
-- Other minor refactorings.
+- Changed Exception handling and logging process.
 
 
 ## [v2.2.0](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...2.2.0)
