@@ -1,4 +1,5 @@
 import re
+import threading
 
 
 class AttackMethod:
@@ -17,3 +18,7 @@ class AttackMethod:
 
     def validate(self):
       return True
+
+    @property
+    def thread_name(self):
+        return threading.current_thread().name

@@ -43,9 +43,11 @@ def check_successful_connections(_ctx: Context) -> bool:
 
     if _ctx.target.statistic.connect.success == _ctx.target.statistic.connect.success_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            _ctx.events.warn(f'{threading.current_thread().name:10} Check connection - FAILED')
             _ctx.add_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)))
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
+        _ctx.events.info(f'{threading.current_thread().name:10} Check connection - SUCCESS')
         _ctx.target.statistic.connect.last_check_time = now_ns
         _ctx.target.statistic.connect.sync_success()
         _ctx.remove_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)).uuid)
@@ -65,10 +67,12 @@ def check_successful_tcp_attack(_ctx: Context) -> bool:
 
     if _ctx.target.statistic.packets.total_sent == _ctx.target.statistic.packets.total_sent_prev:
         if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+            _ctx.events.warn(f'{threading.current_thread().name:10} Check connection - FAILED')
             _ctx.add_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)))
 
             return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
     else:
+        _ctx.events.info(f'{threading.current_thread().name:10} Check connection - SUCCESS')
         _ctx.target.statistic.packets.connections_check_time = now_ns
         _ctx.target.statistic.packets.sync_packets_sent()
         _ctx.remove_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)).uuid)
@@ -88,6 +92,7 @@ def no_successful_connections_error_msg(_ctx: Context) -> str:
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.check_timer(check_period_sec, 'update_current_ip'):
+        _ctx.events.info(f'{threading.current_thread().name:10} Updating current IP address.')
         _ctx.myIpInfo.my_current_ip = get_current_ip()
     if _ctx.myIpInfo.my_start_ip is None:
         _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip
@@ -104,12 +109,15 @@ def update_host_statuses(_ctx: Context):
     _ctx.target.health_check_manager.fetching_host_statuses_in_progress = True
     try:
         if _ctx.target.host_ip:
+            _ctx.events.info(f'{threading.current_thread().name:10} Checking host statuses with check-host.net')
             host_statuses = _ctx.target.health_check_manager.fetch_host_statuses()
             # API in some cases returns 403, so we can't update statuses
             if len(host_statuses.values()):
                 _ctx.target.health_check_manager.host_statuses = host_statuses
                 _ctx.target.health_check_manager.last_host_statuses_update = datetime.datetime.now()
+                _ctx.events.info(f'{threading.current_thread().name:10} Host statuses updated with check-host.net')
     except:
+        _ctx.events.error(f'{threading.current_thread().name:10} Host statuses update failed with check-host.net')
         pass
     finally:
         _ctx.target.health_check_manager.fetching_host_statuses_in_progress = False
@@ -169,7 +177,9 @@ def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY,
     i = 0
     _ctx.logger.rule('[bold]Starting DRipper')
     while i < retry_cnt:
-        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.target.host}:{_ctx.target.port}...')
+        message = f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.target.host}:{_ctx.target.port}...'
+        _ctx.logger.log(message)
+        _ctx.events.info(message)
         if connect_host(_ctx):
             _ctx.logger.rule()
             break

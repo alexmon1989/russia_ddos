@@ -45,6 +45,7 @@ class HttpBypass(HttpFlood):
         }
         with suppress(Exception), create_scraper(browser=browser) as self._http_connect:
             self._ctx.target.statistic.connect.status_success()
+            self._ctx.events.info(f'{self.thread_name:10} Creating CloudFlare scraper connection.')
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break
@@ -58,9 +59,11 @@ class HttpBypass(HttpFlood):
                 self._ctx.target.statistic.http_stats[response.status_code] += 1
                 self.check_rate_limit(response)
         except RateLimitException as e:
+            self._ctx.events.warn(f'{self.thread_name:10} Rate Limit caught...')
             self._ctx.add_error(Errors(type(e).__name__, e.__str__()))
             time.sleep(3.01)
         except Exception as e:
+            self._ctx.events.error(f'{self.thread_name:10} {type(e).__name__} caught...')
             self._ctx.add_error(Errors(type(e).__name__, e.__str__()[:128]))
             self._ctx.target.statistic.connect.status_failed()
         else:
