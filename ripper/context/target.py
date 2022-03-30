@@ -8,6 +8,7 @@ from ripper import common
 from ripper.constants import *
 from ripper.context.stats import Statistic
 from ripper.context.context import *
+from ripper.context.errors import *
 
 
 def default_scheme_port(scheme: str):
@@ -133,12 +134,12 @@ class Target:
 
         if self.statistic.connect.success == self.statistic.connect.success_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                _ctx.add_error(Error('Check connection', no_successful_connections_error_msg(_ctx)))
+                _ctx.add_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)))
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             _ctx.target.statistic.connect.last_check_time = now_ns
             _ctx.target.statistic.connect.sync_success()
-            _ctx.remove_error(Error('Check connection', no_successful_connections_error_msg(_ctx)).uuid)
+            _ctx.remove_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)).uuid)
 
         return True
 

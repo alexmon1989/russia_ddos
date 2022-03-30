@@ -91,3 +91,12 @@ class ProxyListReadOperationFailedError(Error):
         :param count: Error counter.
         """
         super().__init__(code='Proxy list read operation failed', message=message, count=count)
+
+
+class CheckConnectionError(Error):
+    def __init__(self, message: str, count: int = 1):
+        """
+        :param message: Error message.
+        :param count: Error counter.
+        """
+        super().__init__(code='Check connection', message=message, count=count)
