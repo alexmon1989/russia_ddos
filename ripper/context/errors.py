@@ -60,3 +60,11 @@ class TcpSendError(Error):
         :param count: Error counter.
         """
         super().__init__(code='TCP send Err', message=message, count=count)
+
+
+class UdpSendError(Error):
+    def __init__(self, message: str, count: int = 1):
+        """
+        :param count: Error counter.
+        """
+        super().__init__(code='UDP send Err', message=message, count=count)
