@@ -83,3 +83,8 @@ UPDATE_CURRENT_IP_CHECK_PERIOD_SEC = 60
 # ==== Sockets ====
 PROXY_MAX_FAILURE_RATIO = 0.8
 PROXY_MIN_VALIDATION_REQUESTS = 8
+
+# ==== Events template ====
+INFO_TEMPLATE = '[dim][{0}][/] - [dim][blue]{1}[/]'
+WARN_TEMPLATE = '[dim][{0}][/] - [dim][orange1]{1}[/]'
+ERROR_TEMPLATE = '[dim][{0}][/] - [dim][red1]{1}[/]'

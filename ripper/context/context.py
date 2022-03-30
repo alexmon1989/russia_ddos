@@ -2,6 +2,7 @@ import os
 import time
 from rich.console import Console
 
+from ripper.context.events_journal import EventsJournal
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.context.errors import *
@@ -46,7 +47,10 @@ class Context:
     # External API and services info
     sock_manager: SocketManager = SocketManager()
     proxy_manager: ProxyManager = ProxyManager()
+
+    # Logs nad Events
     logger: Console = Console(width=MIN_SCREEN_WIDTH)
+    events: EventsJournal = EventsJournal()
 
     # Health-check
     is_health_check: bool

@@ -1,6 +1,7 @@
 import threading
 import time
 from datetime import datetime
+
 from rich import box
 from rich.console import Group
 from rich.live import Live
@@ -94,7 +95,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connections',               f'success - [green]{_ctx.target.statistic.connect.success}[default], failed - [red]{_ctx.target.statistic.connect.failed}[default], success rate - {rate_color(conn_success_rate, " %")}', end_section=True),
         # ===================================
-        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() in ['http-flood', 'cloudflare-bypass']),
+        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() in ['http-flood', 'http-bypass']),
     ]
 
     return full_stats
@@ -114,7 +115,6 @@ def generate_stats(_ctx: Context):
         box=box.HORIZONTALS,
         min_width=MIN_SCREEN_WIDTH,
         width=MIN_SCREEN_WIDTH,
-        caption=table_caption,
         caption_style='bold')
 
     table.add_column('Description')
@@ -123,6 +123,18 @@ def generate_stats(_ctx: Context):
     for row in collect_stats(_ctx):
         if row.visible:
             table.add_row(row.label, row.value, end_section=row.end_section)
+
+    events_log = Table(
+        box=box.SIMPLE,
+        min_width=MIN_SCREEN_WIDTH,
+        width=MIN_SCREEN_WIDTH,
+        caption=table_caption,
+        caption_style='bold')
+
+    events_log.add_column('[blue]Events Log', style='blue')
+
+    for event in _ctx.events.last(5):
+        events_log.add_row(f'{event}')
 
     logs = None
     if _ctx.has_errors():
@@ -145,7 +157,7 @@ def generate_stats(_ctx: Context):
                          f'{err.count}',
                          f'{err.message}')
 
-    group = Group(table) if logs is None else Group(table, logs)
+    group = Group(table, events_log) if logs is None else Group(table, events_log, logs)
     return group
 
 
