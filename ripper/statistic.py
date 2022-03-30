@@ -71,10 +71,10 @@ def collect_stats(_ctx: Context) -> list[Row]:
     full_stats: list[Row] = [
         #   Description                  Status
         Row('Start Time',                common.format_dt(_ctx.target.statistic.start_time)),
-        Row('Your Public IP | Country',  f'[cyan]{_ctx.myIpInfo.my_ip_masked()} | [green]{_ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
-        Row('Host IP | Country',         f'[cyan]{_ctx.target.host_ip}:{_ctx.target.port} | [red]{_ctx.target.country}'),
+        Row('Your Public IP',            f'[green]{_ctx.myIpInfo.my_country:10}[/] [cyan]{_ctx.myIpInfo.my_ip_masked():20} [red]{your_ip_disclaimer}{your_ip_was_changed}'),
+        Row('Host IP',                   f'[red]{_ctx.target.country:10}[/] [cyan]{_ctx.target.host_ip}:{_ctx.target.port}'),
         Row('HTTP Request',              f'[cyan]{_ctx.target.http_method}: {_ctx.target.url()}', visible=_ctx.target.attack_method.lower() == 'http'),
-        Row('Attack Method',             _ctx.target.attack_method.upper(), end_section=True),
+        Row('Attack Method',             _ctx.target.attack_method.lower(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
         Row('Proxies Count',             f'[cyan]{len(_ctx.proxy_manager.proxy_list)} | {_ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
@@ -90,10 +90,10 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row(f'[cyan][bold]{_ctx.target.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
         Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
-        Row('Sent Bytes | AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
-        Row(f'Sent {sent_units} | AVG speed', f'{_ctx.target.statistic.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
+        Row('Sent Bytes   – AVG speed',  f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes):12} [green]{common.convert_size(data_rps)}/s'),
+        Row(f'Sent {sent_units:7} – AVG speed', f'{_ctx.target.statistic.packets.total_sent:<12} [green]{packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
-        Row('Connections',               f'success - [green]{_ctx.target.statistic.connect.success}[default], failed - [red]{_ctx.target.statistic.connect.failed}[default], success rate - {rate_color(conn_success_rate, " %")}', end_section=True),
+        Row('Connections',               f'success: [green]{_ctx.target.statistic.connect.success}[/], failed: [red]{_ctx.target.statistic.connect.failed}[/], success rate: {rate_color(conn_success_rate, " %")}', end_section=True),
         # ===================================
         Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() in ['http-flood', 'http-bypass']),
     ]
@@ -117,7 +117,7 @@ def generate_stats(_ctx: Context):
         width=MIN_SCREEN_WIDTH,
         caption_style='bold')
 
-    table.add_column('Description')
+    table.add_column('Description', width=27)
     table.add_column('Status')
 
     for row in collect_stats(_ctx):
@@ -131,7 +131,7 @@ def generate_stats(_ctx: Context):
         caption=table_caption,
         caption_style='bold')
 
-    events_log.add_column('[blue]Events Log', style='blue')
+    events_log.add_column('[blue]Events Log', style='dim')
 
     for event in _ctx.events.last(5):
         events_log.add_row(f'{event}')

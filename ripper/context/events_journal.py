@@ -1,8 +1,14 @@
 import datetime
+import threading
 from queue import Queue
 
 from ripper.common import format_dt
-from ripper.constants import DATE_TIME_SHORT, INFO_TEMPLATE, WARN_TEMPLATE, ERROR_TEMPLATE
+from ripper.constants import DATE_TIME_SHORT
+
+# ==== Events template ====
+INFO_TEMPLATE  = '[dim][{0}][/] [blue reverse]{1:^7}[/] {2}'
+WARN_TEMPLATE  = '[dim][{0}][/] [orange1 reverse]{1:^7}[/] {2}'
+ERROR_TEMPLATE = '[dim][{0}][/] [red1 reverse]{1:^7}[/] {2}'
 
 
 class EventsJournal:
@@ -22,17 +28,20 @@ class EventsJournal:
         return self._buffer
 
     def info(self, message: str):
-        self._push_event(INFO_TEMPLATE, message)
+        self._push_event(INFO_TEMPLATE, 'info', message)
 
     def warn(self, message: str):
-        self._push_event(WARN_TEMPLATE, message)
+        self._push_event(WARN_TEMPLATE, 'warn', message)
 
     def error(self, message: str):
-        self._push_event(ERROR_TEMPLATE, message)
+        self._push_event(ERROR_TEMPLATE, 'error', message)
 
-    def _push_event(self, template: str, message: str):
+    def _push_event(self, template: str, level: str, message: str):
         now = format_dt(datetime.datetime.now(), DATE_TIME_SHORT)
-        event = template.format(now, message)
+        event = template.format(
+            now,
+            level,
+            f'{threading.current_thread().name.lower():11} {message}')
         self._queue.put(event)
 
 
