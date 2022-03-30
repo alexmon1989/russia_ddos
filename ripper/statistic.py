@@ -177,11 +177,11 @@ def refresh(_ctx: Context) -> None:
         _ctx.add_error(IPWasChangedError())
 
     if not services.validate_attack(_ctx):
-        _ctx.add_error(Error('Host does not respond', common.get_no_successful_connection_die_msg()))
+        _ctx.add_error(HostDoesNotRespondError(message=common.get_no_successful_connection_die_msg()))
         exit(common.get_no_successful_connection_die_msg())
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        _ctx.add_error(HostDoesNotRespondError())
+        _ctx.add_error(HostDoesNotRespondError(message=NO_MORE_PROXIES_ERR_MSG))
         exit(NO_MORE_PROXIES_ERR_MSG)
 
 
