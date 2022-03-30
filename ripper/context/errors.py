@@ -33,6 +33,7 @@ class Error:
 class IPWasChangedError(Error):
     def __init__(self, message=YOUR_IP_WAS_CHANGED_ERR_MSG, count: int = 1):
         """
+        :param message: Error message.
         :param count: Error counter.
         """
         super().__init__(code='IP was changed', message=message, count=count)
@@ -41,6 +42,7 @@ class IPWasChangedError(Error):
 class HostDoesNotRespondError(Error):
     def __init__(self, message: str, count: int = 1):
         """
+        :param message: Error message.
         :param count: Error counter.
         """
         super().__init__(code='Host does not respond', message=message, count=count)
@@ -49,6 +51,7 @@ class HostDoesNotRespondError(Error):
 class HttpSendError(Error):
     def __init__(self, message: str, count: int = 1):
         """
+        :param message: Error message.
         :param count: Error counter.
         """
         super().__init__(code='HTTP send Err', message=message, count=count)
@@ -65,6 +68,16 @@ class TcpSendError(Error):
 class UdpSendError(Error):
     def __init__(self, message: str, count: int = 1):
         """
+        :param message: Error message.
         :param count: Error counter.
         """
         super().__init__(code='UDP send Err', message=message, count=count)
+
+
+class ProxyListReadOperationFailedError(Error):
+    def __init__(self, message: str, count: int = 1):
+        """
+        :param message: Error message.
+        :param count: Error counter.
+        """
+        super().__init__(code='Proxy list read operation failed', message=message, count=count)

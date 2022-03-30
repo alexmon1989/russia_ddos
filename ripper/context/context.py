@@ -186,7 +186,7 @@ class Context:
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-                self.add_error(Error('Proxy list read operation failed', e))
+                self.add_error(ProxyListReadOperationFailedError(message=e))
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:
