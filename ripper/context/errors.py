@@ -60,9 +60,19 @@ class HttpSendError(Error):
 class TcpSendError(Error):
     def __init__(self, message: str, count: int = 1):
         """
+        :param message: Error message.
         :param count: Error counter.
         """
         super().__init__(code='TCP send Err', message=message, count=count)
+
+
+class CheckTcpAttackError(Error):
+    def __init__(self, message: str, count: int = 1):
+        """
+        :param message: Error message.
+        :param count: Error counter.
+        """
+        super().__init__(code='Check TCP attack', message=message, count=count)
 
 
 class UdpSendError(Error):

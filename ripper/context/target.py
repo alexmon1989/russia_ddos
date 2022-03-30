@@ -7,7 +7,7 @@ from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
 from ripper.context.stats import Statistic
-from ripper.context.context import Error
+from ripper.context.context import *
 
 
 def default_scheme_port(scheme: str):
@@ -155,12 +155,12 @@ class Target:
 
         if _ctx.target.statistic.packets.total_sent == _ctx.target.statistic.packets.total_sent_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                _ctx.add_error(Error('Check TCP attack', no_successful_connections_error_msg(_ctx)))
+                _ctx.add_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)))
 
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             _ctx.target.statistic.packets.connections_check_time = now_ns
             _ctx.target.statistic.packets.sync_packets_sent()
-            _ctx.remove_error(Error('Check TCP attack', no_successful_connections_error_msg(_ctx)).uuid)
+            _ctx.remove_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)).uuid)
 
         return True
