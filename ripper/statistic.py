@@ -12,6 +12,8 @@ from ripper.context.context import Context
 from ripper.context.errors import *
 from ripper.constants import *
 
+lock = threading.Lock()
+
 
 def build_http_codes_distribution(http_codes_counter) -> str:
     codes_distribution = []
@@ -150,9 +152,6 @@ def generate_stats(_ctx: Context):
     return group
 
 
-lock = threading.Lock()
-
-
 def refresh(_ctx: Context) -> None:
     """
     Check threads, IPs, VPN status, etc.
@@ -182,7 +181,7 @@ def refresh(_ctx: Context) -> None:
         exit(common.get_no_successful_connection_die_msg())
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        _ctx.add_error(Error('Host does not respond', NO_MORE_PROXIES_ERR_MSG))
+        _ctx.add_error(HostDoesNotRespondError())
         exit(NO_MORE_PROXIES_ERR_MSG)
 
 

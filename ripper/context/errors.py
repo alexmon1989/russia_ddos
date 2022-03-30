@@ -29,9 +29,18 @@ class Error:
         self.count = count
         self.message = message
 
+
 class IPWasChangedError(Error):
-    def __init__(self, count: int = 1):
+    def __init__(self, message=YOUR_IP_WAS_CHANGED_ERR_MSG, count: int = 1):
         """
         :param count: Error counter.
         """
-        super().__init__(code='IP was changed', message=YOUR_IP_WAS_CHANGED_ERR_MSG, count=count)
+        super().__init__(code='IP was changed', message=message, count=count)
+
+
+class HostDoesNotRespondError(Error):
+    def __init__(self, message=NO_MORE_PROXIES_ERR_MSG, count: int = 1):
+        """
+        :param count: Error counter.
+        """
+        super().__init__(code='Host does not respond', message=message, count=count)
