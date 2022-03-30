@@ -3,7 +3,7 @@ from socket import socket
 from typing import Any
 
 from ripper.common import generate_random_bytes
-from ripper.context.errors import Error
+from ripper.context.errors import *
 from ripper.context.target import Target
 from ripper.constants import *
 from ripper.actions.attack_method import AttackMethod
@@ -58,10 +58,10 @@ class UdpFlood(AttackMethod):
         except socket.gaierror as e:
             self._ctx.add_error(Error('Send UDP packet', GETTING_SERVER_IP_ERR_MSG))
         except Exception as e:
-            self._ctx.add_error(Error('TCP send Err', e))
+            self._ctx.add_error(TcpSendError(message=e))
         else:
             self._ctx.target.statistic.packets.status_sent(sent_bytes=sent)
-            self._ctx.remove_error(Error('TCP send Err', GETTING_SERVER_IP_ERR_MSG).uuid)
+            self._ctx.remove_error(TcpSendError(message=GETTING_SERVER_IP_ERR_MSG).uuid)
             return True
 
         return False

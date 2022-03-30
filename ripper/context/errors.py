@@ -52,3 +52,11 @@ class HttpSendError(Error):
         :param count: Error counter.
         """
         super().__init__(code='HTTP send Err', message=message, count=count)
+
+
+class TcpSendError(Error):
+    def __init__(self, message: str, count: int = 1):
+        """
+        :param count: Error counter.
+        """
+        super().__init__(code='TCP send Err', message=message, count=count)
