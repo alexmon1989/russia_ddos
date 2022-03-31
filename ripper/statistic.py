@@ -3,8 +3,9 @@ import time
 from datetime import datetime
 
 from rich import box
-from rich.console import Group
+from rich.console import Group, Console
 from rich.live import Live
+from rich.panel import Panel
 from rich.table import Table
 
 import ripper.common as common
@@ -85,7 +86,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         Row('Random Packet Length',      f'{_ctx.random_packet_len}{max_length}', end_section=True),
         # ===================================
         Row('CloudFlare DNS Protection', ('[red]' if _ctx.target.is_cloud_flare_protection else '[green]') + _ctx.target.cloudflare_status(), end_section=not _ctx.is_health_check),
-        Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.target.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(_ctx.is_health_check and len(_ctx.target.health_check_manager.host_statuses.values()))),
+        Row('Last Availability Check',   f'[cyan]{common.format_dt(_ctx.target.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)}'),
         Row('Host Availability',         f'{_ctx.target.health_check_manager.get_health_status()}', visible=_ctx.is_health_check, end_section=True),
         # ===================================
         Row(f'[cyan][bold]{_ctx.target.attack_method.upper()} Statistics', '', end_section=True),
@@ -107,8 +108,6 @@ def generate_stats(_ctx: Context):
     caption = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}'
 
     table = Table(
-        title=LOGO_COLOR,
-        title_justify='center',
         style='bold',
         box=box.HORIZONTALS,
         min_width=MIN_SCREEN_WIDTH,
@@ -178,7 +177,11 @@ def refresh(_ctx: Context) -> None:
 
 def render_statistic(_ctx: Context) -> None:
     """Show DRipper runtime statistic."""
-    with Live(generate_stats(_ctx), vertical_overflow='visible', redirect_stderr=False) as live_table:
+    console = Console()
+    logo = Panel(LOGO_COLOR, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
+    console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
+
+    with Live(generate_stats(_ctx), vertical_overflow='visible') as live_table:
         while True:
             time.sleep(0.4)
             refresh(_ctx)

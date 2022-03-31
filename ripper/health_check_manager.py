@@ -125,7 +125,7 @@ class HealthCheckManager:
 
     def get_health_status(self):
         if self.last_host_statuses_update is None or len(self.host_statuses.values()) == 0:
-            return f'...detecting\n({self.health_check_method.upper()} health check method from check-host.net)'
+            return f'...detecting ({self.health_check_method.upper()} health check)'
 
         failed_cnt = 0
         succeeded_cnt = 0
