@@ -51,10 +51,10 @@ class ErrorsManager:
     @property
     def errors(self) -> dict[str, Error]:
         """All properties including child nodes."""
-        united_errors = {} | self._errors
+        united_errors = merge_error_dicts({}, self._errors)
         for child in self._children:
             if child.has_errors():
-                united_errors = united_errors | child.errors
+                united_errors = merge_error_dicts(united_errors, child.errors)
         return united_errors
 
     def clear_errors(self):

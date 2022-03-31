@@ -48,47 +48,46 @@ class DescribeErrorsManager:
         em.remove_error(FakeError().uuid)
         assert not em.has_errors()
 
-    # def it_can_store_error_details(self):
-    #     em = ErrorsManager()
-    #     em.clear_errors()
+    def it_can_store_error_details(self):
+        em = ErrorsManager()
+        em.clear_errors()
 
-    #     actual = Error(code='send UDP packet', message='Cannot get server ip')
-    #     uuid = actual.uuid
-    #     em.add_error(actual)
+        actual = Error(code='send UDP packet', message='Cannot get server ip')
+        uuid = actual.uuid
+        em.add_error(actual)
 
-    #     assert len(em.errors) == 1
-    #     assert em.errors.get(uuid).code == 'send UDP packet'
-    #     assert em.errors.get(uuid).count == 1
-    #     assert em.errors.get(uuid).message == 'Cannot get server ip'
+        assert len(em.errors) == 1
+        assert em.errors.get(uuid).code == 'send UDP packet'
+        assert em.errors.get(uuid).count == 1
+        assert em.errors.get(uuid).message == 'Cannot get server ip'
 
-    # def it_can_count_the_same_error(self):
-    #     em = ErrorsManager()
+    def it_can_count_the_same_error(self):
+        em = ErrorsManager()
 
-    #     assert len(em.errors) == 0
+        assert len(em.errors) == 0
 
-    #     actual = Error(code='send UDP packet', message='Cannot get server ip')
-    #     uuid = actual.uuid
-    #     em.add_error(actual)
+        actual = Error(code='send UDP packet', message='Cannot get server ip')
+        uuid = actual.uuid
+        em.add_error(actual)
 
-    #     assert len(em.errors) == 1
-    #     assert em.errors.get(uuid) == actual
-    #     assert em.errors.get(uuid).count == 1
-    #     assert em.errors.get(uuid).code == 'send UDP packet'
+        assert len(em.errors) == 1
+        assert em.errors.get(uuid).uuid == actual.uuid
+        assert em.errors.get(uuid).count == 1
+        assert em.errors.get(uuid).code == 'send UDP packet'
 
-    #     em.add_error(actual)
-    #     assert len(em.errors) == 1
-    #     assert em.errors.get(uuid).count == 2
+        em.add_error(actual)
+        assert len(em.errors) == 1
+        assert em.errors.get(uuid).count == 2
 
-    # def it_can_delete_existing_error(self):
-    #     context = Context(self.args)
-    #     context.errors.clear()
+    def it_can_delete_existing_error(self):
+        em = ErrorsManager()
 
-    #     actual = Error(code='send UDP packet', message='Cannot get server ip')
-    #     uuid = actual.uuid
-    #     context.add_error(actual)
+        actual = Error(code='send UDP packet', message='Cannot get server ip')
+        uuid = actual.uuid
+        em.add_error(actual)
 
-    #     assert len(context.errors) == 1
-    #     assert context.errors.get(uuid) == actual
+        assert len(em.errors) == 1
+        assert em.errors.get(uuid).uuid == actual.uuid
 
-    #     context.remove_error(uuid)
-    #     assert len(context.errors) == 0
+        em.remove_error(uuid)
+        assert len(em.errors) == 0
