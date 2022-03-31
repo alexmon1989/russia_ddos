@@ -9,6 +9,7 @@ from ripper.constants import *
 from ripper.context.stats import Statistic
 from ripper.context.context import *
 from ripper.errors import *
+from ripper.errors_manager import ErrorsManager
 
 
 def default_scheme_port(scheme: str):
@@ -41,8 +42,9 @@ class Target:
     """HTTP method used in HTTP packets"""
 
     health_check_manager: HealthCheckManager = None
+    errors_manager: ErrorsManager = None
 
-    statistic: Statistic = Statistic()
+    statistic: Statistic = None
     """All the statistics collected separately by protocols and operations."""
 
     @staticmethod
@@ -82,6 +84,9 @@ class Target:
 
         self.health_check_manager = HealthCheckManager(target=self)
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
+
+        self.errors_manager = ErrorsManager()
+        self.statistic = Statistic()
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)
@@ -134,34 +139,34 @@ class Target:
 
         if self.statistic.connect.success == self.statistic.connect.success_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                _ctx.add_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)))
+                self.errors_manager.add_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)))
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
-            _ctx.target.statistic.connect.last_check_time = now_ns
-            _ctx.target.statistic.connect.sync_success()
-            _ctx.remove_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)).uuid)
+            self.statistic.connect.last_check_time = now_ns
+            self.statistic.connect.sync_success()
+            self.errors_manager.remove_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)).uuid)
 
         return True
 
 
-    def check_successful_tcp_attack(_ctx: Context) -> bool:
+    def check_successful_tcp_attack(self) -> bool:
         """
         Checks if there are changes in sent bytes count.
         Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
         """
         now_ns = time.time_ns()
-        lower_bound = max(_ctx.get_start_time_ns(),
-                        _ctx.target.statistic.packets.connections_check_time)
+        lower_bound = max(self.get_start_time_ns(),
+                        self.statistic.packets.connections_check_time)
         diff_sec = common.ns2s(now_ns - lower_bound)
 
-        if _ctx.target.statistic.packets.total_sent == _ctx.target.statistic.packets.total_sent_prev:
+        if self.statistic.packets.total_sent == self.statistic.packets.total_sent_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                _ctx.add_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)))
+                self.errors_manager.add_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)))
 
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
-            _ctx.target.statistic.packets.connections_check_time = now_ns
-            _ctx.target.statistic.packets.sync_packets_sent()
-            _ctx.remove_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)).uuid)
+            self.statistic.packets.connections_check_time = now_ns
+            self.statistic.packets.sync_packets_sent()
+            self.errors_manager.remove_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)).uuid)
 
         return True

