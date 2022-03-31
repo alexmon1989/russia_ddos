@@ -94,7 +94,7 @@ class TcpSendError(Error):
 
 
 class CheckTcpAttackError(Error):
-    def __init__(self, message: str, count: int = 1):
+    def __init__(self, message: str = NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, count: int = 1):
         """
         :param message: Error message.
         :param count: Error counter.
@@ -112,7 +112,7 @@ class UdpSendError(Error):
 
 
 class CheckConnectionError(Error):
-    def __init__(self, message: str, count: int = 1):
+    def __init__(self, message: str = NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, count: int = 1):
         """
         :param message: Error message.
         :param count: Error counter.

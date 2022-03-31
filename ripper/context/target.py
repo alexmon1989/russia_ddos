@@ -7,7 +7,6 @@ from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
 from ripper.context.stats import Statistic
-from ripper.context.context import *
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
 
@@ -126,7 +125,6 @@ class Target:
             return self.check_successful_tcp_attack()
         return self.check_successful_connections()
 
-
     def check_successful_connections(self) -> bool:
         """
         Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
@@ -139,15 +137,14 @@ class Target:
 
         if self.statistic.connect.success == self.statistic.connect.success_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                self.errors_manager.add_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)))
+                self.errors_manager.add_error(CheckConnectionError())
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             self.statistic.connect.last_check_time = now_ns
             self.statistic.connect.sync_success()
-            self.errors_manager.remove_error(CheckConnectionError(message=no_successful_connections_error_msg(_ctx)).uuid)
+            self.errors_manager.remove_error(CheckConnectionError().uuid)
 
         return True
-
 
     def check_successful_tcp_attack(self) -> bool:
         """
@@ -161,12 +158,12 @@ class Target:
 
         if self.statistic.packets.total_sent == self.statistic.packets.total_sent_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                self.errors_manager.add_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)))
+                self.errors_manager.add_error(CheckTcpAttackError())
 
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             self.statistic.packets.connections_check_time = now_ns
             self.statistic.packets.sync_packets_sent()
-            self.errors_manager.remove_error(CheckTcpAttackError(message=no_successful_connections_error_msg(_ctx)).uuid)
+            self.errors_manager.remove_error(CheckTcpAttackError().uuid)
 
         return True

