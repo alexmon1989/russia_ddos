@@ -6,10 +6,13 @@ from ripper.actions.http_bypass import HttpBypass
 from ripper.actions.http_flood import HttpFlood
 from ripper.actions.tcp_flood import TcpFlood
 from ripper.actions.udp_flood import UdpFlood
+from ripper.context.events_journal import EventsJournal
 
 # Forward Reference
 Context = 'Context'
 Target = 'Target'
+
+Events = EventsJournal()
 
 
 attack_methods: list[AttackMethod] = [
@@ -25,7 +28,7 @@ attack_method_labels: list[str] = list(map(lambda am: am.label, attack_methods))
 def attack_method_factory(context: Context):
     target = context.target
     attack_method_name = target.attack_method
-    context.events.info(f'Set attack method to {target.attack_method}')
+    Events.info(f'Set attack method to {target.attack_method}')
     if attack_method_name == 'udp-flood':
         return UdpFlood(target, context)
     elif attack_method_name == 'http-flood':

