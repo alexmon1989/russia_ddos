@@ -6,7 +6,6 @@ from typing import Any
 from socks import ProxyError
 
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
-from ripper.context.errors import Errors
 from ripper.context.events_journal import EventsJournal
 from ripper.context.target import Target
 from ripper.actions.attack_method import AttackMethod

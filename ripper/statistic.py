@@ -10,7 +10,6 @@ from rich.table import Table
 import ripper.common as common
 import ripper.services as services
 from ripper.context.context import Context
-from ripper.context.errors import Errors
 from ripper.context.events_journal import EventsJournal
 from ripper.constants import *
 
@@ -61,7 +60,6 @@ def collect_stats(_ctx: Context) -> list[Row]:
     max_length = f' | Max length: {_ctx.max_random_packet_len}' if _ctx.max_random_packet_len else ''
     sent_units = 'Requests' if _ctx.target.attack_method.lower() == 'http' else 'Packets'
     conn_success_rate = _ctx.target.statistic.connect.get_success_rate()
-    has_errors = True if len(_ctx.errors) > 0 else False
     check_my_ip = common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip)
     your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED}' if check_my_ip else ''
     is_proxy_list = bool(_ctx.proxy_manager.proxy_list and len(_ctx.proxy_manager.proxy_list))
@@ -98,7 +96,7 @@ def collect_stats(_ctx: Context) -> list[Row]:
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connections',               f'success: [green]{_ctx.target.statistic.connect.success}[/], failed: [red]{_ctx.target.statistic.connect.failed}[/], success rate: {rate_color(conn_success_rate, " %")}', end_section=True),
         # ===================================
-        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=has_errors, visible=_ctx.target.attack_method.lower() in ['http-flood', 'http-bypass']),
+        Row('Status Code Distribution',  build_http_codes_distribution(_ctx.target.statistic.http_stats), end_section=True, visible=_ctx.target.attack_method.lower() in ['http-flood', 'http-bypass']),
     ]
 
     return full_stats
@@ -108,8 +106,6 @@ def generate_stats(_ctx: Context):
     """Create statistic from aggregated RAW Statistic data."""
 
     caption = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}'
-    table_caption = caption if not _ctx.has_errors() else None
-    logs_caption = caption if _ctx.has_errors() else None
 
     table = Table(
         title=LOGO_COLOR,
@@ -131,7 +127,7 @@ def generate_stats(_ctx: Context):
         box=box.SIMPLE,
         min_width=MIN_SCREEN_WIDTH,
         width=MIN_SCREEN_WIDTH,
-        caption=table_caption,
+        caption=caption,
         caption_style='bold')
 
     events_log.add_column('[blue]Events Log', style='dim')
@@ -139,29 +135,7 @@ def generate_stats(_ctx: Context):
     for event in Events.get_log():
         events_log.add_row(f'{event}')
 
-    logs = None
-    if _ctx.has_errors():
-        logs = Table(
-            box=box.SIMPLE,
-            min_width=MIN_SCREEN_WIDTH,
-            width=MIN_SCREEN_WIDTH,
-            caption=logs_caption,
-            caption_style='bold')
-
-        logs.add_column('Time')
-        logs.add_column('Action')
-        logs.add_column('Q-ty')
-        logs.add_column('Message')
-
-        for key in _ctx.errors:
-            err = _ctx.errors.get(key)
-            logs.add_row(f'[cyan]{err.time.strftime(DATE_TIME_SHORT)}',
-                         f'[orange1]{err.code}',
-                         f'{err.count}',
-                         f'{err.message}')
-
-    group = Group(table, events_log) if logs is None else Group(table, events_log, logs)
-    return group
+    return Group(table, events_log)
 
 
 lock = threading.Lock()
@@ -189,14 +163,16 @@ def refresh(_ctx: Context) -> None:
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip):
-        _ctx.add_error(Errors('IP was changed', YOUR_IP_WAS_CHANGED))
+        Events.error(YOUR_IP_WAS_CHANGED)
 
-    if not services.validate_attack(_ctx):
-        _ctx.add_error(Errors('Host does not respond', common.get_no_successful_connection_die_msg()))
+    if not _ctx.target.statistic.packets.validate_connection(SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC):
+        Events.error(f'There were no successful connections for more '
+                     f'than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. '
+                     f'Your attack is ineffective.')
         exit(common.get_no_successful_connection_die_msg())
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        _ctx.add_error(Errors('Host does not respond', NO_MORE_PROXIES_MSG))
+        Events.error(f'Host does not respond {NO_MORE_PROXIES_MSG}')
         exit(NO_MORE_PROXIES_MSG)
 
 

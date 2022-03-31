@@ -1,12 +1,13 @@
 import os
-import time
 from rich.console import Console
 
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-from ripper.context.errors import *
+from ripper.context.events_journal import EventsJournal
 from ripper.context.stats import *
 from ripper.context.target import *
+
+Events = EventsJournal()
 
 
 # TODO Make it true singleton
@@ -32,8 +33,6 @@ class Context:
     # ==== Statistic ====
     myIpInfo: IpInfo = IpInfo()
     """All the info about IP addresses and GeoIP information."""
-    errors: dict[str, Errors] = defaultdict(dict[str, Errors])
-    """All the errors during script run."""
 
     # ==========================================================================
     cpu_count: int
@@ -95,26 +94,6 @@ class Context:
             return 0
         return int(self.target.statistic.start_time.timestamp() * 1000000 * 1000)
 
-    def add_error(self, error: Errors):
-        """
-        Add Error to Errors collection without duplication.
-        If Error exists in collection - it updates the error counter.
-        """
-        if self.errors.__contains__(error.uuid):
-            self.errors[error.uuid].count += 1
-            self.errors[error.uuid].time = error.time
-        else:
-            self.errors[error.uuid] = error
-
-    def remove_error(self, error_code: str):
-        """Remove Error from collection by Error Code."""
-        if self.errors.__contains__(error_code):
-            self.errors.__delitem__(error_code)
-
-    def has_errors(self) -> bool:
-        """Check if Errors are exists."""
-        return len(self.errors) > 0
-
     def validate(self):
         """Validates context before Run script. Order is matter!"""
         try:
@@ -175,7 +154,8 @@ class Context:
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-                self.add_error(Errors('Proxy list read operation failed', e))
+                Events.exception(e)
+                Events.error('Proxy list read operation failed.')
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:

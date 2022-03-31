@@ -5,7 +5,6 @@ from cloudscraper import CloudScraper, create_scraper
 from requests import Response
 
 from ripper.actions.http_flood import HttpFlood
-from ripper.context.errors import Errors
 from ripper.context.target import Target
 from ripper.context.events_journal import EventsJournal
 

@@ -8,93 +8,20 @@ from base64 import b64decode
 from ripper import common, statistic, arg_parser
 from ripper.actions.attack import Attack, attack_method_labels
 from ripper.constants import *
-from ripper.context.context import Context, Errors, Target
-from ripper.common import get_current_ip, ns2s
+from ripper.context.context import Context, Target
+from ripper.common import get_current_ip
 from ripper.context.events_journal import EventsJournal
 from ripper.proxy import Proxy
 
 exit_event = threading.Event()
-_global_ctx: Context = None
 events: EventsJournal = EventsJournal()
-
-
-###############################################
-# Connection validators
-###############################################
-def validate_attack(_ctx: Context) -> bool:
-    """
-    Checks if attack is valid.
-    Attack is valid if target accepted traffic within
-    last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
-    """
-    if _ctx.target.attack_method == 'tcp':
-        return check_successful_tcp_attack(_ctx)
-    return check_successful_connections(_ctx)
-
-
-def check_successful_connections(_ctx: Context) -> bool:
-    """
-    Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
-    :parameter _ctx: Context
-    """
-    now_ns = time.time_ns()
-    lower_bound = max(_ctx.get_start_time_ns(),
-                      _ctx.target.statistic.connect.last_check_time)
-    diff_sec = ns2s(now_ns - lower_bound)
-
-    if _ctx.target.statistic.connect.success == _ctx.target.statistic.connect.success_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            events.warn('Check connection - FAILED')
-            _ctx.add_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)))
-            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-    else:
-        events.info('Check connection - SUCCESS')
-        _ctx.target.statistic.connect.last_check_time = now_ns
-        _ctx.target.statistic.connect.sync_success()
-        _ctx.remove_error(Errors('Check connection', no_successful_connections_error_msg(_ctx)).uuid)
-
-    return True
-
-
-def check_successful_tcp_attack(_ctx: Context) -> bool:
-    """
-    Checks if there are changes in sent bytes count.
-    Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
-    """
-    now_ns = time.time_ns()
-    lower_bound = max(_ctx.get_start_time_ns(),
-                      _ctx.target.statistic.packets.connections_check_time)
-    diff_sec = ns2s(now_ns - lower_bound)
-
-    if _ctx.target.statistic.packets.total_sent == _ctx.target.statistic.packets.total_sent_prev:
-        if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-            events.warn('Check connection - FAILED')
-            _ctx.add_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)))
-
-            return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-    else:
-        events.info('Check connection - SUCCESS')
-        _ctx.target.statistic.packets.connections_check_time = now_ns
-        _ctx.target.statistic.packets.sync_packets_sent()
-        _ctx.remove_error(Errors('Check TCP attack', no_successful_connections_error_msg(_ctx)).uuid)
-
-    return True
-
-
-###############################################
-# Other
-###############################################
-def no_successful_connections_error_msg(_ctx: Context) -> str:
-    if _ctx.proxy_manager.proxy_list_initial_len > 0:
-        return NO_SUCCESSFUL_CONNECTIONS_ERROR_PROXY_MSG
-    return NO_SUCCESSFUL_CONNECTIONS_ERROR_VPN_MSG
+_global_ctx: Context = None
 
 
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.check_timer(check_period_sec, 'update_current_ip'):
-        events.info('Updating current IP address.')
+        events.info(f'Checking my public IP address (period: {check_period_sec} sec)')
         _ctx.myIpInfo.my_current_ip = get_current_ip()
     if _ctx.myIpInfo.my_start_ip is None:
         _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip

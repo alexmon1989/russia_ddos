@@ -54,7 +54,8 @@ class TcpFlood(AttackMethod):
             self._ctx.max_random_packet_len)
         try:
             sent = sock.send(send_bytes)
-        except ProxyError:
+        except ProxyError as ep:
+            Events.exception(ep)
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
             Events.exception(e)
