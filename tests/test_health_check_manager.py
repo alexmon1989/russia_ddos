@@ -2,12 +2,11 @@ import pytest as pytest
 from collections import namedtuple
 
 from ripper.context.context import Context
-from ripper.context.context import Target
-from ripper.health_check_manager import classify_host_status, count_host_statuses, HealthCheckManager
+from ripper.health_check_manager import classify_host_status, count_host_statuses
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 from ripper.headers_provider import HeadersProvider
 
-Args = namedtuple('Args', 'target')
+Args = namedtuple('Args', 'targets')
 
 
 class DescribeHealthCheck:
@@ -43,12 +42,11 @@ class DescribeHealthCheck:
     def it_can_fetch_host_statuses(self):
         context = Context(args=Args(
             # TODO expect target_uri in args as well
-            target = 'tcp://google.com',
+            targets = ['tcp://google.com'],
         ))
-        assert len(context.target.host_ip) > 0
+        assert len(context.targets[0].host_ip) > 0
 
-        distribution = context.target.health_check_manager.fetch_host_statuses()
-        print(distribution)
+        distribution = context.targets[0].health_check_manager.fetch_host_statuses()
         # some nodes have issues with file descriptor or connection
         assert distribution[HOST_SUCCESS_STATUS] > 17
 
@@ -62,12 +60,12 @@ class DescribeHealthCheck:
     def it_constructs_request_url(self, args_data, url):
         context = Context(args=Args(
             # TODO expect target_uri in args as well
-            target = args_data['target_uri'],
+            targets = [args_data['target_uri']],
         ))
-        assert context.target.health_check_manager.health_check_method == args_data['health_check_method']
+        assert context.targets[0].health_check_manager.health_check_method == args_data['health_check_method']
         if 'host_ip' in args_data:
-            context.target.host_ip = args_data['host_ip']
-        assert context.target.health_check_manager.request_url == url
+            context.targets[0].host_ip = args_data['host_ip']
+        assert context.targets[0].health_check_manager.request_url == url
 
     @pytest.fixture(scope='session', autouse=True)
     def refresh_headers_provider(self):
