@@ -3,7 +3,7 @@ from contextlib import suppress
 from typing import Any
 from socks import ProxyError
 
-from ripper.context.errors import *
+from ripper.errors import *
 from ripper.context.target import Target
 from ripper.common import generate_random_bytes
 from ripper.actions.attack_method import AttackMethod

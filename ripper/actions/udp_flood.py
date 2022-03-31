@@ -3,7 +3,7 @@ from socket import socket
 from typing import Any
 
 from ripper.common import generate_random_bytes
-from ripper.context.errors import *
+from ripper.errors import *
 from ripper.context.target import Target
 from ripper.constants import *
 from ripper.actions.attack_method import AttackMethod

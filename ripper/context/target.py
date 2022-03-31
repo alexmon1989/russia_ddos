@@ -8,7 +8,7 @@ from ripper import common
 from ripper.constants import *
 from ripper.context.stats import Statistic
 from ripper.context.context import *
-from ripper.context.errors import *
+from ripper.errors import *
 
 
 def default_scheme_port(scheme: str):

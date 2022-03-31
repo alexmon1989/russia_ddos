@@ -9,7 +9,7 @@ from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.headers_provider import HeadersProvider
-from ripper.context.errors import *
+from ripper.errors import *
 from ripper.context.stats import *
 from ripper.context.target import *
 
@@ -37,8 +37,6 @@ class Context:
     # ==== Statistic ====
     myIpInfo: IpInfo = IpInfo()
     """All the info about IP addresses and GeoIP information."""
-    errors: dict[str, Error] = defaultdict(dict[str, Error])
-    """All the errors during script run."""
 
     # ==========================================================================
     cpu_count: int
@@ -103,26 +101,6 @@ class Context:
         if not min_start_time:
             return 0
         return common.s2ns(min_start_time)
-
-    def add_error(self, error: Error):
-        """
-        Add Error to Error collection without duplication.
-        If Error exists in collection - it updates the error counter.
-        """
-        if self.errors.__contains__(error.uuid):
-            self.errors[error.uuid].count += 1
-            self.errors[error.uuid].time = error.time
-        else:
-            self.errors[error.uuid] = error
-
-    def remove_error(self, error_code: str):
-        """Remove Error from collection by Error Code."""
-        if self.errors.__contains__(error_code):
-            self.errors.__delitem__(error_code)
-
-    def has_errors(self) -> bool:
-        """Check if Errors are exists."""
-        return len(self.errors) > 0
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
