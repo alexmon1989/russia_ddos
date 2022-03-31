@@ -83,6 +83,7 @@ class Target:
 
         self.health_check_manager = HealthCheckManager(target=self)
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
+        print(target_uri, self.scheme, self.attack_method)
 
         self.errors_manager = ErrorsManager()
         self.statistic = Statistic()

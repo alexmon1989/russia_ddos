@@ -19,7 +19,7 @@ from ripper.context.target import Target
 class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
-    targets: list[Target] = []
+    targets: list[Target] = None
 
     # ==== Input params ====
     threads: int
@@ -36,7 +36,7 @@ class Context:
     """Is dry run mode."""
 
     # ==== Statistic ====
-    myIpInfo: IpInfo = IpInfo()
+    myIpInfo: IpInfo = None
     """All the info about IP addresses and GeoIP information."""
 
     # ==========================================================================
@@ -44,19 +44,19 @@ class Context:
     """vCPU cont of current machine."""
 
     # ==== Internal variables ====
-    headers_provider: HeadersProvider = HeadersProvider()
+    headers_provider: HeadersProvider = None
     """HTTP Headers used to make Requests."""
 
     # External API and services info
-    sock_manager: SocketManager = SocketManager()
-    proxy_manager: ProxyManager = ProxyManager()
+    sock_manager: SocketManager = None
+    proxy_manager: ProxyManager = None
     errors_manager: ErrorsManager = None
-    logger: Console = Console(width=MIN_SCREEN_WIDTH)
+    logger: Console = None
 
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
 
-    _timer_bucket: dict[str, datetime] = defaultdict(dict[str, datetime])
+    _timer_bucket: dict[str, datetime] = None
     """Internal stopwatch."""
 
     @staticmethod
@@ -128,7 +128,14 @@ class Context:
         return cls.instance
 
     def __init__(self, args):
+        self.targets = []
+        self.myIpInfo = IpInfo()
+        self.headers_provider = HeadersProvider()
+        self.sock_manager = SocketManager()
+        self.proxy_manager = ProxyManager()
         self.errors_manager = ErrorsManager()
+        self.logger = Console(width=MIN_SCREEN_WIDTH)
+        self._timer_bucket = defaultdict(dict[str, datetime])
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))

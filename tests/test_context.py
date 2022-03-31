@@ -4,7 +4,6 @@ import time
 import pytest as pytest
 
 from ripper.context.context import Context
-from ripper.errors import Error
 
 Args = namedtuple('Args', 'targets')
 
@@ -28,21 +27,21 @@ class DescribeContext:
     def it_checks_time_interval(self):
         context = Context(self.args)
         last_2mins = datetime.now() - timedelta(minutes=2)
-        context.target.statistic.start_time = last_2mins
+        context.targets[0].statistic.start_time = last_2mins
 
-        assert datetime.now() > context.target.statistic.start_time
+        assert datetime.now() > context.targets[0].statistic.start_time
         assert context.check_timer(5) is True
         assert context.check_timer(5) is False
         time.sleep(2)
         assert context.check_timer(5) is False
         assert context.check_timer(1) is True
 
-    @pytest.mark.parametrize('target_str, attack_method', [
+    @pytest.mark.parametrize('target_uri, attack_method', [
         ('http://google.com', 'http-flood'),
         ('tcp://google.com', 'tcp-flood'),
         ('udp://google.com', 'udp-flood'),
     ])
-    def it_detects_attack_by_target_in_context(self, target_str, attack_method):
+    def it_detects_attack_by_target_in_context(self, target_uri, attack_method):
         assert Context(args=Args(
-            targets=[target_str],
-        )).target.attack_method == attack_method
+            targets=[target_uri],
+        )).targets[0].attack_method == attack_method
