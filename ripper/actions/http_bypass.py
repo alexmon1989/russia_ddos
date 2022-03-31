@@ -17,15 +17,18 @@ Events = EventsJournal()
 class RateLimitException(BaseException):
     """Exception raised for rate limit response."""
 
+    code: int
+    """Error code"""
     message: str
     """Description of the error"""
 
-    def __init__(self, message: str):
+    def __init__(self, code: int, message: str):
+        self.code = code
         self.message = message
         super().__init__(self.message)
 
     def __str__(self):
-        return f'CODE 429: {self.message}'
+        return f'{self.code}: {self.message}'
 
 
 class HttpBypass(HttpFlood):
@@ -77,8 +80,8 @@ class HttpBypass(HttpFlood):
     @staticmethod
     def check_rate_limit(response: Response):
         """Check status code for Rate limits applied and throws exception."""
-        if response.status_code == 429:
-            raise RateLimitException(response.reason)
+        if response.status_code in [429, 460, 463, 520, 521, 522, 523, 524, 525, 526, 527]:
+            raise RateLimitException(response.status_code, response.reason)
 
     @staticmethod
     def _size_of_request(request) -> int:

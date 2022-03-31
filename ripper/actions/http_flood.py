@@ -59,7 +59,39 @@ class HttpFlood(AttackMethod):
                 check_sock.close()
                 status = int(re.search(HTTP_STATUS_PATTERN, http_response)[1])
                 self._ctx.target.statistic.http_stats[status] += 1
-                Events.info('Checked Response status... SUCCESS')
+                self._send_event_with_status(status)
+
+    @staticmethod
+    def _send_event_with_status(code: int):
+        base = 'Checked Response status...'
+        if code < 300:
+            Events.info(f'{base} {code}: Success')
+        elif 299 > code < 400:
+            Events.warn(f'{base} {code}: Redirection')
+        elif code == 400:
+            Events.warn(f'{base} {code}: Bad Request')
+        elif 400 > code <= 403:
+            Events.warn(f'{base} {code}: Forbidden')
+        elif code == 404:
+            Events.warn(f'{base} {code}: Not Found')
+        elif 404 > code < 408:
+            Events.warn(f'{base} {code}: Not Acceptable or Not Allowed')
+        elif code == 408:
+            Events.warn(f'{base} {code}: Request Timeout')
+        elif 408 > code < 429:
+            Events.error(f'{base} {code}: Client Error')
+        elif code == 429:
+            Events.error(f'{base} {code}: Too Many Requests')
+        elif 429 > code < 459:
+            Events.error(f'{base} {code}: Client Error')
+        elif 460 >= code <= 463:
+            Events.error(f'{base} {code}: AWS Load Balancer Error')
+        elif 499 > code <= 511:
+            Events.error(f'{base} {code}: Server Error')
+        elif 520 >= code <= 530:
+            Events.error(f'{base} {code}: CloudFlare Reverse Proxy Error')
+        else:
+            Events.error(f'{base} {code}: Custom Error')
 
     def send(self, sock: socket) -> bool:
         payload = self.payload().encode('utf-8')
