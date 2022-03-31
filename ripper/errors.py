@@ -1,4 +1,5 @@
 import hashlib
+import json
 from datetime import datetime
 
 from ripper.constants import *
@@ -31,6 +32,15 @@ class Error:
     
     def clone(self):
         return Error(code=self.code, message=self.message, count=self.count)
+    
+    def json(self):
+        return json.dumps({
+            'uuid': self.uuid,
+            'time': self.time.isoformat(),
+            'code': self.code,
+            'count': self.count,
+            'message': self.message,
+        })
 
 
 ###############################################

@@ -1,12 +1,17 @@
 import pytest as pytest
 
-from ripper.errors import Error
+from ripper.errors import Error, IPWasChangedError
 from ripper.errors_manager import ErrorsManager, merge_error_dicts
 
 
 class FakeError(Error):
     def __init__(self):
         super().__init__(code='Fake Error', message='Fake Error', count=1)
+
+
+class ConnectionError(Error):
+    def __init__(self):
+        super().__init__(code='Connection Error', message='Connection Error', count=1)
 
 
 class DescribeError:
@@ -91,3 +96,34 @@ class DescribeErrorsManager:
 
         em.remove_error(uuid)
         assert len(em.errors) == 0
+
+    def it_can_aggregate_errors_from_children(self):
+        root = ErrorsManager()
+        sub1 = ErrorsManager()
+        sub2 = ErrorsManager()
+        sub3 = ErrorsManager()
+        root.add_submanager(sub1)
+        root.add_submanager(sub2)
+        root.add_submanager(sub3)
+
+        root.add_error(FakeError())
+        assert root.errors[FakeError().uuid].count == 1
+        print(list(map(lambda err: err.json(), root.errors.values())))
+
+        root.add_error(IPWasChangedError())
+        assert root.errors[IPWasChangedError().uuid].count == 1
+        print(list(map(lambda err: err.json(), root.errors.values())))
+        
+        sub1.add_error(FakeError())
+        assert root.errors['126d39485389763af5a5d9264284ff9edff41e9e'].count == 2
+        
+        sub1.add_error(ConnectionError())
+        assert root.errors[ConnectionError().uuid].count == 1
+        
+        sub2.add_error(ConnectionError())
+        assert root.errors[ConnectionError().uuid].count == 2
+        
+        sub3.add_error(ConnectionError())
+        assert root.errors[FakeError().uuid].count == 2
+        assert root.errors[IPWasChangedError().uuid].count == 1
+        assert root.errors[ConnectionError().uuid].count == 3
