@@ -11,7 +11,10 @@ import ripper.common as common
 import ripper.services as services
 from ripper.context.context import Context
 from ripper.context.errors import Errors
+from ripper.context.events_journal import EventsJournal
 from ripper.constants import *
+
+Events = EventsJournal()
 
 
 def build_http_codes_distribution(http_codes_counter) -> str:
@@ -133,7 +136,7 @@ def generate_stats(_ctx: Context):
 
     events_log.add_column('[blue]Events Log', style='dim')
 
-    for event in _ctx.events.last(5):
+    for event in Events.get_log():
         events_log.add_row(f'{event}')
 
     logs = None

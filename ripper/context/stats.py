@@ -1,3 +1,4 @@
+import threading
 from collections import defaultdict
 from datetime import datetime
 
@@ -14,18 +15,24 @@ class PacketsStats:
     """Total sent bytes by TCP/UDP connect."""
     connections_check_time: int = 0
     """Connection last check time."""
+    _lock: threading.Lock
+
+    def __init__(self):
+        self._lock = threading.Lock()
 
     def sync_packets_sent(self):
         """Sync previous packets sent stats with current packets sent stats."""
-        self.total_sent_prev = self.total_sent
+        with self._lock:
+            self.total_sent_prev = self.total_sent
 
     def status_sent(self, sent_bytes: int = 0):
         """
         Collect sent packets statistic.
         :param sent_bytes sent packet size in bytes.
         """
-        self.total_sent += 1
-        self.total_sent_bytes += sent_bytes
+        with self._lock:
+            self.total_sent += 1
+            self.total_sent_bytes += sent_bytes
 
 
 class ConnectionStats:
@@ -40,6 +47,10 @@ class ConnectionStats:
     """Last check connection time."""
     in_progress: bool = False
     """Connection state used for checking liveness of Socket."""
+    _lock: threading.Lock
+
+    def __init__(self):
+        self._lock = threading.Lock()
 
     def get_success_rate(self) -> int:
         """Calculate Success Rate for connection."""
@@ -50,23 +61,28 @@ class ConnectionStats:
 
     def sync_success(self):
         """Sync previous success state with current success state."""
-        self.success_prev = self.success
+        with self._lock:
+            self.success_prev = self.success
 
     def set_state_in_progress(self):
         """Set connection State - in progress."""
-        self.in_progress = True
+        with self._lock:
+            self.in_progress = True
 
     def set_state_is_connected(self):
         """Set connection State - is connected."""
-        self.in_progress = False
+        with self._lock:
+            self.in_progress = False
 
     def status_success(self):
         """Collect successful connections."""
-        self.success += 1
+        with self._lock:
+            self.success += 1
 
     def status_failed(self):
         """Collect failed connections."""
-        self.failed += 1
+        with self._lock:
+            self.failed += 1
 
 
 class Statistic:
@@ -81,8 +97,7 @@ class Statistic:
     """Script start time."""
 
     def collect_packets_success(self, sent_bytes: int = 0):
-        self.packets.total_sent += 1
-        self.packets.total_sent_bytes += sent_bytes
+        self.packets.status_sent(sent_bytes)
 
 
 class IpInfo:
