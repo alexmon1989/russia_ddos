@@ -4,15 +4,15 @@ from collections import namedtuple
 from ripper.actions.udp_flood import UdpFlood
 from ripper.context.context import Context
 
-Args = namedtuple('Args', 'target')
+Args = namedtuple('Args', 'targets')
 
 
 class DescribeTcpFloodAttackMethod:
     def it_has_correct_name(self):
         ctx = Context(args=Args(
-            target='udp://localhost',
+            targets=['udp://localhost'],
         ))
-        tcp_flood_am = UdpFlood(ctx, ctx.target)
+        tcp_flood_am = UdpFlood(ctx, ctx.targets[0])
         assert tcp_flood_am.name == 'UDP Flood'
         assert tcp_flood_am.label == 'udp-flood'
 
