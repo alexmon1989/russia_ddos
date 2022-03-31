@@ -81,7 +81,7 @@ class ErrorsManager:
         else:
             self._errors[error.uuid] = error
     
-    def find_error(self, error_uuid: Error):
+    def find_error(self, error_uuid: str):
         """Recursive lookup for error with specified error_uuid."""
         if self._errors.__contains__(error_uuid):
             return self._errors[error_uuid]
@@ -91,12 +91,12 @@ class ErrorsManager:
                 return error
         return None
 
-    def remove_error(self, error_code: str):
+    def remove_error(self, error_uuid: str):
         """Remove Error from collection by Error Code."""
-        if self._errors.__contains__(error_code):
-            self._errors.__delitem__(error_code)
+        if self._errors.__contains__(error_uuid):
+            self._errors.__delitem__(error_uuid)
         for child in self._children:
-            child.remove_error(error_code)
+            child.remove_error(error_uuid)
 
     def has_errors(self) -> bool:
         """Check if Errors are exists."""

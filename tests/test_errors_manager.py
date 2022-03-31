@@ -40,12 +40,13 @@ class DescribeErrorsManager:
         assert merged_errors[FakeError().uuid].count == 5
         assert merged_errors[error2.uuid].count == 1
 
-    # def it_can_construct_errors_single_level(self):
-    #     em = ErrorsManager()
-    #     assert not em.has_errors()
-    #     em.add_error(FakeError())
-    #     assert em.has_errors()
-    #     assert em.remove_error(FakeError().code)
+    def it_can_construct_errors_single_level(self):
+        em = ErrorsManager()
+        assert not em.has_errors()
+        em.add_error(FakeError())
+        assert em.has_errors()
+        em.remove_error(FakeError().uuid)
+        assert not em.has_errors()
 
     # def it_can_store_error_details(self):
     #     em = ErrorsManager()
