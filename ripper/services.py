@@ -123,20 +123,18 @@ def update_host_statuses(_ctx: Context):
         _ctx.target.health_check_manager.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
+def check_host_connection(_ctx: Context, proxy: Proxy = None) -> bool:
+    """Check connection to Host before start script."""
     _ctx.target.statistic.connect.set_state_in_progress()
-    try:
-        sock = _ctx.sock_manager.create_tcp_socket(proxy)
-        sock.connect((_ctx.target.host, _ctx.target.port))
-    except:
-        res = False
-        _ctx.target.statistic.connect.failed += 1
-    else:
-        res = True
-        _ctx.target.statistic.connect.success += 1
-        sock.close()
-    _ctx.target.statistic.connect.set_state_is_connected()
-    return res
+    with _ctx.sock_manager.create_tcp_socket(proxy) as http:
+        try:
+            http.connect(_ctx.target.hostip_port_tuple())
+        except:
+            res = False
+        else:
+            _ctx.target.statistic.connect.set_state_is_connected()
+            res = True
+        return res
 
 
 def go_home(_ctx: Context) -> None:
@@ -179,8 +177,8 @@ def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY,
     while i < retry_cnt:
         message = f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.target.host}:{_ctx.target.port}...'
         _ctx.logger.log(message)
-        _ctx.events.info(message)
-        if connect_host(_ctx):
+        events.info(message)
+        if check_host_connection(_ctx):
             _ctx.logger.rule()
             break
         time.sleep(timeout_secs)
