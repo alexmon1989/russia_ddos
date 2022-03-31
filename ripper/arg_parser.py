@@ -49,6 +49,9 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-d', '--dry-run',
                       dest='dry_run', action="store_true",
                       help='Print formatted output without full script running.')
+    parser.add_option('--log-size',
+                      dest='log_size', type='int', default=5,
+                      help='Set the Events Log history frame length.')
 
 
 def print_usage():

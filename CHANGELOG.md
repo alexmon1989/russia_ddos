@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Added
 - `dry run` mode for fast testing purposes
 - CloudFlare bypass mode for HTTP flood method
+- Events log that helps to understand attack process details in depth
+- `--log-size` parameter to configure Events log history frame length
 
 ### Fixed
 - Fixed error with keyboard interrupting and threads shutdown process
 - Reduced IP address re-checks to avoid redundant API calls
+- Attack checks methods, improved speed
 
 ### Changed
 - Isolated target. The target contains a full server description, statistics, and health check. It is an intermediate step towards multiple targets.
@@ -23,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Reduced awareness about the entire context structure.
 - Unified tests format. Classes should represent "Describe" blocks, and test methods should start with "it."
 - Changed Exception handling and logging process.
+- Replaced Error class with Events
 
 
 ## [v2.2.0](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...2.2.0)

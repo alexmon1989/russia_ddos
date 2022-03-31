@@ -71,10 +71,10 @@ def collect_stats(_ctx: Context) -> list[Row]:
 
     full_stats: list[Row] = [
         #   Description                  Status
-        Row('Start Time',                common.format_dt(_ctx.target.statistic.start_time)),
-        Row('Your Public IP',            f'[green]{_ctx.myIpInfo.my_country:10}[/] [cyan]{_ctx.myIpInfo.my_ip_masked():20} [red]{your_ip_disclaimer}{your_ip_was_changed}'),
-        Row('Host IP',                   f'[red]{_ctx.target.country:10}[/] [cyan]{_ctx.target.host_ip}:{_ctx.target.port}'),
-        Row('HTTP Request',              f'[cyan]{_ctx.target.http_method}: {_ctx.target.url()}', visible=_ctx.target.attack_method.lower() == 'http'),
+        Row('Start Time, duration',      f'{common.format_dt(_ctx.target.statistic.start_time)} - {str(duration).split(".", 2)[0]}'),
+        Row('Your Country, Public IP',   f'[green]{_ctx.myIpInfo.my_country:4}[/] [cyan]{_ctx.myIpInfo.my_ip_masked():20} [red]{your_ip_disclaimer}{your_ip_was_changed}'),
+        Row('Host Country, IP',          f'[red]{_ctx.target.country:4}[/] [cyan]{_ctx.target.host_ip}:{_ctx.target.port}'),
+        Row('HTTP Request',              f'[cyan]{_ctx.target.http_method}: {_ctx.target.url()}', visible=_ctx.target.attack_method.lower().startswith('http')),
         Row('Attack Method',             _ctx.target.attack_method.lower(), end_section=True),
         # ===================================
         Row('Threads',                   f'{_ctx.threads}'),
@@ -90,9 +90,8 @@ def collect_stats(_ctx: Context) -> list[Row]:
         # ===================================
         Row(f'[cyan][bold]{_ctx.target.attack_method.upper()} Statistics', '', end_section=True),
         # ===================================
-        Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
-        Row('Sent Bytes   – AVG speed',  f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes):12} [green]{common.convert_size(data_rps)}/s'),
-        Row(f'Sent {sent_units:7} – AVG speed', f'{_ctx.target.statistic.packets.total_sent:<12} [green]{packets_rps} {sent_units.lower()}/s'),
+        Row('Sent Bytes @ AVG speed',    f'{common.convert_size(_ctx.target.statistic.packets.total_sent_bytes):>12} @ [green]{common.convert_size(data_rps)}/s'),
+        Row(f'Sent {sent_units} @ AVG speed', f'{_ctx.target.statistic.packets.total_sent:>12,} @ [green]{packets_rps} {sent_units.lower()}/s'),
         # === Info UDP/TCP => insert Sent bytes statistic
         Row('Connections',               f'success: [green]{_ctx.target.statistic.connect.success}[/], failed: [red]{_ctx.target.statistic.connect.failed}[/], success rate: {rate_color(conn_success_rate, " %")}', end_section=True),
         # ===================================
@@ -166,10 +165,11 @@ def refresh(_ctx: Context) -> None:
         Events.error(YOUR_IP_WAS_CHANGED)
 
     if not _ctx.target.statistic.packets.validate_connection(SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC):
-        Events.error(f'There were no successful connections for more '
-                     f'than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. '
-                     f'Your attack is ineffective.')
-        exit(common.get_no_successful_connection_die_msg())
+        msg = f'There were no successful connections for more ' \
+              f'than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. ' \
+              f'Your attack is ineffective.'
+        Events.error(msg)
+        exit(msg)
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
         Events.error(f'Host does not respond {NO_MORE_PROXIES_MSG}')

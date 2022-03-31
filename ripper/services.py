@@ -14,7 +14,7 @@ from ripper.context.events_journal import EventsJournal
 from ripper.proxy import Proxy
 
 exit_event = threading.Event()
-events: EventsJournal = EventsJournal()
+events: EventsJournal = None
 _global_ctx: Context = None
 
 
@@ -121,21 +121,29 @@ def main():
     if len(sys.argv) < 2 or not validate_input(args[0]):
         arg_parser.print_usage()
 
+    # Init Events Log
+    _log_size = max(5, getattr(args[0], 'log_size', 5))
+    global events
+    events = EventsJournal(_log_size)
+
     # Init context
     global _global_ctx
     _global_ctx = Context(args[0])
     go_home(_global_ctx)
+
     # Proxies should be validated during the runtime
     connect_host_loop(
         _global_ctx,
         retry_cnt=(1 if _global_ctx.proxy_manager.proxy_list_initial_len > 0 or _global_ctx.target.attack_method == 'udp' else 5))
     _global_ctx.validate()
 
+    # Start Threads
     time.sleep(.5)
     threads_range = _global_ctx.threads if not _global_ctx.dry_run else 1
     for _ in range(threads_range):
         Attack(_global_ctx).start()
 
+    # Render Statistic
     statistic.render_statistic(_global_ctx)
 
 

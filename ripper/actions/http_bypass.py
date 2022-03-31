@@ -65,7 +65,7 @@ class HttpBypass(HttpFlood):
                 self._ctx.target.statistic.http_stats[response.status_code] += 1
                 self.check_rate_limit(response)
         except RateLimitException as e:
-            Events.warn(f'{type(e).__name__} {e.__str__()}')
+            Events.warn(f'{type(e).__name__} {e.__str__()}, sleep for 3 sec')
             time.sleep(3.01)
             return True
         except Exception as e:
