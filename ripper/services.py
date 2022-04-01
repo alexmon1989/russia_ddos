@@ -1,9 +1,11 @@
+# XXX Services look like unstructured junk-box
 import datetime
 import signal
 import sys
 import threading
 import time
 from base64 import b64decode
+from rich.live import Live
 
 from ripper import common, statistic, arg_parser
 from ripper.actions.attack import Attack, attack_method_labels
@@ -13,22 +15,16 @@ from ripper.context.target import Target
 from ripper.common import get_current_ip
 from ripper.proxy import Proxy
 from ripper.socket_manager import SocketManager
+from ripper.errors import *
 
 exit_event = threading.Event()
+lock = threading.Lock()
 _global_ctx: Context = None
 
 
 ###############################################
-# Other
+# Target-only
 ###############################################
-def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
-    """Updates current IPv4 address."""
-    if _ctx.check_timer(check_period_sec, 'update_current_ip'):
-        _ctx.myIpInfo.my_current_ip = get_current_ip()
-    if _ctx.myIpInfo.my_start_ip is None:
-        _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip
-
-
 def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
     diff = float('inf')
@@ -51,20 +47,15 @@ def update_host_statuses(target: Target):
         target.health_check_manager.fetching_host_statuses_in_progress = False
 
 
-def connect_host(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
-    target.statistic.connect.set_state_in_progress()
-    try:
-        sock = _ctx.sock_manager.create_tcp_socket(proxy)
-        sock.connect((target.host, target.port))
-    except:
-        res = False
-        target.statistic.connect.failed += 1
-    else:
-        res = True
-        target.statistic.connect.success += 1
-        sock.close()
-    target.statistic.connect.set_state_is_connected()
-    return res
+###############################################
+# Context-only
+###############################################
+def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
+    """Updates current IPv4 address."""
+    if _ctx.check_timer(check_period_sec, 'update_current_ip'):
+        _ctx.myIpInfo.my_current_ip = get_current_ip()
+    if _ctx.myIpInfo.my_start_ip is None:
+        _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip
 
 
 def go_home(_ctx: Context) -> None:
@@ -76,6 +67,77 @@ def go_home(_ctx: Context) -> None:
             target.host += '*'
 
 
+def refresh_context_details(_ctx: Context) -> None:
+    """Check threads, IPs, VPN status, etc."""
+    lock.acquire()
+
+    threading.Thread(
+        target=update_current_ip,
+        args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC]).start()
+
+    if _ctx.is_health_check:
+        for target in _ctx.targets:
+            threading.Thread(target=update_host_statuses, args=[target]).start()
+
+    if _ctx.myIpInfo.my_country == GEOIP_NOT_DEFINED:
+        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.my_current_ip]).start()
+
+    for target in _ctx.targets:
+        if target.country == GEOIP_NOT_DEFINED:
+            threading.Thread(target=common.get_country_by_ipv4, args=[target.host_ip]).start()
+
+    lock.release()
+
+    # Check for my IPv4 wasn't changed (if no proxylist only)
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip):
+        _ctx.errors_manager.add_error(IPWasChangedError())
+
+    for target in _ctx.targets:
+        if not target.validate_attack(_ctx):
+            target.errors_manager.add_error(HostDoesNotRespondError(message=common.get_no_successful_connection_die_msg()))
+            # TODO !!! Remove target instead of doing exit, exit when no more targets left
+            exit(common.get_no_successful_connection_die_msg())
+
+    if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
+        _ctx.errors_manager.add_error(HostDoesNotRespondError(message=NO_MORE_PROXIES_ERR_MSG))
+        exit(NO_MORE_PROXIES_ERR_MSG)
+
+
+###############################################
+# Target+Context
+###############################################
+def connect_host(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
+    target.stats.connect.set_state_in_progress()
+    try:
+        sock = _ctx.sock_manager.create_tcp_socket(proxy)
+        sock.connect((target.host, target.port))
+    except:
+        res = False
+        target.stats.connect.failed += 1
+    else:
+        res = True
+        target.stats.connect.success += 1
+        sock.close()
+    target.stats.connect.set_state_is_connected()
+    return res
+
+
+def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
+    """Tries to connect host in permanent loop."""
+    i = 0
+    _ctx.logger.rule('[bold]Starting DRipper')
+    while i < retry_cnt:
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
+        if connect_host(target=target, _ctx=_ctx):
+            _ctx.logger.rule()
+            break
+        time.sleep(timeout_secs)
+        i += 1
+
+
+###############################################
+# Console
+###############################################
 def validate_input(args) -> bool:
     """Validates input params."""
     if not Target.validate_format(args.target):
@@ -101,17 +163,16 @@ def validate_input(args) -> bool:
     return True
 
 
-def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
-    """Tries to connect host in permanent loop."""
-    i = 0
-    _ctx.logger.rule('[bold]Starting DRipper')
-    while i < retry_cnt:
-        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
-        if connect_host(target=target, _ctx=_ctx):
-            _ctx.logger.rule()
-            break
-        time.sleep(timeout_secs)
-        i += 1
+def render_statistic(_ctx: Context) -> None:
+    """Show DRipper runtime statistic."""
+    with Live(_ctx.stats.build_stats(), vertical_overflow='visible', redirect_stderr=False) as live:
+        live.start()
+        while True:
+            time.sleep(0.5)
+            refresh_context_details(_ctx)
+            live.update(_ctx.stats.build_stats())
+            if _ctx.dry_run:
+                break
 
 
 def main():

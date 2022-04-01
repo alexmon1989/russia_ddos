@@ -9,6 +9,7 @@ from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.headers_provider import HeadersProvider
+from ripper.stats.context_stats_manager import ContextStatsManager
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
 from ripper.stats.ip_info import IpInfo
@@ -52,6 +53,7 @@ class Context:
     proxy_manager: ProxyManager = None
     errors_manager: ErrorsManager = None
     logger: Console = None
+    stats: ContextStatsManager = None
 
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
@@ -108,7 +110,8 @@ class Context:
     
     def add_target(self, target):
         self.targets.append(target)
-        self.errors_manager.add_submanager(target.errors_manager)
+        # NOTE We will merge error on visualization step
+        # self.errors_manager.add_submanager(target.errors_manager)
 
     # TODO use Singleton meta class
     def __new__(cls, args):
@@ -124,6 +127,7 @@ class Context:
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.errors_manager = ErrorsManager()
+        self.stats = ContextStatsManager()
         self.logger = Console(width=MIN_SCREEN_WIDTH)
         self._timer_bucket = defaultdict(dict[str, datetime])
         self.start_time = datetime()

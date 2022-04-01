@@ -6,7 +6,7 @@ from ripper.headers_provider import HeadersProvider
 from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
-from ripper.stats.target_statistics_manager import TargetStatisticsManager
+from ripper.stats.target_stats_manager import TargetStatsManager
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
 
@@ -43,7 +43,7 @@ class Target:
     health_check_manager: HealthCheckManager = None
     errors_manager: ErrorsManager = None
 
-    statistic: TargetStatisticsManager = None
+    stats: TargetStatsManager = None
     """All the statistics collected separately by protocols and operations."""
 
     @staticmethod
@@ -85,8 +85,8 @@ class Target:
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
         self.errors_manager = ErrorsManager()
-        self.statistic = TargetStatisticsManager()
-        self.statistic.start_time = datetime.now()
+        self.stats = TargetStatsManager()
+        self.stats.start_time = datetime.now()
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)
@@ -109,9 +109,9 @@ class Target:
 
     def get_start_time_ns(self) -> int:
         """Get start time in nanoseconds."""
-        if not self.statistic.start_time:
+        if not self.stats.start_time:
             return 0
-        return common.s2ns(self.statistic.start_time)
+        return common.s2ns(self.stats.start_time)
 
     ###############################################
     # Connection validators
@@ -133,16 +133,16 @@ class Target:
         """
         now_ns = time.time_ns()
         lower_bound = max(self.get_start_time_ns(),
-                        self.statistic.connect.last_check_time)
+                        self.stats.connect.last_check_time)
         diff_sec = common.ns2s(now_ns - lower_bound)
 
-        if self.statistic.connect.success == self.statistic.connect.success_prev:
+        if self.stats.connect.success == self.stats.connect.success_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
                 self.errors_manager.add_error(CheckConnectionError())
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
-            self.statistic.connect.last_check_time = now_ns
-            self.statistic.connect.sync_success()
+            self.stats.connect.last_check_time = now_ns
+            self.stats.connect.sync_success()
             self.errors_manager.remove_error(CheckConnectionError().uuid)
 
         return True
@@ -154,17 +154,17 @@ class Target:
         """
         now_ns = time.time_ns()
         lower_bound = max(self.get_start_time_ns(),
-                        self.statistic.packets.connections_check_time)
+                        self.stats.packets.connections_check_time)
         diff_sec = common.ns2s(now_ns - lower_bound)
 
-        if self.statistic.packets.total_sent == self.statistic.packets.total_sent_prev:
+        if self.stats.packets.total_sent == self.stats.packets.total_sent_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
                 self.errors_manager.add_error(CheckTcpAttackError())
 
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
-            self.statistic.packets.connections_check_time = now_ns
-            self.statistic.packets.sync_packets_sent()
+            self.stats.packets.connections_check_time = now_ns
+            self.stats.packets.sync_packets_sent()
             self.errors_manager.remove_error(CheckTcpAttackError().uuid)
 
         return True

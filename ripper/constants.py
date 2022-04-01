@@ -36,7 +36,7 @@ Please, make sure you are ANONYMOUS!
 '''
 
 BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine\n'
-
+CONTROL_CAPTION = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}'
 
 # ==== Error messages ====
 GETTING_SERVER_IP_ERR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
