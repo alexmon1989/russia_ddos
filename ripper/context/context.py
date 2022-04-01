@@ -1,17 +1,13 @@
 import os
-import time
-from datetime import datetime
-from collections import defaultdict
 from rich.console import Console
 
-from ripper import common
-from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-from ripper.headers_provider import HeadersProvider
-from ripper.context.errors import *
+from ripper.context.events_journal import EventsJournal
 from ripper.context.stats import *
 from ripper.context.target import *
+
+Events = EventsJournal()
 
 
 # TODO Make it true singleton
@@ -37,8 +33,6 @@ class Context:
     # ==== Statistic ====
     myIpInfo: IpInfo = IpInfo()
     """All the info about IP addresses and GeoIP information."""
-    errors: dict[str, Errors] = defaultdict(dict[str, Errors])
-    """All the errors during script run."""
 
     # ==========================================================================
     cpu_count: int
@@ -51,6 +45,8 @@ class Context:
     # External API and services info
     sock_manager: SocketManager = SocketManager()
     proxy_manager: ProxyManager = ProxyManager()
+
+    # Logs nad Events
     logger: Console = Console(width=MIN_SCREEN_WIDTH)
 
     # Health-check
@@ -85,38 +81,18 @@ class Context:
             return True
 
     def get_timer_seconds(self, bucket: str = None) -> int:
-         stopwatch = '__stopwatch__' if bucket is None else bucket
+        stopwatch = '__stopwatch__' if bucket is None else bucket
 
-         if self._timer_bucket[stopwatch]:
-             return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
+        if self._timer_bucket[stopwatch]:
+            return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
 
-         return 0
+        return 0
 
     def get_start_time_ns(self) -> int:
         """Get start time in nanoseconds."""
         if not self.target.statistic.start_time:
             return 0
         return int(self.target.statistic.start_time.timestamp() * 1000000 * 1000)
-
-    def add_error(self, error: Errors):
-        """
-        Add Error to Errors collection without duplication.
-        If Error exists in collection - it updates the error counter.
-        """
-        if self.errors.__contains__(error.uuid):
-            self.errors[error.uuid].count += 1
-            self.errors[error.uuid].time = error.time
-        else:
-            self.errors[error.uuid] = error
-
-    def remove_error(self, error_code: str):
-        """Remove Error from collection by Error Code."""
-        if self.errors.__contains__(error_code):
-            self.errors.__delitem__(error_code)
-
-    def has_errors(self) -> bool:
-        """Check if Errors are exists."""
-        return len(self.errors) > 0
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
@@ -141,10 +117,10 @@ class Context:
         # TODO rename target to target_uri
         if args and getattr(args, 'target'):
             self.target = Target(
-                target_uri = getattr(args, 'target', ''),
-                attack_method = getattr(args, 'attack_method', None),
+                target_uri=getattr(args, 'target', ''),
+                attack_method=getattr(args, 'attack_method', None),
                 # TODO move http_method to target_uri to allow each target have its own method
-                http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+                http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
             )
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
@@ -157,7 +133,7 @@ class Context:
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        if self.target.attack_method == 'http-flood':
+        if self.target.attack_method in ['http-flood', 'http-bypass']:
             self.random_packet_len = False
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:
@@ -178,7 +154,8 @@ class Context:
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-                self.add_error(Errors('Proxy list read operation failed', e))
+                Events.exception(e)
+                Events.error('Proxy list read operation failed.')
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:

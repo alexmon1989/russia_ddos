@@ -4,6 +4,7 @@ from optparse import OptionParser
 from ripper.constants import *
 from ripper.actions.attack import attack_method_labels
 
+
 def create_parser() -> OptionParser:
     """Initialize parser with options."""
     parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}')
@@ -48,6 +49,9 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-d', '--dry-run',
                       dest='dry_run', action="store_true",
                       help='Print formatted output without full script running.')
+    parser.add_option('--log-size',
+                      dest='log_size', type='int', default=5,
+                      help='Set the Events Log history frame length.')
 
 
 def print_usage():

@@ -1,19 +1,16 @@
-import re
-
-
 class AttackMethod:
     """Abstract attack method."""
 
     @property
     def name(self):
-      raise NotImplemented
+        raise NotImplemented
 
     @property
     def label(self):
-      raise NotImplemented
+        raise NotImplemented
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError
 
     def validate(self):
-      return True
+        return True
