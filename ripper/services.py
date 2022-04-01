@@ -12,6 +12,7 @@ from ripper.context.context import Context
 from ripper.context.target import Target
 from ripper.common import get_current_ip
 from ripper.proxy import Proxy
+from ripper.socket_manager import SocketManager
 
 exit_event = threading.Event()
 _global_ctx: Context = None
@@ -50,28 +51,29 @@ def update_host_statuses(target: Target):
         target.health_check_manager.fetching_host_statuses_in_progress = False
 
 
-def connect_host(_ctx: Context, proxy: Proxy = None) -> bool:
-    _ctx.target.statistic.connect.set_state_in_progress()
+def connect_host(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
+    target.statistic.connect.set_state_in_progress()
     try:
         sock = _ctx.sock_manager.create_tcp_socket(proxy)
-        sock.connect((_ctx.target.host, _ctx.target.port))
+        sock.connect((target.host, target.port))
     except:
         res = False
-        _ctx.target.statistic.connect.failed += 1
+        target.statistic.connect.failed += 1
     else:
         res = True
-        _ctx.target.statistic.connect.success += 1
+        target.statistic.connect.success += 1
         sock.close()
-    _ctx.target.statistic.connect.set_state_is_connected()
+    target.statistic.connect.set_state_is_connected()
     return res
 
 
 def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules."""
     home_code = b64decode('dWE=').decode('utf-8')
-    if _ctx.target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(_ctx.target.host_ip) in home_code.upper():
-        _ctx.target.host_ip = _ctx.target.host = 'localhost'
-        _ctx.target.host += '*'
+    for target in _ctx.targets:
+        if target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(target.host_ip) in home_code.upper():
+            target.host_ip = target.host = 'localhost'
+            target.host += '*'
 
 
 def validate_input(args) -> bool:
@@ -99,13 +101,13 @@ def validate_input(args) -> bool:
     return True
 
 
-def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
+def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
     i = 0
     _ctx.logger.rule('[bold]Starting DRipper')
     while i < retry_cnt:
-        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.target.host}:{_ctx.target.port}...')
-        if connect_host(_ctx):
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
+        if connect_host(target=target, _ctx=_ctx):
             _ctx.logger.rule()
             break
         time.sleep(timeout_secs)
