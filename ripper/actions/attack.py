@@ -38,7 +38,7 @@ class Attack(Thread):
     _method: str
     """Attack method."""
     _ctx: Context
-    """Context to collect Statistic."""
+    """Context to collect Statistics."""
 
     def __init__(self, context: Context = None):
         """

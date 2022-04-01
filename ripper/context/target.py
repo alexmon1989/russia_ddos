@@ -110,7 +110,7 @@ class Target:
         """Get start time in nanoseconds."""
         if not self.stats.start_time:
             return 0
-        return common.s2ns(self.stats.start_time)
+        return common.s2ns(self.stats.start_time.timestamp())
 
     ###############################################
     # Connection validators

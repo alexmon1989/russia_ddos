@@ -7,14 +7,13 @@ import time
 from base64 import b64decode
 from rich.live import Live
 
-from ripper import common, statistic, arg_parser
+from ripper import common, arg_parser
 from ripper.actions.attack import Attack, attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context
 from ripper.context.target import Target
 from ripper.common import get_current_ip
 from ripper.proxy import Proxy
-from ripper.socket_manager import SocketManager
 from ripper.errors import *
 
 exit_event = threading.Event()
@@ -93,7 +92,7 @@ def refresh_context_details(_ctx: Context) -> None:
         _ctx.errors_manager.add_error(IPWasChangedError())
 
     for target in _ctx.targets:
-        if not target.validate_attack(_ctx):
+        if not target.validate_attack():
             target.errors_manager.add_error(HostDoesNotRespondError(message=common.get_no_successful_connection_die_msg()))
             # TODO !!! Remove target instead of doing exit, exit when no more targets left
             exit(common.get_no_successful_connection_die_msg())
@@ -140,9 +139,10 @@ def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO
 ###############################################
 def validate_input(args) -> bool:
     """Validates input params."""
-    if not Target.validate_format(args.target):
-        print(f'Wrong target format.')
-        return False
+    for target_uri in args.targets:
+        if not Target.validate_format(target_uri):
+            print(f'Wrong target format in {target_uri}.')
+            return False
 
     if int(args.threads) < 1:
         print(f'Wrong threads number.')
@@ -163,8 +163,8 @@ def validate_input(args) -> bool:
     return True
 
 
-def render_statistic(_ctx: Context) -> None:
-    """Show DRipper runtime statistic."""
+def render_statistics(_ctx: Context) -> None:
+    """Show DRipper runtime statistics."""
     with Live(_ctx.stats.build_stats(), vertical_overflow='visible', redirect_stderr=False) as live:
         live.start()
         while True:
@@ -187,9 +187,9 @@ def main():
     _global_ctx = Context(args[0])
     go_home(_global_ctx)
     # Proxies should be validated during the runtime
-    connect_host_loop(
-        _global_ctx,
-        retry_cnt=(1 if _global_ctx.proxy_manager.proxy_list_initial_len > 0 or _global_ctx.target.attack_method == 'udp' else 5))
+    for target in _global_ctx.targets:
+        retry_cnt = 1 if _global_ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
+        connect_host_loop(_ctx=_global_ctx, target=target, retry_cnt=retry_cnt)
     _global_ctx.validate()
 
     time.sleep(.5)
@@ -197,7 +197,7 @@ def main():
     for _ in range(threads_range):
         Attack(_global_ctx).start()
 
-    statistic.render_statistic(_global_ctx)
+    render_statistics(_global_ctx)
 
 
 def signal_handler(signum, frame):

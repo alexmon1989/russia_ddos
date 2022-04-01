@@ -15,7 +15,7 @@ Context = 'Context'
 class ContextStatsManager:
     start_time: datetime = None
     """Script start time."""
-    _ctx: Context
+    _ctx: Context = None
     """Context we are working with."""
     current_visualized_target: Target = None
     """We show one target details at the same time."""
@@ -76,7 +76,7 @@ class ContextStatsManager:
 
     def build_errors_table(self) -> Table:
       em = ErrorsManager()
-      em.add_submanager(self._ctx.error_mamanger)
+      em.add_submanager(self._ctx.errors_manager)
       # Merges context-level errors with visible target-level errors
       if self.current_visualized_target:
           em.add_submanager(self.current_visualized_target.errors_manager)
@@ -105,8 +105,7 @@ class ContextStatsManager:
       return logs_table
 
     def build_stats(self):
-        """Create statistic from aggregated RAW Statistic data."""
-
+        """Create statistics from aggregated RAW Statistics data."""
         details_table = self.build_details_stats_table()
         errors_table = self.build_errors_table()
         group = Group(details_table) if errors_table is None else Group(details_table, errors_table)

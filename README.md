@@ -48,7 +48,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
   Last Availability Check           04:10:52                                    
   Host Availability                 Accessible in 21 of 21 zones (100%)         
  ────────────────────────────────────────────────────────────────────────────── 
-  UDP Statistic                                                                 
+  UDP Statistics                                                                 
  ────────────────────────────────────────────────────────────────────────────── 
   Duration                          0:12:11                                     
   Sent Packets                      10,332,191                                     

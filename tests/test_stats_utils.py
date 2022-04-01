@@ -3,7 +3,7 @@ import pytest as pytest
 from ripper.stats.utils import build_http_codes_distribution, rate_color
 
 
-class DescribeStatistic:
+class DescribeStatsUtils:
     @pytest.mark.parametrize('actual, expected', [
         (0,  '[red]'),
         (15, '[red]'),

@@ -36,7 +36,7 @@ class Context:
     dry_run: bool = False
     """Is dry run mode."""
 
-    # ==== Statistic ====
+    # ==== Statistics ====
     myIpInfo: IpInfo = None
     """All the info about IP addresses and GeoIP information."""
 

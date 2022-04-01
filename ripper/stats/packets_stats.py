@@ -1,5 +1,5 @@
 class PacketsStats:
-    """Class for TCP/UDP statistic collection."""
+    """Class for TCP/UDP statistics collection."""
     total_sent: int = 0
     """Total packets sent by TCP/UDP."""
     total_sent_prev: int = 0
@@ -15,7 +15,7 @@ class PacketsStats:
 
     def status_sent(self, sent_bytes: int = 0):
         """
-        Collect sent packets statistic.
+        Collect sent packets statistics.
         :param sent_bytes sent packet size in bytes.
         """
         self.total_sent += 1
