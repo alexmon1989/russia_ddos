@@ -11,7 +11,7 @@ from ripper.socket_manager import SocketManager
 from ripper.headers_provider import HeadersProvider
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
-from ripper.context.stats import *
+from ripper.stats.ip_info import IpInfo
 from ripper.context.target import Target
 
 
@@ -58,17 +58,14 @@ class Context:
 
     _timer_bucket: dict[str, datetime] = None
     """Internal stopwatch."""
+    start_time: datetime = None
+    """Script start time."""
 
     @staticmethod
     def _getattr(obj, name: str, default):
         value = getattr(obj, name, default)
 
         return value if value is not None else default
-
-    def min_targets_start_time(self):
-        if not self.targets or len(self.targets) < 1:
-            return 0
-        return min(map(lambda target: target.statistic.start_time, self.targets))
 
     def check_timer(self, sec: int, bucket: str = None) -> bool:
         """
@@ -80,7 +77,7 @@ class Context:
         stopwatch = '__stopwatch__' if bucket is None else bucket
 
         if not self._timer_bucket[stopwatch]:
-            self._timer_bucket[stopwatch] = self.min_targets_start_time()
+            self._timer_bucket[stopwatch] = self.stats_manager.start_time
         delta = (datetime.now() - self._timer_bucket[stopwatch]).total_seconds()
         if int(delta) < sec:
             return False
@@ -95,13 +92,6 @@ class Context:
              return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
 
          return 0
-
-    def get_start_time_ns(self) -> int:
-        """Get start time in nanoseconds."""
-        min_start_time = self.min_targets_start_time()
-        if not min_start_time:
-            return 0
-        return common.s2ns(min_start_time)
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
@@ -136,6 +126,7 @@ class Context:
         self.errors_manager = ErrorsManager()
         self.logger = Console(width=MIN_SCREEN_WIDTH)
         self._timer_bucket = defaultdict(dict[str, datetime])
+        self.start_time = datetime()
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
@@ -161,9 +152,6 @@ class Context:
             self.max_random_packet_len = 1024
 
         self.connections_check_time = time.time_ns()
-
-        for target in self.targets:
-            target.statistic.start_time = datetime.now()
 
         if self.proxy_list and getattr(args, 'attack_method', None) != 'udp-flood':
             self.proxy_manager.set_proxy_type(self.proxy_type)

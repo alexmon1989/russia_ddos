@@ -6,7 +6,7 @@ from ripper.headers_provider import HeadersProvider
 from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
-from ripper.context.stats import Statistic
+from ripper.stats.target_statistics_manager import TargetStatisticsManager
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
 
@@ -43,7 +43,7 @@ class Target:
     health_check_manager: HealthCheckManager = None
     errors_manager: ErrorsManager = None
 
-    statistic: Statistic = None
+    statistic: TargetStatisticsManager = None
     """All the statistics collected separately by protocols and operations."""
 
     @staticmethod
@@ -83,10 +83,10 @@ class Target:
 
         self.health_check_manager = HealthCheckManager(target=self)
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
-        print(target_uri, self.scheme, self.attack_method)
 
         self.errors_manager = ErrorsManager()
-        self.statistic = Statistic()
+        self.statistic = TargetStatisticsManager()
+        self.statistic.start_time = datetime.now()
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)
