@@ -85,8 +85,7 @@ class Target:
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
         self.errors_manager = ErrorsManager()
-        self.stats = TargetStatsManager()
-        self.stats.start_time = datetime.now()
+        self.stats = TargetStatsManager(target=self)
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)

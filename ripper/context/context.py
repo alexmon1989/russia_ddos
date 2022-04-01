@@ -79,7 +79,7 @@ class Context:
         stopwatch = '__stopwatch__' if bucket is None else bucket
 
         if not self._timer_bucket[stopwatch]:
-            self._timer_bucket[stopwatch] = self.stats_manager.start_time
+            self._timer_bucket[stopwatch] = self.stats.start_time
         delta = (datetime.now() - self._timer_bucket[stopwatch]).total_seconds()
         if int(delta) < sec:
             return False
@@ -127,10 +127,9 @@ class Context:
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.errors_manager = ErrorsManager()
-        self.stats = ContextStatsManager()
         self.logger = Console(width=MIN_SCREEN_WIDTH)
         self._timer_bucket = defaultdict(dict[str, datetime])
-        self.start_time = datetime()
+        self.start_time = datetime.now()
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
@@ -177,3 +176,5 @@ class Context:
                     http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
                 )
                 self.add_target(target)
+
+        self.stats = ContextStatsManager(_ctx=self)
