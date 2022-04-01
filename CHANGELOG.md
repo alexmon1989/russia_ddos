@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.3.0...HEAD)
+
+
+## [v2.3.0](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...2.3.0)
 
 ### Added
 - `dry run` mode for fast testing purposes
@@ -16,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Fixed error with keyboard interrupting and threads shutdown process
 - Reduced IP address re-checks to avoid redundant API calls
 - Attack checks methods, improved speed
+- Rendering table with statistic does not re-render table caption with logo
 
 ### Changed
 - Isolated target. The target contains a full server description, statistics, and health check. It is an intermediate step towards multiple targets.
