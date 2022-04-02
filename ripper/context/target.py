@@ -39,7 +39,10 @@ class Target:
     """Current attack method."""
     http_method: str
     """HTTP method used in HTTP packets"""
-
+    
+    threads: int = 0
+    """The number of threads."""
+    
     health_check_manager: HealthCheckManager = None
     errors_manager: ErrorsManager = None
 

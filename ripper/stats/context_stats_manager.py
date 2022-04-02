@@ -37,7 +37,7 @@ class ContextStatsManager:
             Row('Start Time',                common.format_dt(self._ctx.start_time)),
             Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.my_ip_masked()} | [green]{self._ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}', end_section=True),
             # ===================================
-            Row('Threads',                   f'{self._ctx.threads}'),
+            Row('Total Threads',             f'{self._ctx.threads}'),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
             Row('vCPU Count',                f'{self._ctx.cpu_count}'),

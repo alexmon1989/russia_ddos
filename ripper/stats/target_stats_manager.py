@@ -37,35 +37,36 @@ class TargetStatsManager:
 
     def build_target_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
-        sent_units = 'Requests' if self.attack_method.lower() == 'http' else 'Packets'
-        conn_success_rate = self.stats.connect.get_success_rate()
+        sent_units = 'Requests' if self.target.attack_method.lower() == 'http' else 'Packets'
+        conn_success_rate = self.target.stats.connect.get_success_rate()
 
-        duration = datetime.now() - self.stats.start_time
-        packets_rps = int(self.stats.packets.total_sent / duration.total_seconds())
-        data_rps = int(self.stats.packets.total_sent_bytes / duration.total_seconds())
-        is_health_check = bool(self.health_check_manager)
+        duration = datetime.now() - self.target.stats.start_time
+        packets_rps = int(self.target.stats.packets.total_sent / duration.total_seconds())
+        data_rps = int(self.target.stats.packets.total_sent_bytes / duration.total_seconds())
+        is_health_check = bool(self.target.health_check_manager)
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Host IP | Country',         f'[cyan]{self.host_ip}:{self.port} | [red]{self.country}'),
-            Row('HTTP Request',              f'[cyan]{self.http_method}: {self.url()}', visible=self.attack_method.lower() == 'http-flood'),
-            Row('Attack Method',             self.attack_method.upper(), end_section=True),
+            Row('Host IP | Country',         f'[cyan]{self.target.host_ip}:{self.target.port} | [red]{self.target.country}'),
+            Row('HTTP Request',              f'[cyan]{self.target.http_method}: {self.target.url()}', visible=self.target.attack_method.lower() == 'http-flood'),
+            Row('Attack Method',             self.target.attack_method.upper(), end_section=True),
+            Row('Threads',                   f'{self.target.threads}'),
             # ===================================
-            Row('CloudFlare DNS Protection', ('[red]' if self.is_cloud_flare_protection else '[green]') + self.cloudflare_status(), end_section=not is_health_check),
-            Row('Last Availability Check',   f'[cyan]{common.format_dt(self.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(is_health_check and len(self.health_check_manager.host_statuses.values()))),
-            Row('Host Availability',         f'{self.health_check_manager.get_health_status()}', visible=is_health_check, end_section=True),
+            Row('CloudFlare DNS Protection', ('[red]' if self.target.is_cloud_flare_protection else '[green]') + self.target.cloudflare_status(), end_section=not is_health_check),
+            Row('Last Availability Check',   f'[cyan]{common.format_dt(self.target.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(is_health_check and len(self.target.health_check_manager.host_statuses.values()))),
+            Row('Host Availability',         f'{self.target.health_check_manager.get_health_status()}', visible=is_health_check, end_section=True),
             # ===================================
-            Row(f'[cyan][bold]{self.attack_method.upper()} Statistics', '', end_section=True),
+            Row(f'[cyan][bold]{self.target.attack_method.upper()} Statistics', '', end_section=True),
             # ===================================
             Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
-            Row('Sent Bytes | AVG speed',    f'{common.convert_size(self.stats.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
-            Row(f'Sent {sent_units} | AVG speed', f'{self.stats.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
+            Row('Sent Bytes | AVG speed',    f'{common.convert_size(self.target.stats.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),
+            Row(f'Sent {sent_units} | AVG speed', f'{self.target.stats.packets.total_sent:,} | [green]{packets_rps} {sent_units.lower()}/s'),
             # === Info UDP/TCP => insert Sent bytes statistic
-            Row('Connection Success',        f'[green]{self.stats.connect.success}'),
-            Row('Connection Failed',         f'[red]{self.stats.connect.failed}'),
+            Row('Connection Success',        f'[green]{self.target.stats.connect.success}'),
+            Row('Connection Failed',         f'[red]{self.target.stats.connect.failed}'),
             Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', end_section=True),
             # ===================================
-            Row('Status Code Distribution',  build_http_codes_distribution(self.stats.http_stats), end_section=True, visible=self.attack_method.lower() == 'http-flood'),
+            Row('Status Code Distribution',  build_http_codes_distribution(self.target.stats.http_stats), end_section=True, visible=self.target.attack_method.lower() == 'http-flood'),
         ]
 
         return full_stats

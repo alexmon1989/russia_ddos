@@ -18,7 +18,6 @@ from ripper.errors import *
 
 exit_event = threading.Event()
 lock = threading.Lock()
-_global_ctx: Context = None
 
 
 ###############################################
@@ -182,22 +181,23 @@ def main():
     if len(sys.argv) < 2 or not validate_input(args[0]):
         arg_parser.print_usage()
 
-    # Init context
-    global _global_ctx
-    _global_ctx = Context(args[0])
-    go_home(_global_ctx)
+    _ctx = Context(args[0])
+    go_home(_ctx)
     # Proxies should be validated during the runtime
-    for target in _global_ctx.targets:
-        retry_cnt = 1 if _global_ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
-        connect_host_loop(_ctx=_global_ctx, target=target, retry_cnt=retry_cnt)
-    _global_ctx.validate()
+    for target in _ctx.targets:
+        retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
+        connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt)
+    _ctx.validate()
 
     time.sleep(.5)
-    threads_range = _global_ctx.threads if not _global_ctx.dry_run else 1
-    for _ in range(threads_range):
-        Attack(_global_ctx).start()
+    threads_range = _ctx.threads if not _ctx.dry_run else 1 
+    # TODO create targets manager
+    for idx in range(threads_range):
+        target = _ctx.targets[idx % len(_ctx.targets)]
+        target.threads += 1
+        Attack(_ctx=_ctx, target=target).start()
 
-    render_statistics(_global_ctx)
+    render_statistics(_ctx)
 
 
 def signal_handler(signum, frame):

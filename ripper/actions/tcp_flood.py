@@ -24,9 +24,9 @@ class TcpFlood(AttackMethod):
     _ctx: Context
     _proxy: Proxy = None
 
-    def __init__(self, target: Target, context: Context):
+    def __init__(self, target: Target, _ctx: Context):
         self._target = target
-        self._ctx = context
+        self._ctx = _ctx
 
     def create_connection(self) -> socket:
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
