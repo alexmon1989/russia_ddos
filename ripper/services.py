@@ -38,6 +38,7 @@ def update_host_statuses(target: Target):
 ###############################################
 # Context-only
 ###############################################
+# TODO use context as an argument name
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
