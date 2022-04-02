@@ -82,7 +82,7 @@ class HealthStatus(Enum):
     alive = 'alive'
     undefined = 'undefined'
     dead = 'dead'
-    pending = 'pending'
+    start_pending = 'start_pending'
 
 
 class AvailabilityDistribution:
@@ -159,8 +159,8 @@ class HealthCheckManager:
     
     @property
     def status(self) -> HealthStatus:
-        if self.is_pending:
-            return HealthStatus.pending
+        if self.is_in_progress and not self.last_host_statuses_update:
+            return HealthStatus.start_pending
         avd = self.availability_distribution
         if avd.total < 1:
             return HealthStatus.undefined

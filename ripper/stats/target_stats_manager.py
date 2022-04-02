@@ -35,9 +35,9 @@ class TargetStatsManager:
     
     def get_availability_msg(self) -> str:
         status: HealthStatus = self.target.health_check_manager.status
-        if status == HealthStatus.pending or status == HealthStatus.undefined:
+        if status == HealthStatus.start_pending or status == HealthStatus.undefined:
             return f'...detecting\n({self.target.health_check_manager.health_check_method.upper()} health check method from check-host.net)'
-        avd: AvailabilityDistribution = self.availability_distribution
+        avd: AvailabilityDistribution = self.target.health_check_manager.availability_distribution
         accessible_message = f'Accessible in {avd.succeeded} of {avd.total} zones ({avd.availability_percentage}%)'
         if status == HealthStatus.alive:
             return accessible_message
