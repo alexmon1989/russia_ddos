@@ -1,5 +1,5 @@
 import threading
-from threading import Thread
+from threading import Thread, Event
 
 from ripper.actions.attack_method import AttackMethod
 from ripper.actions.http_flood import HttpFlood
@@ -36,6 +36,7 @@ class Attack(Thread):
     """This class creates threads with specified attack method."""
     _ctx: Context
     target: Context
+    stop_event: Event = None
 
     def __init__(self, _ctx: Context, target: Target):
         """
@@ -45,6 +46,11 @@ class Attack(Thread):
         Thread.__init__(self, daemon=True)
         self._ctx = _ctx
         self.target = target
+        self.target.add_attack_thread(self)
+        self.stop_event = threading.Event()
+    
+    def stop(self):
+        self.stop_event.set()
 
     def run(self):
         runner = attack_method_factory(target=self.target, _ctx=self._ctx)
@@ -53,28 +59,5 @@ class Attack(Thread):
             runner()
             exit(0)
 
-        while not threading.Event().is_set():
+        while not self.stop_event.is_set():
             runner()
-
-# class Attack:
-#     """This class creates threads with specified attack method."""
-#     _ctx: Context
-#     target: Context
-
-#     def __init__(self, _ctx: Context, target: Target):
-#         """
-#         :param _ctx: Global context.
-#         :param target: Attack target.
-#         """
-#         self._ctx = _ctx
-#         self.target = target
-
-#     def start(self):
-#         runner = attack_method_factory(target=self.target, _ctx=self._ctx)
-
-#         if self._ctx.dry_run:
-#             runner()
-#             exit(0)
-
-#         while True:
-#             runner()

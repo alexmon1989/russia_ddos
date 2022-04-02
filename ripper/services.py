@@ -1,5 +1,4 @@
 # XXX Services look unstructured
-import datetime
 import signal
 import sys
 import threading
@@ -81,11 +80,16 @@ def refresh_context_details(_ctx: Context) -> None:
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip):
         _ctx.errors_manager.add_error(IPWasChangedError())
 
-    for target in _ctx.targets:
+    for (target_idx, target) in enumerate(_ctx.targets):
         if not target.validate_attack():
             target.errors_manager.add_error(HostDoesNotRespondError(message=common.get_no_successful_connection_die_msg()))
-            # TODO !!! Remove target instead of doing exit, exit when no more targets left
-            exit(common.get_no_successful_connection_die_msg())
+            if len(_ctx.targets) < 2:
+                exit(common.get_no_successful_connection_die_msg())
+            else:
+                target.stop_attack_threads()
+                lock.acquire()
+                _ctx.targets.pop(target_idx)
+                lock.release()
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
         _ctx.errors_manager.add_error(HostDoesNotRespondError(message=NO_MORE_PROXIES_ERR_MSG))
@@ -132,8 +136,8 @@ def validate_input(args) -> bool:
             print(f'Wrong target format in {target_uri}.')
             return False
 
-    if int(args.threads) < 1:
-        print(f'Wrong threads number.')
+    if int(args.threads_count) < 1:
+        print(f'Wrong threads count.')
         return False
 
     if args.attack_method is not None and args.attack_method.lower() not in attack_method_labels:
@@ -182,11 +186,10 @@ def main():
     _ctx.validate()
 
     time.sleep(.5)
-    threads_range = _ctx.threads if not _ctx.dry_run else 1 
+    threads_range = _ctx.threads_count if not _ctx.dry_run else 1
     # TODO create targets manager
     for idx in range(threads_range):
         target = _ctx.targets[idx % len(_ctx.targets)]
-        target.threads += 1
         Attack(_ctx=_ctx, target=target).start()
 
     render_statistics(_ctx)

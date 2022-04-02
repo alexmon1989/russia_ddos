@@ -21,7 +21,7 @@ class Context(metaclass=common.Singleton):
     targets: list[Target] = None
 
     # ==== Input params ====
-    threads: int
+    threads_count: int
     """The number of threads."""
     max_random_packet_len: int
     """Limit for Random Packet Length."""
@@ -91,7 +91,7 @@ class Context(metaclass=common.Singleton):
         self.interval_manager = TimeIntervalManager()
         self.logger = Console(width=MIN_SCREEN_WIDTH)
 
-        self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
+        self.threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
         self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', ARGS_DEFAULT_MAX_RND_PACKET_LEN))
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
@@ -139,4 +139,4 @@ class Context(metaclass=common.Singleton):
 
         self.stats = ContextStatsManager(_ctx=self)
         # We can't have less threads than targets
-        self.threads = max(self.threads, len(self.targets))
+        self.threads_count = max(self.threads_count, len(self.targets))

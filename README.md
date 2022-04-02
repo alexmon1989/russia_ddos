@@ -90,7 +90,7 @@ Options:
   -h, --help            show this help message and exit
   -s TARGET, --target=TARGET
                         Attack target in {scheme}://{hostname}[:{port}][{path}] format. Multiple targets allowed.
-  -t THREADS, --threads=THREADS (default: 100)
+  -t THREADS_COUNT, --threads=THREADS_COUNT (default: 100)
                         Threads count.
   -r RANDOM_PACKET_LEN, --random_len=RANDOM_PACKET_LEN (default: 1)
                         Send random packets with random length. Turn on: 1, turn off: 0.

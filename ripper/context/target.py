@@ -1,15 +1,18 @@
+from threading import Thread
 import time
 from typing import Tuple
 from urllib.parse import urlparse
 
 from ripper.headers_provider import HeadersProvider
-from ripper.health_check_manager import HealthCheckManager
+from ripper.health_check_manager import HealthCheckManager, HealthStatus
 from ripper import common
 from ripper.constants import *
 from ripper.stats.target_stats_manager import TargetStatsManager
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
 from ripper.time_interval_manager import TimeIntervalManager
+
+Attack = 'Attack'
 
 
 def default_scheme_port(scheme: str):
@@ -41,8 +44,8 @@ class Target:
     http_method: str
     """HTTP method used in HTTP packets"""
     
-    threads: int = 0
-    """The number of threads."""
+    attack_threads: list[Attack] = None
+    """Attack-related threads."""
     
     health_check_manager: HealthCheckManager = None
     errors_manager: ErrorsManager = None
@@ -69,6 +72,7 @@ class Target:
         return None
 
     def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD):
+        self.attack_threads = []
         self.http_method = http_method
         headers_provider = HeadersProvider()
         self.interval_manager = TimeIntervalManager()
@@ -92,6 +96,9 @@ class Target:
         self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
 
+    def add_attack_thread(self, attack: Attack):
+        self.attack_threads.append(attack)
+
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)
 
@@ -99,6 +106,7 @@ class Target:
         """Validates target."""
         if self.host_ip is None or not common.is_ipv4(self.host_ip):
             raise Exception(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
+        # XXX Should we call validate attack here as well?
         return True
 
     def cloudflare_status(self) -> str:
@@ -112,6 +120,10 @@ class Target:
 
         return f"{http_protocol}{self.host}:{self.port}{self.http_path}"
 
+    def stop_attack_threads(self):
+        for attack in self.attack_threads:
+            attack.stop()
+
     ###############################################
     # Connection validators
     ###############################################
@@ -120,7 +132,10 @@ class Target:
         Checks if attack is valid.
         Attack is valid if target accepted traffic within
         last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
+        :return: True if valid.
         """
+        if self.health_check_manager.status == HealthStatus.dead:
+            return False
         if self.attack_method == 'tcp':
             return self.check_successful_tcp_attack()
         return self.check_successful_connections()
