@@ -9,6 +9,7 @@ from ripper.constants import *
 from ripper.stats.target_stats_manager import TargetStatsManager
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
+from ripper.time_interval_manager import TimeIntervalManager
 
 
 def default_scheme_port(scheme: str):
@@ -45,6 +46,7 @@ class Target:
     
     health_check_manager: HealthCheckManager = None
     errors_manager: ErrorsManager = None
+    interval_manager: TimeIntervalManager = None
 
     stats: TargetStatsManager = None
     """All the statistics collected separately by protocols and operations."""
@@ -68,8 +70,8 @@ class Target:
 
     def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD):
         self.http_method = http_method
-
         headers_provider = HeadersProvider()
+        self.interval_manager = TimeIntervalManager()
 
         parts = urlparse(target_uri)
         self.scheme = parts.scheme
@@ -84,10 +86,10 @@ class Target:
         self.country = common.get_country_by_ipv4(self.host_ip)
         self.is_cloud_flare_protection = common.check_cloud_flare_protection(self.host, headers_provider.user_agents)
 
-        self.health_check_manager = HealthCheckManager(target=self)
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
         self.errors_manager = ErrorsManager()
+        self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
@@ -109,12 +111,6 @@ class Target:
 
         return f"{http_protocol}{self.host}:{self.port}{self.http_path}"
 
-    def get_start_time_ns(self) -> int:
-        """Get start time in nanoseconds."""
-        if not self.stats.start_time:
-            return 0
-        return common.s2ns(self.stats.start_time.timestamp())
-
     ###############################################
     # Connection validators
     ###############################################
@@ -134,7 +130,7 @@ class Target:
         Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
         """
         now_ns = time.time_ns()
-        lower_bound = max(self.get_start_time_ns(),
+        lower_bound = max(self.interval_manager.get_start_time_ns(),
                         self.stats.connect.last_check_time)
         diff_sec = common.ns2s(now_ns - lower_bound)
 
@@ -155,7 +151,7 @@ class Target:
         Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
         """
         now_ns = time.time_ns()
-        lower_bound = max(self.get_start_time_ns(),
+        lower_bound = max(self.interval_manager.get_start_time_ns(),
                         self.stats.packets.connections_check_time)
         diff_sec = common.ns2s(now_ns - lower_bound)
 

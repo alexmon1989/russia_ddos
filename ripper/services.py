@@ -50,7 +50,7 @@ def update_host_statuses(target: Target):
 ###############################################
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
-    if _ctx.check_timer(check_period_sec, 'update_current_ip'):
+    if _ctx.interval_manager.check_timer(check_period_sec, 'update_current_ip'):
         _ctx.myIpInfo.my_current_ip = get_current_ip()
     if _ctx.myIpInfo.my_start_ip is None:
         _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip

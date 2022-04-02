@@ -27,14 +27,14 @@ class DescribeContext:
     def it_checks_time_interval(self):
         context = Context(self.args)
         last_2mins = datetime.now() - timedelta(minutes=2)
-        context.stats.start_time = last_2mins
+        context.interval_manager.start_time = last_2mins
 
-        assert datetime.now() > context.stats.start_time
-        assert context.check_timer(5) is True
-        assert context.check_timer(5) is False
+        assert datetime.now() > context.interval_manager.start_time
+        assert context.interval_manager.check_timer(5) is True
+        assert context.interval_manager.check_timer(5) is False
         time.sleep(2)
-        assert context.check_timer(5) is False
-        assert context.check_timer(1) is True
+        assert context.interval_manager.check_timer(5) is False
+        assert context.interval_manager.check_timer(1) is True
 
     @pytest.mark.parametrize('target_uri, attack_method', [
         ('http://google.com', 'http-flood'),

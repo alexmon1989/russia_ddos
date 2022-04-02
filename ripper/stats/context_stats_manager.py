@@ -13,15 +13,12 @@ Context = 'Context'
 
 
 class ContextStatsManager:
-    start_time: datetime = None
-    """Script start time."""
     _ctx: Context = None
     """Context we are working with."""
     current_target_idx: int = 0
     """We show one target details at the same time."""
 
     def __init__(self, _ctx: Context):
-        self.start_time = datetime.now()
         self._ctx = _ctx
 
     @property
@@ -47,7 +44,7 @@ class ContextStatsManager:
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Start Time',                common.format_dt(self._ctx.start_time)),
+            Row('Start Time',                common.format_dt(self._ctx.interval_manager.start_time)),
             Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.my_ip_masked()} | [green]{self._ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.threads}'),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
@@ -87,28 +84,28 @@ class ContextStatsManager:
         return details_table
 
     def build_errors_table(self) -> Table:
-      logs_caption = CONTROL_CAPTION if self.combined_error_manager.has_errors() else None
-      logs_table = None
-      if self.combined_error_manager.has_errors():
-          logs_table = Table(
-              box=box.SIMPLE,
-              min_width=MIN_SCREEN_WIDTH,
-              width=MIN_SCREEN_WIDTH,
-              caption=logs_caption,
-              caption_style='bold')
+        logs_caption = CONTROL_CAPTION if self.combined_error_manager.has_errors() else None
+        logs_table = None
+        if self.combined_error_manager.has_errors():
+            logs_table = Table(
+                box=box.SIMPLE,
+                min_width=MIN_SCREEN_WIDTH,
+                width=MIN_SCREEN_WIDTH,
+                caption=logs_caption,
+                caption_style='bold')
 
-          logs_table.add_column('Time')
-          logs_table.add_column('Action')
-          logs_table.add_column('Q-ty')
-          logs_table.add_column('Message')
+            logs_table.add_column('Time')
+            logs_table.add_column('Action')
+            logs_table.add_column('Q-ty')
+            logs_table.add_column('Message')
 
-          for key in self.combined_error_manager.errors:
-              err = self.combined_error_manager.errors.get(key)
-              logs_table.add_row(f'[cyan]{err.time.strftime(DATE_TIME_SHORT)}',
-                           f'[orange1]{err.code}',
-                           f'{err.count}',
-                           f'{err.message}')
-      return logs_table
+            for key in self.combined_error_manager.errors:
+                err = self.combined_error_manager.errors.get(key)
+                logs_table.add_row(f'[cyan]{err.time.strftime(DATE_TIME_SHORT)}',
+                            f'[orange1]{err.code}',
+                            f'{err.count}',
+                            f'{err.message}')
+        return logs_table
 
     def build_stats(self):
         """Create statistics from aggregated RAW Statistics data."""

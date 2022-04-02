@@ -12,7 +12,7 @@ class DescribeServices:
         target = Target(target_uri=self.target_uri)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         target.stats.packets.connections_check_time = init_check_time
-        target.stats.start_time = None
+        target.interval_manager.start_time = None
         uuid = CheckTcpAttackError(message=NO_SUCCESSFUL_CONNECTIONS_ERR_MSG).uuid
 
         # Case when no attack
@@ -39,7 +39,7 @@ class DescribeServices:
         target = Target(target_uri=self.target_uri)
         init_check_time = time.time_ns() - (200 * 1000000 * 1000)
         target.stats.connect.last_check_time = init_check_time
-        target.stats.start_time = None
+        target.interval_manager.start_time = None
         uuid = CheckConnectionError().uuid
 
         # Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec

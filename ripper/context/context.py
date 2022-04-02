@@ -1,7 +1,5 @@
 import os
 import time
-from datetime import datetime
-from collections import defaultdict
 from rich.console import Console
 
 from ripper import common
@@ -10,6 +8,7 @@ from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.headers_provider import HeadersProvider
 from ripper.stats.context_stats_manager import ContextStatsManager
+from ripper.time_interval_manager import TimeIntervalManager
 from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
 from ripper.stats.ip_info import IpInfo
@@ -52,48 +51,18 @@ class Context:
     sock_manager: SocketManager = None
     proxy_manager: ProxyManager = None
     errors_manager: ErrorsManager = None
+    interval_manager: TimeIntervalManager = None
     logger: Console = None
     stats: ContextStatsManager = None
 
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
 
-    _timer_bucket: dict[str, datetime] = None
-    """Internal stopwatch."""
-    start_time: datetime = None
-    """Script start time."""
-
     @staticmethod
     def _getattr(obj, name: str, default):
         value = getattr(obj, name, default)
 
         return value if value is not None else default
-
-    def check_timer(self, sec: int, bucket: str = None) -> bool:
-        """
-        Check if time in seconds elapsed from last check.
-        :param sec: Amount of seconds which needs to check.
-        :param bucket: Bucket name to track specific timer.
-        :return: True if specified seconds elapsed, False - if not elapsed.
-        """
-        stopwatch = '__stopwatch__' if bucket is None else bucket
-
-        if not self._timer_bucket[stopwatch]:
-            self._timer_bucket[stopwatch] = self.stats.start_time
-        delta = (datetime.now() - self._timer_bucket[stopwatch]).total_seconds()
-        if int(delta) < sec:
-            return False
-        else:
-            self._timer_bucket[stopwatch] = datetime.now()
-            return True
-
-    def get_timer_seconds(self, bucket: str = None) -> int:
-         stopwatch = '__stopwatch__' if bucket is None else bucket
-
-         if self._timer_bucket[stopwatch]:
-             return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
-
-         return 0
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
@@ -127,9 +96,8 @@ class Context:
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.errors_manager = ErrorsManager()
+        self.interval_manager = TimeIntervalManager()
         self.logger = Console(width=MIN_SCREEN_WIDTH)
-        self._timer_bucket = defaultdict(dict[str, datetime])
-        self.start_time = datetime.now()
 
         self.threads = getattr(args, 'threads', ARGS_DEFAULT_THREADS)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))

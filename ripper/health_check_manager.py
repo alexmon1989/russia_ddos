@@ -10,6 +10,7 @@ from urllib import request
 
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 from ripper.headers_provider import HeadersProvider
+from ripper.errors import Error
 
 # Prepare static patterns once at start.
 STATUS_PATTERN = re.compile(r"get_check_results\(\n* *'([^']+)")
@@ -149,6 +150,7 @@ class HealthCheckManager:
             body = fetch_zipped_body(self.request_url)
             # request_code is some sort of trace_id which is provided on every request to master node
             request_code = re.search(STATUS_PATTERN, body)[1]
+            self.target.errors_manager.add_error(Error(code='Unhandled', message=request_code))
             # it takes time to poll all information from slave nodes
             time.sleep(5)
             # to prevent loop, do not wait for more than 30 seconds

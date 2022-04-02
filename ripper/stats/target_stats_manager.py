@@ -21,15 +21,12 @@ class TargetStatsManager:
     """Collect stats about HTTP response codes."""
     connect: ConnectionStats = None
     """Collect all the Connections stats via Socket or HTTP Client."""
-    start_time: datetime = None
-    """Script start time."""
 
     def __init__(self, target: Target):
       self.target = target
       self.packets = PacketsStats()
       self.connect = ConnectionStats()
       self.http_stats = defaultdict(int)
-      self.start_time = datetime.now()
 
     def collect_packets_success(self, sent_bytes: int = 0):
         self.packets.total_sent += 1
@@ -40,7 +37,7 @@ class TargetStatsManager:
         sent_units = 'Requests' if self.target.attack_method.lower() == 'http' else 'Packets'
         conn_success_rate = self.target.stats.connect.get_success_rate()
 
-        duration = datetime.now() - self.target.stats.start_time
+        duration = datetime.now() - self.target.interval_manager.start_time
         packets_rps = int(self.target.stats.packets.total_sent / duration.total_seconds())
         data_rps = int(self.target.stats.packets.total_sent_bytes / duration.total_seconds())
         is_health_check = bool(self.target.health_check_manager)
