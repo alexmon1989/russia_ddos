@@ -1,4 +1,4 @@
-# XXX Services look like unstructured junk-box
+# XXX Services look unstructured
 import datetime
 import signal
 import sys
@@ -25,13 +25,9 @@ lock = threading.Lock()
 ###############################################
 def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
-    diff = float('inf')
-    if target.health_check_manager.last_host_statuses_update is not None:
-        diff = time.time() - datetime.datetime.timestamp(target.health_check_manager.last_host_statuses_update)
-
-    if target.health_check_manager.fetching_host_statuses_in_progress or diff < MIN_UPDATE_HOST_STATUSES_TIMEOUT:
-        return
-    target.health_check_manager.fetching_host_statuses_in_progress = True
+    if target.health_check_manager.fetching_host_statuses_in_progress or \
+        not target.interval_manager.check_timer(bucket=f'update_host_statuses_{target.url}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
+        return False
     try:
         if target.host_ip:
             host_statuses = target.health_check_manager.fetch_host_statuses()
@@ -41,8 +37,7 @@ def update_host_statuses(target: Target):
                 target.health_check_manager.last_host_statuses_update = datetime.datetime.now()
     except:
         pass
-    finally:
-        target.health_check_manager.fetching_host_statuses_in_progress = False
+    return True
 
 
 ###############################################

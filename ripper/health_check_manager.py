@@ -145,6 +145,7 @@ class HealthCheckManager:
 
     def fetch_host_statuses(self) -> dict:
         """Fetches regional availability statuses."""
+        self.fetching_host_statuses_in_progress = True
         statuses = {}
         try:
             body = fetch_zipped_body(self.request_url)
@@ -154,12 +155,13 @@ class HealthCheckManager:
             # it takes time to poll all information from slave nodes
             time.sleep(5)
             # to prevent loop, do not wait for more than 30 seconds
-            for i in range(0, 5):
+            for _ in range(5):
                 time.sleep(5)
                 resp_data = json.loads(fetch_zipped_body(f'https://check-host.net/check_result/{request_code}'))
                 statuses = count_host_statuses(resp_data)
                 if HOST_IN_PROGRESS_STATUS not in statuses:
-                    return statuses
+                    break
         except:
             pass
+        self.fetching_host_statuses_in_progress = False
         return statuses

@@ -105,6 +105,7 @@ class Target:
         """Get human-readable status for CloudFlare target HOST protection."""
         return 'Protected' if self.is_cloud_flare_protection else 'Not protected'
 
+    @property
     def url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
         http_protocol = 'https://' if self.port == 443 else 'http://'

@@ -45,7 +45,7 @@ class TargetStatsManager:
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Host IP | Country',         f'[cyan]{self.target.host_ip}:{self.target.port} | [red]{self.target.country}'),
-            Row('HTTP Request',              f'[cyan]{self.target.http_method}: {self.target.url()}', visible=self.target.attack_method.lower() == 'http-flood'),
+            Row('HTTP Request',              f'[cyan]{self.target.http_method}: {self.target.url}', visible=self.target.attack_method.lower() == 'http-flood'),
             Row('Attack Method',             self.target.attack_method.upper()),
             Row('Threads',                   f'{self.target.threads}'),
             Row('CloudFlare DNS Protection', ('[red]' if self.target.is_cloud_flare_protection else '[green]') + self.target.cloudflare_status(), end_section=not is_health_check),
