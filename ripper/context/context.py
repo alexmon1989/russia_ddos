@@ -15,8 +15,7 @@ from ripper.stats.ip_info import IpInfo
 from ripper.context.target import Target
 
 
-# TODO Make it true singleton
-class Context:
+class Context(metaclass=common.Singleton):
     """Class (Singleton) for passing a context to a parallel processes."""
 
     targets: list[Target] = None
@@ -82,13 +81,6 @@ class Context:
         # NOTE We will merge error on visualization step
         # self.errors_manager.add_submanager(target.errors_manager)
 
-    # TODO use Singleton meta class
-    def __new__(cls, args):
-        """Singleton realization."""
-        if not hasattr(cls, 'instance'):
-            cls.instance = super().__new__(cls)
-        return cls.instance
-
     def __init__(self, args):
         self.targets = []
         self.myIpInfo = IpInfo()
@@ -146,3 +138,5 @@ class Context:
                 self.add_target(target)
 
         self.stats = ContextStatsManager(_ctx=self)
+        # We can't have less threads than targets
+        self.threads = max(self.threads, len(self.targets))
