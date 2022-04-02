@@ -114,11 +114,9 @@ def connect_host(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
 def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
     i = 0
-    _ctx.logger.rule('[bold]Starting DRipper')
     while i < retry_cnt:
         _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
         if connect_host(target=target, _ctx=_ctx):
-            _ctx.logger.rule()
             break
         time.sleep(timeout_secs)
         i += 1
@@ -174,10 +172,13 @@ def main():
 
     _ctx = Context(args[0])
     go_home(_ctx)
-    # Proxies should be validated during the runtime
+
+    _ctx.logger.rule('[bold]Starting DRipper')
     for target in _ctx.targets:
+        # Proxies should be validated during the runtime
         retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
         connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt)
+    _ctx.logger.rule()
     _ctx.validate()
 
     time.sleep(.5)
