@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 
 from ripper.common import Singleton, s2ns
@@ -46,3 +46,6 @@ class TimeIntervalManager(metaclass=Singleton):
         if not self.start_time:
             return 0
         return s2ns(self.start_time.timestamp())
+
+    def get_start_duration(self) -> timedelta:
+        return datetime.now() - self.start_time

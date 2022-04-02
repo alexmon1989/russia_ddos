@@ -37,7 +37,7 @@ class TargetStatsManager:
         sent_units = 'Requests' if self.target.attack_method.lower() == 'http' else 'Packets'
         conn_success_rate = self.target.stats.connect.get_success_rate()
 
-        duration = datetime.now() - self.target.interval_manager.start_time
+        duration = self.target.interval_manager.get_start_duration()
         packets_rps = int(self.target.stats.packets.total_sent / duration.total_seconds())
         data_rps = int(self.target.stats.packets.total_sent_bytes / duration.total_seconds())
         is_health_check = bool(self.target.health_check_manager)
@@ -52,7 +52,7 @@ class TargetStatsManager:
             Row('Last Availability Check',   f'[cyan]{common.format_dt(self.target.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(is_health_check and len(self.target.health_check_manager.host_statuses.values()))),
             Row('Host Availability',         f'{self.target.health_check_manager.get_health_status()}', visible=is_health_check, end_section=True),
             # ===================================
-            Row(f'[cyan][bold]{self.target.attack_method.upper()} Statistics', '', end_section=True),
+            Row(f'[cyan][bold]{self.target.attack_method.upper()} Statistics', end_section=True),
             # ===================================
             Row('Duration',                  f'{str(duration).split(".", 2)[0]}'),
             Row('Sent Bytes | AVG speed',    f'{common.convert_size(self.target.stats.packets.total_sent_bytes)} | [green]{common.convert_size(data_rps)}/s'),

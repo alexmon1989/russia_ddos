@@ -29,7 +29,7 @@ def build_http_codes_distribution(http_codes_counter) -> str:
 
 
 class Row:
-    def __init__(self, label: str, value: str, visible: bool = True, end_section: bool = False):
+    def __init__(self, label: str, value: str = '', visible: bool = True, end_section: bool = False):
         self.label = label
         self.value = value
         self.visible = visible
