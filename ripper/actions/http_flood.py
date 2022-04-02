@@ -48,7 +48,7 @@ class HttpFlood(AttackMethod):
 
     def check_response_status(self, payload: bytes):
         with suppress(Exception):
-            if self._ctx.interval_manager.check_timer(HTTP_STATUS_CODE_CHECK_PERIOD_SEC):
+            if self._ctx.interval_manager.check_timer_elapsed(HTTP_STATUS_CODE_CHECK_PERIOD_SEC):
                 check_sock = self.create_connection()
                 check_sock.connect(self._target.hostip_port_tuple())
                 check_sock.send(payload)

@@ -83,7 +83,7 @@ class HealthCheckManager:
     """Tracks hosts availability state using check-host.net."""
     headers_provider: HeadersProvider = None
     connections_check_time: int
-    fetching_host_statuses_in_progress: bool = False
+    is_in_progress: bool = False
     last_host_statuses_update: datetime = None
     host_statuses = {}
 
@@ -145,8 +145,9 @@ class HealthCheckManager:
 
     def fetch_host_statuses(self) -> dict:
         """Fetches regional availability statuses."""
-        self.fetching_host_statuses_in_progress = True
+        self.is_in_progress = True
         statuses = {}
+        self.target.errors_manager.add_error(Error(code='Unhandled', message='Started'))
         try:
             body = fetch_zipped_body(self.request_url)
             # request_code is some sort of trace_id which is provided on every request to master node
@@ -163,5 +164,5 @@ class HealthCheckManager:
                     break
         except:
             pass
-        self.fetching_host_statuses_in_progress = False
+        self.is_in_progress = False
         return statuses

@@ -25,9 +25,10 @@ lock = threading.Lock()
 ###############################################
 def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
-    if target.health_check_manager.fetching_host_statuses_in_progress or \
-        not target.interval_manager.check_timer(bucket=f'update_host_statuses_{target.url}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
+    if target.health_check_manager.is_in_progress or \
+        not target.interval_manager.check_timer_elapsed(bucket=f'update_host_statuses_{target.url}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
         return False
+    target.errors_manager.add_error(Error(code='Unhandled', message=f'passed'))    
     try:
         if target.host_ip:
             host_statuses = target.health_check_manager.fetch_host_statuses()
@@ -45,7 +46,7 @@ def update_host_statuses(target: Target):
 ###############################################
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
-    if _ctx.interval_manager.check_timer(check_period_sec, 'update_current_ip'):
+    if _ctx.interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
         _ctx.myIpInfo.my_current_ip = get_current_ip()
     if _ctx.myIpInfo.my_start_ip is None:
         _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip
