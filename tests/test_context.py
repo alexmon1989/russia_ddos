@@ -21,11 +21,13 @@ class DescribeContext:
     ])
     def it_can_get_my_ip_masked(self, actual_ip, expected_result):
         context = Context(self.args)
+        context.__init__(self.args)
         context.myIpInfo.my_start_ip = actual_ip
         assert context.myIpInfo.my_ip_masked() == expected_result
 
     def it_checks_time_interval(self):
         context = Context(self.args)
+        context.__init__(self.args)
         last_2mins = datetime.now() - timedelta(minutes=2)
         context.interval_manager.start_time = last_2mins
 
@@ -42,6 +44,10 @@ class DescribeContext:
         ('udp://google.com', 'udp-flood'),
     ])
     def it_detects_attack_by_target_in_context(self, target_uri, attack_method):
-        assert Context(args=Args(
+        args = Args(
             targets=[target_uri],
-        )).targets[0].attack_method == attack_method
+        )
+        context = Context(args)
+        # context is singleton now, so it should be reinitialized manually
+        context.__init__(args)
+        assert context.targets[0].attack_method == attack_method

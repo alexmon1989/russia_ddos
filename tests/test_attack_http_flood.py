@@ -13,10 +13,12 @@ class DescribeHttpFloodAttackMethod:
     target_uri: str = 'tcp://localhost'
 
     def it_has_some_headers(self):
-        ctx = Context(Args(
+        args = Args(
             targets=[self.target_uri],
             http_method='GET',
-        ))
+        )
+        ctx = Context(args)
+        ctx.__init__(args)
         http_flood_am = HttpFlood(_ctx=ctx, target=ctx.targets[0])
 
         actual = http_flood_am.headers()
@@ -25,10 +27,12 @@ class DescribeHttpFloodAttackMethod:
         assert with_content.get('Content-Length') == '11'
 
     def it_has_payload(self):
-        ctx = Context(Args(
+        args = Args(
             targets=[self.target_uri],
             http_method='POST',
-        ))
+        )
+        ctx = Context(args)
+        ctx.__init__(args)
         ctx.headers_provider.user_agents = ['Mozilla/5.0 (Windows NT 6.3; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0']
         http_flood_am = HttpFlood(_ctx=ctx, target=ctx.targets[0])
 
@@ -45,10 +49,12 @@ class DescribeHttpFloodAttackMethod:
         assert payload_with_body.split('\r\n') == expected_with_body.split('\r\n')
 
     def it_has_correct_name(self):
-        ctx = Context(Args(
+        args = Args(
             targets=[self.target_uri],
             http_method='GET',
-        ))
+        )
+        ctx = Context(args)
+        ctx.__init__(args)
         http_flood_am = HttpFlood(target=ctx.targets[0], _ctx=ctx)
         assert http_flood_am.name == 'HTTP Flood'
         assert http_flood_am.label == 'http-flood'

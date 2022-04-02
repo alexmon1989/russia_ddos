@@ -41,10 +41,12 @@ class DescribeHealthCheck:
 
     # slow
     def it_can_fetch_host_statuses(self):
-        context = Context(args=Args(
+        args = Args(
             # TODO expect target_uri in args as well
-            targets = ['tcp://google.com'],
-        ))
+            targets=['tcp://google.com'],
+        )
+        context = Context(args)
+        context.__init__(args)
         assert len(context.targets[0].host_ip) > 0
         
         health_check_manager = context.targets[0].health_check_manager
@@ -69,10 +71,12 @@ class DescribeHealthCheck:
         ({'target_uri': 'udp://google.com:443', 'host_ip': '172.217.20.206', 'health_check_method': 'ping'}, 'https://check-host.net/check-ping?host=172.217.20.206'),
     ])
     def it_constructs_request_url(self, args_data, url):
-        context = Context(args=Args(
+        args = Args(
             # TODO expect target_uri in args as well
-            targets = [args_data['target_uri']],
-        ))
+            targets=[args_data['target_uri']],
+        )
+        context = Context(args)
+        context.__init__(args)
         assert context.targets[0].health_check_manager.health_check_method == args_data['health_check_method']
         if 'host_ip' in args_data:
             context.targets[0].host_ip = args_data['host_ip']
