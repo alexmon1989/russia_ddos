@@ -49,9 +49,8 @@ class TargetStatsManager:
             #   Description                  Status
             Row('Host IP | Country',         f'[cyan]{self.target.host_ip}:{self.target.port} | [red]{self.target.country}'),
             Row('HTTP Request',              f'[cyan]{self.target.http_method}: {self.target.url()}', visible=self.target.attack_method.lower() == 'http-flood'),
-            Row('Attack Method',             self.target.attack_method.upper(), end_section=True),
+            Row('Attack Method',             self.target.attack_method.upper()),
             Row('Threads',                   f'{self.target.threads}'),
-            # ===================================
             Row('CloudFlare DNS Protection', ('[red]' if self.target.is_cloud_flare_protection else '[green]') + self.target.cloudflare_status(), end_section=not is_health_check),
             Row('Last Availability Check',   f'[cyan]{common.format_dt(self.target.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)}', visible=(is_health_check and len(self.target.health_check_manager.host_statuses.values()))),
             Row('Host Availability',         f'{self.target.health_check_manager.get_health_status()}', visible=is_health_check, end_section=True),

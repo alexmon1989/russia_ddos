@@ -32,7 +32,7 @@ def attack_method_factory(_ctx: Context, target: Target):
     return None
 
 
-class __Attack(Thread):
+class Attack(Thread):
     """This class creates threads with specified attack method."""
     _ctx: Context
     target: Context

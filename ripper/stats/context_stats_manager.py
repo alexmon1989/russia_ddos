@@ -17,12 +17,25 @@ class ContextStatsManager:
     """Script start time."""
     _ctx: Context = None
     """Context we are working with."""
-    current_visualized_target: Target = None
+    current_target_idx: int = 0
     """We show one target details at the same time."""
 
     def __init__(self, _ctx: Context):
         self.start_time = datetime.now()
         self._ctx = _ctx
+
+    @property
+    def current_target(self) -> Target:
+        return self._ctx.targets[self.current_target_idx]
+    
+    @property
+    def combined_error_manager(self) -> ErrorsManager:
+        em = ErrorsManager()
+        em.add_submanager(self._ctx.errors_manager)
+        # Merges context-level errors with visible target-level errors
+        if self.current_target:
+            em.add_submanager(self.current_target.errors_manager)
+        return em
 
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
@@ -35,8 +48,7 @@ class ContextStatsManager:
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Start Time',                common.format_dt(self._ctx.start_time)),
-            Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.my_ip_masked()} | [green]{self._ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}', end_section=True),
-            # ===================================
+            Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.my_ip_masked()} | [green]{self._ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.threads}'),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
@@ -49,7 +61,7 @@ class ContextStatsManager:
         return full_stats
 
     def build_details_stats_table(self) -> Table:
-        table_caption = CONTROL_CAPTION if not self._ctx.errors_manager.has_errors() else None
+        table_caption = CONTROL_CAPTION if not self.combined_error_manager.has_errors() else None
 
         details_table = Table(
             title=LOGO_COLOR,
@@ -65,8 +77,8 @@ class ContextStatsManager:
         details_table.add_column('Status')
 
         rows = self.build_global_details_stats()
-        if self.current_visualized_target:
-            rows += self.current_visualized_target.stats.build_target_details_stats()
+        if self.current_target:
+            rows += self.current_target.stats.build_target_details_stats()
 
         for row in rows:
             if row.visible:
@@ -75,15 +87,9 @@ class ContextStatsManager:
         return details_table
 
     def build_errors_table(self) -> Table:
-      em = ErrorsManager()
-      em.add_submanager(self._ctx.errors_manager)
-      # Merges context-level errors with visible target-level errors
-      if self.current_visualized_target:
-          em.add_submanager(self.current_visualized_target.errors_manager)
-
-      logs_caption = CONTROL_CAPTION if em.has_errors() else None
+      logs_caption = CONTROL_CAPTION if self.combined_error_manager.has_errors() else None
       logs_table = None
-      if em.has_errors():
+      if self.combined_error_manager.has_errors():
           logs_table = Table(
               box=box.SIMPLE,
               min_width=MIN_SCREEN_WIDTH,
@@ -96,8 +102,8 @@ class ContextStatsManager:
           logs_table.add_column('Q-ty')
           logs_table.add_column('Message')
 
-          for key in em.errors:
-              err = em.errors.get(key)
+          for key in self.combined_error_manager.errors:
+              err = self.combined_error_manager.errors.get(key)
               logs_table.add_row(f'[cyan]{err.time.strftime(DATE_TIME_SHORT)}',
                            f'[orange1]{err.code}',
                            f'{err.count}',
