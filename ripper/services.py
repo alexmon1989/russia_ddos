@@ -27,15 +27,10 @@ def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
     if target.health_check_manager.is_in_progress or \
         not target.interval_manager.check_timer_elapsed(bucket=f'update_host_statuses_{target.url}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
-        return False
-    target.errors_manager.add_error(Error(code='Unhandled', message=f'passed'))    
+        return False   
     try:
         if target.host_ip:
-            host_statuses = target.health_check_manager.fetch_host_statuses()
-            # API in some cases returns 403, so we can't update statuses
-            if len(host_statuses.values()):
-                target.health_check_manager.host_statuses = host_statuses
-                target.health_check_manager.last_host_statuses_update = datetime.datetime.now()
+            target.health_check_manager.update_host_statuses()
     except:
         pass
     return True

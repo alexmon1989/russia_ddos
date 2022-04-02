@@ -143,26 +143,26 @@ class HealthCheckManager:
 
         return accessible_message
 
-    def fetch_host_statuses(self) -> dict:
+    def update_host_statuses(self) -> dict:
         """Fetches regional availability statuses."""
         self.is_in_progress = True
-        statuses = {}
-        self.target.errors_manager.add_error(Error(code='Unhandled', message='Started'))
+        current_host_statuses = {}
         try:
             body = fetch_zipped_body(self.request_url)
             # request_code is some sort of trace_id which is provided on every request to master node
             request_code = re.search(STATUS_PATTERN, body)[1]
-            self.target.errors_manager.add_error(Error(code='Unhandled', message=request_code))
             # it takes time to poll all information from slave nodes
             time.sleep(5)
             # to prevent loop, do not wait for more than 30 seconds
             for _ in range(5):
                 time.sleep(5)
                 resp_data = json.loads(fetch_zipped_body(f'https://check-host.net/check_result/{request_code}'))
-                statuses = count_host_statuses(resp_data)
-                if HOST_IN_PROGRESS_STATUS not in statuses:
+                current_host_statuses = count_host_statuses(resp_data)
+                if HOST_IN_PROGRESS_STATUS not in current_host_statuses:
                     break
         except:
             pass
         self.is_in_progress = False
-        return statuses
+        self.host_statuses = current_host_statuses
+        self.last_host_statuses_update = datetime.datetime.now()
+        return current_host_statuses

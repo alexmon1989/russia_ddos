@@ -1,5 +1,6 @@
 import pytest as pytest
 from collections import namedtuple
+from datetime import datetime
 
 from ripper.context.context import Context
 from ripper.health_check_manager import classify_host_status, count_host_statuses
@@ -45,10 +46,20 @@ class DescribeHealthCheck:
             targets = ['tcp://google.com'],
         ))
         assert len(context.targets[0].host_ip) > 0
+        
+        health_check_manager = context.targets[0].health_check_manager
 
-        distribution = context.targets[0].health_check_manager.fetch_host_statuses()
+        before_execution = datetime.now()
+        distribution = health_check_manager.update_host_statuses()
+        after_execution = datetime.now()
+
         # some nodes have issues with file descriptor or connection
         assert distribution[HOST_SUCCESS_STATUS] > 17
+        # state should be updated
+        assert distribution == health_check_manager.host_statuses
+        assert not health_check_manager.is_in_progress
+        assert health_check_manager.last_host_statuses_update > before_execution
+        assert health_check_manager.last_host_statuses_update < after_execution
 
     @pytest.mark.parametrize('args_data, url', [
         ({'target_uri': 'https://google.com', 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com'),
