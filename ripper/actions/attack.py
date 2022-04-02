@@ -56,25 +56,25 @@ class __Attack(Thread):
         while not threading.Event().is_set():
             runner()
 
-class Attack:
-    """This class creates threads with specified attack method."""
-    _ctx: Context
-    target: Context
+# class Attack:
+#     """This class creates threads with specified attack method."""
+#     _ctx: Context
+#     target: Context
 
-    def __init__(self, _ctx: Context, target: Target):
-        """
-        :param _ctx: Global context.
-        :param target: Attack target.
-        """
-        self._ctx = _ctx
-        self.target = target
+#     def __init__(self, _ctx: Context, target: Target):
+#         """
+#         :param _ctx: Global context.
+#         :param target: Attack target.
+#         """
+#         self._ctx = _ctx
+#         self.target = target
 
-    def start(self):
-        runner = attack_method_factory(target=self.target, _ctx=self._ctx)
+#     def start(self):
+#         runner = attack_method_factory(target=self.target, _ctx=self._ctx)
 
-        if self._ctx.dry_run:
-            runner()
-            exit(0)
+#         if self._ctx.dry_run:
+#             runner()
+#             exit(0)
 
-        while True:
-            runner()
+#         while True:
+#             runner()
