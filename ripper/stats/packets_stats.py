@@ -26,6 +26,7 @@ class PacketsStats:
             self.total_sent += 1
             self.total_sent_bytes += sent_bytes
 
+    # TODO remove, it is not a method for stats
     def validate_connection(self, period_sec: int = 0) -> bool:
         """
         Check if there was successful connection for last time with interval of `period_sec`.

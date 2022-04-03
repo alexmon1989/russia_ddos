@@ -7,11 +7,11 @@ from ripper.health_check_manager import HealthCheckManager, HealthStatus
 from ripper import common
 from ripper.constants import *
 from ripper.stats.target_stats_manager import TargetStatsManager
-from ripper.errors import *
-from ripper.errors_manager import ErrorsManager
+from ripper.context.events_journal import EventsJournal
 from ripper.time_interval_manager import TimeIntervalManager
 
 Attack = 'Attack'
+events = EventsJournal()
 
 
 def default_scheme_port(scheme: str):
@@ -47,7 +47,6 @@ class Target:
     """Attack-related threads."""
     
     health_check_manager: HealthCheckManager = None
-    errors_manager: ErrorsManager = None
     interval_manager: TimeIntervalManager = None
 
     stats: TargetStatsManager = None
@@ -91,7 +90,6 @@ class Target:
 
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
-        self.errors_manager = ErrorsManager()
         self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
 
@@ -151,12 +149,11 @@ class Target:
 
         if self.stats.connect.success == self.stats.connect.success_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                self.errors_manager.add_error(CheckConnectionError())
+                events.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG)
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             self.stats.connect.last_check_time = now_ns
             self.stats.connect.sync_success()
-            self.errors_manager.remove_error(CheckConnectionError().uuid)
 
         return True
 
@@ -172,11 +169,10 @@ class Target:
 
         if self.stats.packets.total_sent == self.stats.packets.total_sent:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                self.errors_manager.add_error(CheckTcpAttackError())
+                events.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG)
 
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             self.stats.packets.connections_check_time = now_ns
-            self.errors_manager.remove_error(CheckTcpAttackError().uuid)
 
         return True

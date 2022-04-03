@@ -3,7 +3,6 @@ from contextlib import suppress
 from typing import Any
 from socks import ProxyError
 
-from ripper.errors import *
 from ripper.context.events_journal import EventsJournal
 from ripper.context.target import Target
 from ripper.common import generate_random_bytes
@@ -60,7 +59,6 @@ class TcpFlood(AttackMethod):
             Events.exception(ep)
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            self._target.errors_manager.add_error(TcpSendError(message=e))
             Events.exception(e)
         else:
             self._target.stats.packets.status_sent(sent_bytes=sent)

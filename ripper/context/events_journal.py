@@ -3,6 +3,7 @@ import threading
 from queue import Queue
 
 from ripper.constants import DATE_TIME_SHORT
+from ripper.common import Singleton
 
 # ==== Events template ====
 INFO_TEMPLATE  = '[dim][bold][cyan][{0}][/] [blue reverse]{1:^7}[/] {2}'
@@ -10,18 +11,12 @@ WARN_TEMPLATE  = '[dim][bold][cyan][{0}][/] [orange1 reverse]{1:^7}[/] {2}'
 ERROR_TEMPLATE = '[dim][bold][cyan][{0}][/] [red1 reverse]{1:^7}[/] {2}'
 
 
-class EventsJournal:
+class EventsJournal(metaclass=Singleton):
     """Collect and represent various logs and events."""
 
     _lock = None
     _queue: Queue
     _buffer: list[str]
-
-    def __new__(cls, args=None):
-        """Singleton realization."""
-        if not hasattr(cls, 'instance'):
-            cls.instance = super().__new__(cls)
-        return cls.instance
 
     def __init__(self, size: int = 5):
         self._lock = threading.Lock()

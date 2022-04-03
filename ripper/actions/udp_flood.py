@@ -3,7 +3,6 @@ from socket import socket
 from typing import Any
 
 from ripper.common import generate_random_bytes
-from ripper.errors import *
 from ripper.context.events_journal import EventsJournal
 from ripper.context.target import Target
 from ripper.constants import *
@@ -61,15 +60,12 @@ class UdpFlood(AttackMethod):
         try:
             sent = sock.sendto(send_bytes, self._target.hostip_port_tuple())
         except socket.gaierror as e:
-            self._target.errors_manager.add_error(UdpSendError(message=GETTING_SERVER_IP_ERR_MSG))
             Events.exception(e)
             Events.error(GETTING_SERVER_IP_ERR_MSG)
         except Exception as e:
-            self._target.errors_manager.add_error(UdpSendError(message=e))
             Events.exception(e)
         else:
             self._target.stats.packets.status_sent(sent_bytes=sent)
-            self._ctx.remove_error(UdpSendError(message=GETTING_SERVER_IP_ERR_MSG).uuid)
             return True
 
         return False

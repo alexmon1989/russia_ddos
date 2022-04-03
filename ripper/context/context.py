@@ -8,14 +8,12 @@ from ripper.socket_manager import SocketManager
 from ripper.headers_provider import HeadersProvider
 from ripper.stats.context_stats_manager import ContextStatsManager
 from ripper.time_interval_manager import TimeIntervalManager
-from ripper.errors import *
-from ripper.errors_manager import ErrorsManager
 from ripper.stats.ip_info import IpInfo
 from ripper.context.target import Target
 from ripper.context.events_journal import EventsJournal
 from ripper.context.target import *
 
-Events = EventsJournal()
+events = EventsJournal()
 
 
 class Context(metaclass=common.Singleton):
@@ -90,7 +88,6 @@ class Context(metaclass=common.Singleton):
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
-        self.errors_manager = ErrorsManager()
         self.interval_manager = TimeIntervalManager()
         self.logger = Console(width=MIN_SCREEN_WIDTH)
         self.threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
@@ -126,9 +123,8 @@ class Context(metaclass=common.Singleton):
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-                self.errors_manager.add_error(ProxyListReadOperationFailedError(message=e))
-                Events.exception(e)
-                Events.error('Proxy list read operation failed.')
+                events.exception(e)
+                events.error('Proxy list read operation failed.')
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:

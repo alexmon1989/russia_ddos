@@ -32,6 +32,7 @@ class IpInfo:
         else:
             return parts[0]
 
+    # TODO make property
     def is_ip_changed(self) -> bool:
         """:return: True is start ip doesn't equal to current ip"""
         return self.start_ip != self.current_ip

@@ -3,7 +3,6 @@ from rich.table import Table
 from rich import box
 
 from ripper.context.target import Target
-from ripper.errors_manager import ErrorsManager
 from ripper.stats.utils import Row
 from rich.console import Group
 from ripper import common
@@ -12,7 +11,8 @@ from ripper.time_interval_manager import TimeIntervalManager
 from ripper.context.events_journal import EventsJournal
 
 Context = 'Context'
-Events = EventsJournal()
+events = EventsJournal()
+
 
 class ContextStatsManager:
     _ctx: Context = None
@@ -39,15 +39,6 @@ class ContextStatsManager:
     @property
     def current_target(self) -> Target:
         return self._ctx.targets[self.current_target_idx]
-    
-    @property
-    def combined_error_manager(self) -> ErrorsManager:
-        em = ErrorsManager()
-        em.add_submanager(self._ctx.errors_manager)
-        # Merges context-level errors with visible target-level errors
-        if self.current_target:
-            em.add_submanager(self.current_target.errors_manager)
-        return em
 
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
@@ -112,33 +103,7 @@ class ContextStatsManager:
                 details_table.add_row(row.label, row.value, end_section=row.end_section)
         
         return details_table
-
-    # XXX Replace with events?
-    def build_errors_table(self) -> Table:
-        logs_caption = CONTROL_CAPTION if self.combined_error_manager.has_errors() else None
-        logs_table = None
-        if self.combined_error_manager.has_errors():
-            logs_table = Table(
-                box=box.SIMPLE,
-                min_width=MIN_SCREEN_WIDTH,
-                width=MIN_SCREEN_WIDTH,
-                caption=logs_caption,
-                caption_style='bold')
-
-            logs_table.add_column('Time')
-            logs_table.add_column('Action')
-            logs_table.add_column('Q-ty')
-            logs_table.add_column('Message')
-
-            for key in self.combined_error_manager.errors:
-                err = self.combined_error_manager.errors.get(key)
-                logs_table.add_row(f'[cyan]{err.time.strftime(DATE_TIME_SHORT)}',
-                            f'[orange1]{err.code}',
-                            f'{err.count}',
-                            f'{err.message}')
-        return logs_table
     
-    # XXX Integrate??
     def build_events_table(self) -> Table:
         events_log = Table(
             box=box.SIMPLE,
@@ -149,15 +114,14 @@ class ContextStatsManager:
 
         events_log.add_column('[blue]Events Log', style='dim')
 
-        for event in Events.get_log():
+        for event in events.get_log():
             events_log.add_row(f'{event}')
 
         return events_log
 
-
     def build_stats(self):
         """Create statistics from aggregated RAW Statistics data."""
         details_table = self.build_details_stats_table()
-        errors_table = self.build_errors_table()
-        group = Group(details_table) if errors_table is None else Group(details_table, errors_table)
+        events_table = self.build_events_table()
+        group = Group(details_table) if events_table is None else Group(details_table, events_table)
         return group

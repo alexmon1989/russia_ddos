@@ -16,10 +16,9 @@ from ripper.context.context import Context, Target
 from ripper.common import get_current_ip
 from ripper.context.events_journal import EventsJournal
 from ripper.proxy import Proxy
-from ripper.errors import *
 
 exit_event = threading.Event()
-events: EventsJournal = None
+events = EventsJournal()
 lock = threading.Lock()
 
 
@@ -85,11 +84,12 @@ def refresh_context_details(_ctx: Context) -> None:
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
-        _ctx.errors_manager.add_error(IPWasChangedError())
+        events.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
 
     for (target_idx, target) in enumerate(_ctx.targets):
-        if not target.validate_attack():
-            target.errors_manager.add_error(HostDoesNotRespondError(message=common.get_no_successful_connection_die_msg()))
+        # TODO Merge validators
+        if not target.validate_attack() or not target.stats.packets.validate_connection(SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC):
+            events.error(common.get_no_successful_connection_die_msg())
             if len(_ctx.targets) < 2:
                 exit(common.get_no_successful_connection_die_msg())
             else:
@@ -99,7 +99,7 @@ def refresh_context_details(_ctx: Context) -> None:
                 lock.release()
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        _ctx.errors_manager.add_error(HostDoesNotRespondError(message=NO_MORE_PROXIES_ERR_MSG))
+        events.error(NO_MORE_PROXIES_ERR_MSG)
         exit(NO_MORE_PROXIES_ERR_MSG)
 
 
@@ -122,25 +122,12 @@ def connect_host(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
     return res
 
 
-def check_host_connection(_ctx: Context, proxy: Proxy = None) -> bool:
-    """Check connection to Host before start script."""
-    _ctx.target.statistic.connect.set_state_in_progress()
-    with _ctx.sock_manager.create_tcp_socket(proxy) as http:
-        try:
-            http.connect(_ctx.target.hostip_port_tuple())
-        except:
-            res = False
-        else:
-            _ctx.target.statistic.connect.set_state_is_connected()
-            res = True
-        return res
-
-
 def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
     i = 0
     while i < retry_cnt:
-        _ctx.logger.log(f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
+        _ctx.logger.log(
+            f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
         if connect_host(target=target, _ctx=_ctx):
             break
         time.sleep(timeout_secs)
@@ -186,21 +173,6 @@ def render_statistics(_ctx: Context) -> None:
             live.update(_ctx.stats.build_stats())
             if _ctx.dry_run:
                 break
-
-
-def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
-    """Tries to connect host in permanent loop."""
-    i = 0
-    _ctx.logger.rule('[bold]Starting DRipper')
-    while i < retry_cnt:
-        message = f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.target.host}:{_ctx.target.port}...'
-        _ctx.logger.log(message)
-        events.info(message)
-        if check_host_connection(_ctx):
-            _ctx.logger.rule()
-            break
-        time.sleep(timeout_secs)
-        i += 1
 
 
 def main():

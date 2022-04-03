@@ -3,7 +3,6 @@ from collections import namedtuple
 
 from ripper.actions.http_flood import HttpFlood
 from ripper.context.context import Context
-from ripper.context.target import Target
 from ripper.headers_provider import HeadersProvider
 
 Args = namedtuple('Args', 'targets http_method')
