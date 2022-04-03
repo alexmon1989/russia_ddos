@@ -70,7 +70,7 @@ class TargetStatsManager:
             # === Info UDP/TCP => insert Sent bytes statistic
             Row('Connection Success',        f'[green]{self.target.stats.connect.success}'),
             Row('Connection Failed',         f'[red]{self.target.stats.connect.failed}'),
-            Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}{conn_success_rate}%', end_section=True),
+            Row('Connection Success Rate',   f'{rate_color(conn_success_rate)}%', end_section=True),
             # ===================================
             Row('Status Code Distribution',  build_http_codes_distribution(self.target.stats.http_stats), end_section=True, visible=self.target.attack_method.lower() == 'http-flood'),
         ]

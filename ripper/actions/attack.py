@@ -27,7 +27,7 @@ attack_method_labels: list[str] = list(map(lambda am: am.label, attack_methods))
 
 def attack_method_factory(_ctx: Context, target: Target):
     attack_method_name = target.attack_method
-    Events.info(f'Set attack method to {target.attack_method}')
+    # Events.info(f'Set attack method to {target.attack_method}')
     if attack_method_name == 'udp-flood':
         return UdpFlood(target=target, _ctx=_ctx)
     elif attack_method_name == 'http-flood':

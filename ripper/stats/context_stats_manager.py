@@ -43,7 +43,7 @@ class ContextStatsManager:
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
         max_length = f' | Max length: {self._ctx.max_random_packet_len}' if self._ctx.max_random_packet_len else ''
-        check_my_ip = common.is_my_ip_changed(self._ctx.myIpInfo.start_ip, self._ctx.myIpInfo.my_current_ip)
+        check_my_ip = self._ctx.myIpInfo.is_ip_changed()
         your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED_ERR_MSG}' if check_my_ip else ''
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
         your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
@@ -78,8 +78,6 @@ class ContextStatsManager:
         ]
 
     def build_details_stats_table(self) -> Table:
-        table_caption = CONTROL_CAPTION if not self.combined_error_manager.has_errors() else None
-
         details_table = Table(
             title=LOGO_COLOR,
             title_justify='center',
@@ -87,7 +85,7 @@ class ContextStatsManager:
             box=box.HORIZONTALS,
             min_width=MIN_SCREEN_WIDTH,
             width=MIN_SCREEN_WIDTH,
-            caption=table_caption,
+            caption=CONTROL_CAPTION,
             caption_style='bold')
 
         details_table.add_column('Description')

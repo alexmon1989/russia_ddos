@@ -50,7 +50,6 @@ class Context(metaclass=common.Singleton):
     # External API and services info
     sock_manager: SocketManager = None
     proxy_manager: ProxyManager = None
-    errors_manager: ErrorsManager = None
     interval_manager: TimeIntervalManager = None
     logger: Console = None
     stats: ContextStatsManager = None
