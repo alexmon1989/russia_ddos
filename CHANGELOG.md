@@ -4,14 +4,22 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.3.0...HEAD)
+
+
+## [v2.3.0](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...2.3.0)
 
 ### Added
 - `dry run` mode for fast testing purposes
+- CloudFlare bypass mode for HTTP flood method
+- Events log that helps to understand attack process details in depth
+- `--log-size` parameter to configure Events log history frame length
 
 ### Fixed
 - Fixed error with keyboard interrupting and threads shutdown process
 - Reduced IP address re-checks to avoid redundant API calls
+- Attack checks methods, improved speed
+- Rendering table with statistic does not re-render table caption with logo
 
 ### Changed
 - Isolated target. The target contains a full server description, statistics, and health check. It is an intermediate step towards multiple targets.
@@ -21,7 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Changed health check to be target-dependant.
 - Reduced awareness about the entire context structure.
 - Unified tests format. Classes should represent "Describe" blocks, and test methods should start with "it."
-- Other minor refactorings.
+- Changed Exception handling and logging process.
+- Replaced Error class with Events
 
 
 ## [v2.2.0](https://github.com/alexmon1989/russia_ddos/compare/2.1.0...2.2.0)

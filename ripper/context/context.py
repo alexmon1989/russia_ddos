@@ -1,9 +1,8 @@
 import os
 import time
+
 from rich.console import Console
 
-from ripper import common
-from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.headers_provider import HeadersProvider
@@ -13,6 +12,10 @@ from ripper.errors import *
 from ripper.errors_manager import ErrorsManager
 from ripper.stats.ip_info import IpInfo
 from ripper.context.target import Target
+from ripper.context.events_journal import EventsJournal
+from ripper.context.target import *
+
+Events = EventsJournal()
 
 
 class Context(metaclass=common.Singleton):
@@ -72,7 +75,7 @@ class Context(metaclass=common.Singleton):
             self.logger.log(str(e))
             exit(1)
 
-        if self.myIpInfo.my_start_ip is None or not common.is_ipv4(self.myIpInfo.my_start_ip):
+        if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
             self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
     
@@ -83,32 +86,34 @@ class Context(metaclass=common.Singleton):
 
     def __init__(self, args):
         self.targets = []
-        self.myIpInfo = IpInfo()
+        self.myIpInfo = IpInfo(common.get_current_ip())
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.errors_manager = ErrorsManager()
         self.interval_manager = TimeIntervalManager()
         self.logger = Console(width=MIN_SCREEN_WIDTH)
-
         self.threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
         self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', ARGS_DEFAULT_MAX_RND_PACKET_LEN))
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
         self.dry_run = getattr(args, 'dry_run', False)
-
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        self.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
+        attack_method = getattr(args, 'attack_method', None)
 
-        # Get initial info from external services
-        self.myIpInfo.my_start_ip = common.get_current_ip()
-        self.myIpInfo.my_current_ip = self.myIpInfo.my_start_ip
-        self.myIpInfo.my_country = common.get_country_by_ipv4(self.myIpInfo.my_start_ip)
+        if attack_method in ['http-flood', 'http-bypass']:
+            self.random_packet_len = False
+            self.max_random_packet_len = 0
+        elif self.random_packet_len and not self.max_random_packet_len:
+            self.max_random_packet_len = 1024
 
-        if getattr(args, 'attack_method', None) == 'http-flood':
+        # to avoid situation when vCPU might be 0
+        self.cpu_count = max(os.cpu_count(), 1)
+
+        if attack_method == 'http-flood':
             self.random_packet_len = False
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:
@@ -116,12 +121,17 @@ class Context(metaclass=common.Singleton):
 
         self.connections_check_time = time.time_ns()
 
-        if self.proxy_list and getattr(args, 'attack_method', None) != 'udp-flood':
+        if self.proxy_list and attack_method != 'udp-flood':
             self.proxy_manager.set_proxy_type(self.proxy_type)
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
+<<<<<<< HEAD
                 self.errors_manager.add_error(ProxyListReadOperationFailedError(message=e))
+=======
+                Events.exception(e)
+                Events.error('Proxy list read operation failed.')
+>>>>>>> 8d03aaae91730f80fd6b1bf39562fb9c5ea28375
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:

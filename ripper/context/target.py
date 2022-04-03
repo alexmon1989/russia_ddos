@@ -1,4 +1,3 @@
-from threading import Thread
 import time
 from typing import Tuple
 from urllib.parse import urlparse

@@ -1,5 +1,4 @@
 from collections import defaultdict
-from datetime import datetime
 
 from ripper.stats.packets_stats import PacketsStats
 from ripper.stats.connection_stats import ConnectionStats
@@ -30,8 +29,7 @@ class TargetStatsManager:
       self.http_stats = defaultdict(int)
 
     def collect_packets_success(self, sent_bytes: int = 0):
-        self.packets.total_sent += 1
-        self.packets.total_sent_bytes += sent_bytes
+        self.packets.status_sent(sent_bytes)
     
     def get_availability_msg(self) -> str:
         status: HealthStatus = self.target.health_check_manager.status

@@ -1,6 +1,7 @@
 import random
 import re
 import json
+import threading
 import urllib
 import gzip
 import time
@@ -109,8 +110,10 @@ class HealthCheckManager:
     host_statuses = {}
 
     target: Target = None
+    _lock: threading.Lock
 
     def __init__(self, target: Target) -> None:
+        self._lock = threading.Lock()
         self.headers_provider = HeadersProvider()
         self.target = target
 
@@ -170,24 +173,25 @@ class HealthCheckManager:
 
     def update_host_statuses(self) -> dict:
         """Fetches regional availability statuses."""
-        self.is_in_progress = True
-        current_host_statuses = {}
-        try:
-            body = fetch_zipped_body(self.request_url)
-            # request_code is some sort of trace_id which is provided on every request to master node
-            request_code = re.search(STATUS_PATTERN, body)[1]
-            # it takes time to poll all information from slave nodes
-            time.sleep(5)
-            # to prevent loop, do not wait for more than 30 seconds
-            for _ in range(5):
+        with self._lock:
+            self.is_in_progress = True
+            current_host_statuses = {}
+            try:
+                body = fetch_zipped_body(self.request_url)
+                # request_code is some sort of trace_id which is provided on every request to master node
+                request_code = re.search(STATUS_PATTERN, body)[1]
+                # it takes time to poll all information from slave nodes
                 time.sleep(5)
-                resp_data = json.loads(fetch_zipped_body(f'https://check-host.net/check_result/{request_code}'))
-                current_host_statuses = count_host_statuses(resp_data)
-                if HOST_IN_PROGRESS_STATUS not in current_host_statuses:
-                    break
-        except:
-            pass
-        self.is_in_progress = False
-        self.host_statuses = current_host_statuses
-        self.last_host_statuses_update = datetime.datetime.now()
-        return current_host_statuses
+                # to prevent loop, do not wait for more than 30 seconds
+                for _ in range(5):
+                    time.sleep(5)
+                    resp_data = json.loads(fetch_zipped_body(f'https://check-host.net/check_result/{request_code}'))
+                    current_host_statuses = count_host_statuses(resp_data)
+                    if HOST_IN_PROGRESS_STATUS not in current_host_statuses:
+                        break
+            except:
+                pass
+            self.is_in_progress = False
+            self.host_statuses = current_host_statuses
+            self.last_host_statuses_update = datetime.datetime.now()
+            return current_host_statuses

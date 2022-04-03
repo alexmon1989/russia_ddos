@@ -1,6 +1,6 @@
 import pytest as pytest
 
-from ripper.common import convert_size, is_my_ip_changed
+from ripper.common import convert_size
 
 
 class DescribeCommonMethods:
@@ -14,10 +14,3 @@ class DescribeCommonMethods:
     ])
     def it_has_convert_size(self, actual, expected):
         assert convert_size(actual) == expected
-
-    def it_has_my_ip_changed(self):
-        my_start_ip = '192.168.0.1'
-        my_current_ip = '10.20.0.1'
-
-        assert is_my_ip_changed(my_start_ip, my_current_ip) is True
-        assert is_my_ip_changed(my_start_ip, my_start_ip) is False

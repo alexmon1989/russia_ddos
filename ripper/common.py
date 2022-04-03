@@ -17,12 +17,6 @@ from ripper.constants import *
 IPv4_PATTERN = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
 
 
-def get_no_successful_connection_die_msg() -> str:
-    return f"There were no successful connections for more " \
-           f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
-           f"Your attack is ineffective."
-
-
 def read_file_lines(filename: str) -> list[str]:
     """Read string from fs or http"""
     if filename.startswith('http'):
@@ -38,7 +32,7 @@ def read_file_lines_fs(filename: str) -> list[str]:
 
 def read_file_lines_http(url: str) -> list[str]:
     """Read string from http"""
-    data =  urllib.request.urlopen(url).read().decode('utf8')
+    data = urllib.request.urlopen(url).read().decode('utf8')
     return data.splitlines()
 
 
@@ -90,11 +84,6 @@ def format_dt(dt: datetime, fmt=DATE_TIME_FULL) -> str:
     if dt is None:
         return ''
     return dt.strftime(fmt)
-
-
-def is_my_ip_changed(my_start_ip: str, my_current_ip: str) -> bool:
-    """Check if my IPv4 starting address wasn't changed during script run."""
-    return my_start_ip != my_current_ip
 
 
 def is_ipv4(ip: str) -> bool:
@@ -182,8 +171,10 @@ def get_cpu_load() -> str:
 
         return f"{cpu_usage:.2f}%"
 
+
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)

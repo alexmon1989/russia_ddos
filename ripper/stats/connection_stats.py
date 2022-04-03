@@ -1,3 +1,6 @@
+from threading import Lock
+
+
 class ConnectionStats:
     """Class for Connection statistic"""
     success_prev: int = 0
@@ -10,6 +13,10 @@ class ConnectionStats:
     """Last check connection time."""
     in_progress: bool = False
     """Connection state used for checking liveness of Socket."""
+    _lock: Lock = None
+
+    def __init__(self):
+        self._lock = Lock()
 
     def get_success_rate(self) -> int:
         """Calculate Success Rate for connection."""

@@ -12,10 +12,14 @@ from ripper.constants import *
 from ripper.context.context import Context
 from ripper.context.target import Target
 from ripper.common import get_current_ip
+from ripper.context.context import Context, Target
+from ripper.common import get_current_ip
+from ripper.context.events_journal import EventsJournal
 from ripper.proxy import Proxy
 from ripper.errors import *
 
 exit_event = threading.Event()
+events: EventsJournal = None
 lock = threading.Lock()
 
 
@@ -32,6 +36,7 @@ def update_host_statuses(target: Target):
             target.health_check_manager.update_host_statuses()
     except:
         pass
+    events.error('Host statuses update failed with check-host.net')
     return True
 
 
@@ -42,9 +47,10 @@ def update_host_statuses(target: Target):
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
+        events.info(f'Checking my public IP address (period: {check_period_sec} sec)')
         _ctx.myIpInfo.my_current_ip = get_current_ip()
-    if _ctx.myIpInfo.my_start_ip is None:
-        _ctx.myIpInfo.my_start_ip = _ctx.myIpInfo.my_current_ip
+    if _ctx.myIpInfo.start_ip is None:
+        _ctx.myIpInfo.start_ip = _ctx.myIpInfo.my_current_ip
 
 
 def go_home(_ctx: Context) -> None:
@@ -55,9 +61,9 @@ def go_home(_ctx: Context) -> None:
             target.host_ip = target.host = 'localhost'
             target.host += '*'
 
-
 def refresh_context_details(_ctx: Context) -> None:
     """Check threads, IPs, VPN status, etc."""
+    global lock
     lock.acquire()
 
     threading.Thread(
@@ -68,7 +74,7 @@ def refresh_context_details(_ctx: Context) -> None:
         for target in _ctx.targets:
             threading.Thread(target=update_host_statuses, args=[target]).start()
 
-    if _ctx.myIpInfo.my_country == GEOIP_NOT_DEFINED:
+    if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.my_current_ip]).start()
 
     for target in _ctx.targets:
@@ -78,7 +84,7 @@ def refresh_context_details(_ctx: Context) -> None:
     lock.release()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
-    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.my_start_ip, _ctx.myIpInfo.my_current_ip):
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.start_ip, _ctx.myIpInfo.my_current_ip):
         _ctx.errors_manager.add_error(IPWasChangedError())
 
     for (target_idx, target) in enumerate(_ctx.targets):
@@ -114,6 +120,20 @@ def connect_host(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
         sock.close()
     target.stats.connect.set_state_is_connected()
     return res
+
+
+def check_host_connection(_ctx: Context, proxy: Proxy = None) -> bool:
+    """Check connection to Host before start script."""
+    _ctx.target.statistic.connect.set_state_in_progress()
+    with _ctx.sock_manager.create_tcp_socket(proxy) as http:
+        try:
+            http.connect(_ctx.target.hostip_port_tuple())
+        except:
+            res = False
+        else:
+            _ctx.target.statistic.connect.set_state_is_connected()
+            res = True
+        return res
 
 
 def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
@@ -168,6 +188,21 @@ def render_statistics(_ctx: Context) -> None:
                 break
 
 
+def connect_host_loop(_ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
+    """Tries to connect host in permanent loop."""
+    i = 0
+    _ctx.logger.rule('[bold]Starting DRipper')
+    while i < retry_cnt:
+        message = f'({i + 1}/{retry_cnt}) Trying connect to {_ctx.target.host}:{_ctx.target.port}...'
+        _ctx.logger.log(message)
+        events.info(message)
+        if check_host_connection(_ctx):
+            _ctx.logger.rule()
+            break
+        time.sleep(timeout_secs)
+        i += 1
+
+
 def main():
     """The main function to run the script from the command line."""
     args = arg_parser.create_parser().parse_args()
@@ -186,6 +221,7 @@ def main():
     _ctx.logger.rule()
     _ctx.validate()
 
+    # Start Threads
     time.sleep(.5)
     threads_range = _ctx.threads_count if not _ctx.dry_run else 1
     # TODO create targets manager

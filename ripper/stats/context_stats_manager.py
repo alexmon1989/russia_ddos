@@ -9,9 +9,10 @@ from rich.console import Group
 from ripper import common
 from ripper.constants import *
 from ripper.time_interval_manager import TimeIntervalManager
+from ripper.context.events_journal import EventsJournal
 
 Context = 'Context'
-
+Events = EventsJournal()
 
 class ContextStatsManager:
     _ctx: Context = None
@@ -51,7 +52,7 @@ class ContextStatsManager:
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
         max_length = f' | Max length: {self._ctx.max_random_packet_len}' if self._ctx.max_random_packet_len else ''
-        check_my_ip = common.is_my_ip_changed(self._ctx.myIpInfo.my_start_ip, self._ctx.myIpInfo.my_current_ip)
+        check_my_ip = common.is_my_ip_changed(self._ctx.myIpInfo.start_ip, self._ctx.myIpInfo.my_current_ip)
         your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED_ERR_MSG}' if check_my_ip else ''
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
         your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
@@ -59,7 +60,7 @@ class ContextStatsManager:
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Start Time',                common.format_dt(self._ctx.interval_manager.start_time)),
-            Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.my_ip_masked()} | [green]{self._ctx.myIpInfo.my_country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
+            Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.my_ip_masked()} | [green]{self._ctx.myIpInfo.country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.threads_count}', visible=len(self._ctx.targets) > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
@@ -112,6 +113,7 @@ class ContextStatsManager:
         
         return details_table
 
+    # XXX Replace with events?
     def build_errors_table(self) -> Table:
         logs_caption = CONTROL_CAPTION if self.combined_error_manager.has_errors() else None
         logs_table = None
@@ -135,6 +137,23 @@ class ContextStatsManager:
                             f'{err.count}',
                             f'{err.message}')
         return logs_table
+    
+    # XXX Integrate??
+    def build_events_table(self) -> Table:
+        events_log = Table(
+            box=box.SIMPLE,
+            min_width=MIN_SCREEN_WIDTH,
+            width=MIN_SCREEN_WIDTH,
+            caption=CONTROL_CAPTION,
+            caption_style='bold')
+
+        events_log.add_column('[blue]Events Log', style='dim')
+
+        for event in Events.get_log():
+            events_log.add_row(f'{event}')
+
+        return events_log
+
 
     def build_stats(self):
         """Create statistics from aggregated RAW Statistics data."""

@@ -1,4 +1,4 @@
-def rate_color(rate: int) -> str:
+def rate_color(rate: int, units: str = '') -> str:
     """
     Get color schema for percentage value.
     Color schema looks like red-yellow-green scale for values 0-50-100.
@@ -15,7 +15,7 @@ def rate_color(rate: int) -> str:
     if rate >= 90:
         color = '[green1]'
 
-    return color
+    return f'{color}{rate}{units}[default]'
 
 
 def build_http_codes_distribution(http_codes_counter) -> str:
