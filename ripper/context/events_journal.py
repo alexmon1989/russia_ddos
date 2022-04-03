@@ -1,6 +1,7 @@
 import datetime
 import threading
 from queue import Queue
+from enum import Enum
 
 from ripper.constants import DATE_TIME_SHORT
 from ripper.common import Singleton
@@ -11,17 +12,25 @@ WARN_TEMPLATE  = '[dim][bold][cyan][{0}][/] [orange1 reverse]{1:^7}[/] {2}'
 ERROR_TEMPLATE = '[dim][bold][cyan][{0}][/] [red1 reverse]{1:^7}[/] {2}'
 
 
+class LogLevel(Enum):
+    none = 0
+    error = 1
+    warn = 2
+    info = 3
+
+
 class EventsJournal(metaclass=Singleton):
     """Collect and represent various logs and events."""
-
     _lock = None
     _queue: Queue
     _buffer: list[str]
+    _log_level: LogLevel = None
 
-    def __init__(self, size: int = 5):
+    def __init__(self, size: int = 5, log_level: LogLevel = LogLevel.info):
         self._lock = threading.Lock()
         self._queue = Queue()
         self._buffer = [''] * size
+        self._log_level = log_level
 
     def get_log(self) -> list[str]:
         with self._lock:
@@ -32,13 +41,16 @@ class EventsJournal(metaclass=Singleton):
         return self._buffer
 
     def info(self, message: str):
-        self._push_event(INFO_TEMPLATE, 'info', message)
+        if self._log_level >= LogLevel.info:
+            self._push_event(INFO_TEMPLATE, 'info', message)
 
     def warn(self, message: str):
-        self._push_event(WARN_TEMPLATE, 'warn', message)
+        if self._log_level >= LogLevel.warn:
+            self._push_event(WARN_TEMPLATE, 'warn', message)
 
     def error(self, message: str):
-        self._push_event(ERROR_TEMPLATE, 'error', message)
+        if self._log_level >= LogLevel.error:
+            self._push_event(ERROR_TEMPLATE, 'error', message)
 
     def exception(self, ex):
         self._push_event(ERROR_TEMPLATE, f'{type(ex).__name__}: {ex.__str__()[:128]}')
