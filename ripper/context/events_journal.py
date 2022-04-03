@@ -56,5 +56,3 @@ class EventsJournal:
                 level,
                 f'{threading.current_thread().name.lower():11} {message}')
             self._queue.put(event)
-
-

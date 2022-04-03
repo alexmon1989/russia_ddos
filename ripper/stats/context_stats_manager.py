@@ -60,7 +60,7 @@ class ContextStatsManager:
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Start Time',                common.format_dt(self._ctx.interval_manager.start_time)),
-            Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.my_ip_masked()} | [green]{self._ctx.myIpInfo.country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
+            Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.ip_masked} | [green]{self._ctx.myIpInfo.country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.threads_count}', visible=len(self._ctx.targets) > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),

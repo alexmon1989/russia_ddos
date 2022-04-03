@@ -48,7 +48,7 @@ def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
         events.info(f'Checking my public IP address (period: {check_period_sec} sec)')
-        _ctx.myIpInfo.my_current_ip = get_current_ip()
+        _ctx.myIpInfo.current_ip = get_current_ip()
     if _ctx.myIpInfo.start_ip is None:
         _ctx.myIpInfo.start_ip = _ctx.myIpInfo.my_current_ip
 
@@ -75,7 +75,7 @@ def refresh_context_details(_ctx: Context) -> None:
             threading.Thread(target=update_host_statuses, args=[target]).start()
 
     if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
-        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.my_current_ip]).start()
+        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.current_ip]).start()
 
     for target in _ctx.targets:
         if target.country == GEOIP_NOT_DEFINED:
@@ -84,7 +84,7 @@ def refresh_context_details(_ctx: Context) -> None:
     lock.release()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
-    if _ctx.proxy_manager.proxy_list_initial_len == 0 and common.is_my_ip_changed(_ctx.myIpInfo.start_ip, _ctx.myIpInfo.my_current_ip):
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
         _ctx.errors_manager.add_error(IPWasChangedError())
 
     for (target_idx, target) in enumerate(_ctx.targets):

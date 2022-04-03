@@ -170,14 +170,13 @@ class Target:
                         self.stats.packets.connections_check_time)
         diff_sec = common.ns2s(now_ns - lower_bound)
 
-        if self.stats.packets.total_sent == self.stats.packets.total_sent_prev:
+        if self.stats.packets.total_sent == self.stats.packets.total_sent:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
                 self.errors_manager.add_error(CheckTcpAttackError())
 
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             self.stats.packets.connections_check_time = now_ns
-            self.stats.packets.sync_packets_sent()
             self.errors_manager.remove_error(CheckTcpAttackError().uuid)
 
         return True

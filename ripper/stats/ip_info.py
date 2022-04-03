@@ -16,7 +16,8 @@ class IpInfo:
         self.current_ip = self.start_ip
         self.country = get_country_by_ipv4(self.start_ip)
 
-    def my_ip_masked(self) -> str:
+    @property
+    def ip_masked(self) -> str:
         """
         Get my initial IPv4 address with masked octets.
 

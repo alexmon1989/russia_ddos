@@ -126,12 +126,9 @@ class Context(metaclass=common.Singleton):
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-<<<<<<< HEAD
                 self.errors_manager.add_error(ProxyListReadOperationFailedError(message=e))
-=======
                 Events.exception(e)
                 Events.error('Proxy list read operation failed.')
->>>>>>> 8d03aaae91730f80fd6b1bf39562fb9c5ea28375
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:

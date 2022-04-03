@@ -37,50 +37,6 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
 ## How it looks
 
 ```bash
-<<<<<<< HEAD
-                                                                                
-              ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗               
-              ██╔══██╗██╔══██║██║██╔══██╗██╔══██╗██╔════╝██╔══██║               
-              ██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝               
-              ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗               
-              ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║               
-              ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝               
-                                                          v2.0.0                
-                                                                                
-        It is the end user's responsibility to obey all applicable laws.        
-        It is just like a server testing script and Your IP is visible.         
-                                                                                
-                      Please, make sure you are ANONYMOUS!                      
-                                                                                
- ────────────────────────────────────────────────────────────────────────────── 
-  Description                       Status                                      
- ────────────────────────────────────────────────────────────────────────────── 
-  Start Time                        2022-02-24 04:00:00                         
-  Your Public IP / Country          131.*.*.* / AR                              
-  Host IP / Country                 192.168.0.1:80 / RU                        
-  Attack Method                     UDP-FLOOD                                         
- ────────────────────────────────────────────────────────────────────────────── 
-  Threads                           50                                          
-  vCPU Count                        16                                          
-  Random Packet Length              True / Max length: 2048                     
- ────────────────────────────────────────────────────────────────────────────── 
-  CloudFlare DNS Protection         Not protected                               
-  Last Availability Check           04:10:52                                    
-  Host Availability                 Accessible in 21 of 21 zones (100%)         
- ────────────────────────────────────────────────────────────────────────────── 
-  UDP Statistics                                                                 
- ────────────────────────────────────────────────────────────────────────────── 
-  Duration                          0:12:11                                     
-  Sent Packets                      10,332,191                                     
-  Sent Bytes                        2.22 GB                                   
-  Connection Success                2                                           
-  Connection Failed                 29                                          
-  Connection Success Rate           6%                                          
- ────────────────────────────────────────────────────────────────────────────── 
-                        Press CTRL+C to interrupt process.                       
-                                                                                
-                               #StandWithUkraine                               
-=======
 ──────────────────────────────────── Starting DRipper ────────────────────────────────────
 [23:29:24] (1/5) Trying connect to www.localhost.orc:443...                services.py:108
 ──────────────────────────────────────────────────────────────────────────────────────────
@@ -143,7 +99,6 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
                             Press CTRL+C to interrupt process.
 
                                     #StandWithUkraine
->>>>>>> 8d03aaae91730f80fd6b1bf39562fb9c5ea28375
 ```
 
 ## Usage
@@ -153,7 +108,6 @@ We recommend to use `PowerShell` for Windows users to run the script, Linux/macO
 
 Run `dripper --help` to see detailed params description.
 
-<<<<<<< HEAD
 ```bash
 
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
@@ -197,8 +151,6 @@ Options:
 
 Example: dripper -s http://192.168.0.1 -t 100
 ```
-=======
->>>>>>> 8d03aaae91730f80fd6b1bf39562fb9c5ea28375
 
 ## How to Run
 
