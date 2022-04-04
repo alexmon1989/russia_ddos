@@ -12,7 +12,7 @@ from ripper.context.events_journal import EventsJournal
 Context = 'Context'
 Target = 'Target'
 
-events = EventsJournal()
+events_journal = EventsJournal()
 
 
 attack_methods: list[AttackMethod] = [
@@ -27,7 +27,7 @@ attack_method_labels: list[str] = list(map(lambda am: am.label, attack_methods))
 
 def attack_method_factory(_ctx: Context, target: Target):
     attack_method_name = target.attack_method
-    # events.info(f'Set attack method to {target.attack_method}', target=target)
+    # events_journal.info(f'Set attack method to {target.attack_method}', target=target)
     if attack_method_name == 'udp-flood':
         return UdpFlood(target=target, _ctx=_ctx)
     elif attack_method_name == 'http-flood':

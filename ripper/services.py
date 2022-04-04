@@ -18,7 +18,7 @@ from ripper.context.events_journal import EventsJournal
 from ripper.proxy import Proxy
 
 exit_event = threading.Event()
-events = EventsJournal()
+events_journal = EventsJournal()
 lock = threading.Lock()
 
 
@@ -34,9 +34,9 @@ def update_host_statuses(target: Target):
         if target.host_ip:
             target.health_check_manager.update_host_statuses()
     except:
-        events.error(f'Host statuses update failed with check-host.net', target=target)
+        events_journal.error(f'Host statuses update failed with check-host.net', target=target)
     else:
-        events.error(f'Host statuses updated with check-host.net', target=target)
+        events_journal.error(f'Host statuses updated with check-host.net', target=target)
     return True
 
 
@@ -47,7 +47,7 @@ def update_host_statuses(target: Target):
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
-        events.info(f'Checking my public IP address (period: {check_period_sec} sec)')
+        events_journal.info(f'Checking my public IP address (period: {check_period_sec} sec)')
         _ctx.myIpInfo.current_ip = get_current_ip()
     if _ctx.myIpInfo.start_ip is None:
         _ctx.myIpInfo.start_ip = _ctx.myIpInfo.my_current_ip
@@ -85,12 +85,12 @@ def refresh_context_details(_ctx: Context) -> None:
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
-        events.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
+        events_journal.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
 
     for (target_idx, target) in enumerate(_ctx.targets):
         # TODO Merge validators
         if not target.validate_attack() or not target.stats.packets.validate_connection(SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC):
-            events.error(common.get_no_successful_connection_die_msg(), target=target)
+            events_journal.error(common.get_no_successful_connection_die_msg(), target=target)
             if len(_ctx.targets) < 2:
                 exit(common.get_no_successful_connection_die_msg())
             else:
@@ -100,7 +100,7 @@ def refresh_context_details(_ctx: Context) -> None:
                 lock.release()
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
-        events.error(NO_MORE_PROXIES_ERR_MSG)
+        events_journal.error(NO_MORE_PROXIES_ERR_MSG)
         exit(NO_MORE_PROXIES_ERR_MSG)
 
 
@@ -186,9 +186,9 @@ def main():
     # Init Events Log
     global events
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
-    events = EventsJournal()
-    events.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
-    events.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
+    events_journal = EventsJournal()
+    events_journal.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
+    events_journal.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
 
     _ctx = Context(args[0])
     go_home(_ctx)

@@ -11,7 +11,7 @@ from ripper.context.events_journal import EventsJournal
 from ripper.time_interval_manager import TimeIntervalManager
 
 Attack = 'Attack'
-events = EventsJournal()
+events_journal = EventsJournal()
 
 
 def default_scheme_port(scheme: str):
@@ -149,7 +149,7 @@ class Target:
 
         if self.stats.connect.success == self.stats.connect.success_prev:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                events.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
+                events_journal.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:
             self.stats.connect.last_check_time = now_ns
@@ -169,7 +169,7 @@ class Target:
 
         if self.stats.packets.total_sent == self.stats.packets.total_sent:
             if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                events.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
+                events_journal.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
 
                 return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
         else:

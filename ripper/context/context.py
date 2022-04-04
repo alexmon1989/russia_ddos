@@ -12,7 +12,7 @@ from ripper.context.target import Target
 from ripper.context.events_journal import EventsJournal
 from ripper.context.target import *
 
-events = EventsJournal()
+events_journal = EventsJournal()
 
 
 class Context(metaclass=common.Singleton):
@@ -121,8 +121,8 @@ class Context(metaclass=common.Singleton):
             try:
                 self.proxy_manager.update_proxy_list_from_file(self.proxy_list)
             except Exception as e:
-                events.exception(e)
-                events.error('Proxy list read operation failed.')
+                events_journal.exception(e)
+                events_journal.error('Proxy list read operation failed.')
 
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:

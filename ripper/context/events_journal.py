@@ -64,7 +64,7 @@ class Event:
 
 
 class EventsJournal(metaclass=Singleton):
-    """Collect and represent various logs and events."""
+    """Collect and represent various logs and events_journal."""
     _lock = None
     _queue: Queue = None
     _buffer: list[str] = None
