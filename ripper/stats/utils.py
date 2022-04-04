@@ -21,6 +21,8 @@ def rate_color(rate: int, units: str = '') -> str:
 def build_http_codes_distribution(http_codes_counter) -> str:
     codes_distribution = []
     total = sum(http_codes_counter.values())
+    if not total:
+        return '...detecting'
     for code in http_codes_counter.keys():
         count = http_codes_counter[code]
         percent = round(count * 100 / total)

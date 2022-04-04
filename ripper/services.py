@@ -34,8 +34,9 @@ def update_host_statuses(target: Target):
         if target.host_ip:
             target.health_check_manager.update_host_statuses()
     except:
-        pass
-    events.error(f'Host statuses update failed with check-host.net', target=target)
+        events.error(f'Host statuses update failed with check-host.net', target=target)
+    else:
+        events.error(f'Host statuses updated with check-host.net', target=target)
     return True
 
 
@@ -183,11 +184,11 @@ def main():
         arg_parser.print_usage()
 
     # Init Events Log
-    # TODO events journal should not be a singleton as it depends on args. Move it under the context!
-    log_size = getattr(args[0], 'log_size', DEFAULT_LOG_SIZE)
-    event_level = getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL)
     global events
-    events = EventsJournal(log_size=log_size, event_level=event_level)
+    # TODO events journal should not be a singleton as it depends on args. Move it under the context!
+    events = EventsJournal()
+    events.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
+    events.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
 
     _ctx = Context(args[0])
     go_home(_ctx)

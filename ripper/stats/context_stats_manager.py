@@ -85,8 +85,8 @@ class ContextStatsManager:
             box=box.HORIZONTALS,
             min_width=MIN_SCREEN_WIDTH,
             width=MIN_SCREEN_WIDTH,
-            # caption=CONTROL_CAPTION,
-            # caption_style='bold',
+            caption=CONTROL_CAPTION if not events.get_max_event_level() else None,
+            caption_style='bold',
         )
 
         details_table.add_column('Description')
@@ -121,6 +121,6 @@ class ContextStatsManager:
     def build_stats(self):
         """Create statistics from aggregated RAW Statistics data."""
         details_table = self.build_details_stats_table()
-        events_table = self.build_events_table()
+        events_table = self.build_events_table() if events.get_max_event_level() else None
         group = Group(details_table) if events_table is None else Group(details_table, events_table)
         return group

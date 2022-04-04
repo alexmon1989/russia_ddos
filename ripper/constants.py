@@ -38,7 +38,7 @@ https://github.com/alexmon1989/russia_ddos
 '''
 
 BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine'
-CONTROL_CAPTION = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}'
+CONTROL_CAPTION = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}\n'
 
 # ==== Error messages ====
 GETTING_SERVER_IP_ERR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'

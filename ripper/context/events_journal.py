@@ -45,6 +45,7 @@ class Event:
     def __init__(self, level: int, message: str, target: Target = None):
         self._level = level
         self._message = message
+        self._target = target
     
     def get_level_color(self):
         if self._level == EventLevel.warn:
@@ -56,10 +57,10 @@ class Event:
     def format_message(self):
         now = datetime.datetime.now().strftime(DATE_TIME_SHORT)
         thread_name = threading.current_thread().name.lower()
-        # self._target.url
         log_level_name = EventLevel.get_name_by_id(self._level)
         log_level_color = self.get_level_color()
-        return f'[dim][bold][cyan][{now}][/] [{log_level_color}]{log_level_name}[/] {self._message}'
+        locator = self._target.url if self._target is not None else 'global'
+        return f'[dim][bold][cyan][{now}][/]  [{log_level_color}]{log_level_name: >5}[/]  {locator}  {thread_name}  {self._message}'
 
 
 class EventsJournal(metaclass=Singleton):
@@ -67,13 +68,22 @@ class EventsJournal(metaclass=Singleton):
     _lock = None
     _queue: Queue = None
     _buffer: list[str] = None
-    _max_event_level: int = None
+    _max_event_level: int = EventLevel.none
 
-    def __init__(self, size: int = DEFAULT_LOG_SIZE, max_event_level_name: str = DEFAULT_LOG_LEVEL):
+    def __init__(self):
         self._lock = threading.Lock()
         self._queue = Queue()
+        self.set_log_size(DEFAULT_LOG_SIZE)
+        self.set_max_event_level(DEFAULT_LOG_LEVEL)
+    
+    def set_log_size(self, size):
         self._buffer = [''] * size
+    
+    def set_max_event_level(self, max_event_level_name: str):
         self._max_event_level = EventLevel.get_id_by_name(max_event_level_name)
+    
+    def get_max_event_level(self):
+        return self._max_event_level
 
     def get_log(self) -> list[str]:
         with self._lock:
