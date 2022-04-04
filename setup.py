@@ -18,8 +18,8 @@ setup(
     install_requires=required,
     package_data={
         'ripper': [
-            'headers.txt',
-            'useragents.txt',
+            'assets/headers.txt',
+            'assets/useragents.txt',
         ],
     },
     entry_points={

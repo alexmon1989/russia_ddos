@@ -47,10 +47,10 @@ jobs:
           python3 -m pip install pytest
           python3 -m pip install --upgrade pip -e .
 
-      - name: Minimalistic CLI check
-        shell: bash
+      - name: Fast attack test
+        if: runner.os == 'Linux'
         run: |
-          dripper --help
+          dripper -s https:/httpbin.org:443 -t 1 -m tcp-flood --dry-run
 
       - name: Run Tests
         run: python3 -m pytest tests/
@@ -122,3 +122,8 @@ jobs:
           tag: ${{ steps.get-version.outputs.version }}
           bodyFile: "./release-notes.md"
           allowUpdates: true
+
+      - name: Fast attack test using Docker
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux'
+        run: |
+          docker run -ti --rm alexmon1989/dripper:latest -s https:/httpbin.org:443 -t 1 -m tcp-flood --dry-run

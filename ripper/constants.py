@@ -1,9 +1,9 @@
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-VERSION = 'v2.3.0'
+VERSION = 'v2.3.1'
 USAGE = 'Usage: %prog [options] arg'
-EPILOG = 'Example: dripper -s tcp://192.168.0.1:80 -t 100'
+EPILOG = 'Example: dripper -s tcp://192.168.0.1:80 -t 100 -m tcp-flood'
 
 LOGO_COLOR = f'''[deep_sky_blue1]
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
