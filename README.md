@@ -148,6 +148,11 @@ Options:
   -e HTTP_METHOD, --http_method=HTTP_METHOD (default: GET)
   -o SOCKET_TIMEOUT, --socket_timeout=SOCKET_TIMEOUT (default: 10 without proxy, 20 with proxy)
                         Timeout in seconds for socket connection is seconds.
+  -d, --dry-run         Print formatted output without full script running.
+  --log-size=LOG_SIZE   Set the Events Log history frame length.
+  --log-level=EVENT_LEVEL
+                        Log level for events board. Supported levels: info,
+                        warn, error, none.
 
 Example: dripper -s http://192.168.0.1 -t 100
 ```
