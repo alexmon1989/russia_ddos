@@ -1,6 +1,5 @@
 import os
 import time
-
 from rich.console import Console
 
 from ripper.proxy_manager import ProxyManager
