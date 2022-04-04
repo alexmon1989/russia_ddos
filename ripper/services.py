@@ -185,9 +185,9 @@ def main():
     # Init Events Log
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
     log_size = getattr(args[0], 'log_size', DEFAULT_LOG_SIZE)
-    log_level = getattr(args[0], 'log_level', DEFAULT_LOG_LEVEL)
+    event_level = getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL)
     global events
-    events = EventsJournal(log_size=log_size, log_level=log_level)
+    events = EventsJournal(log_size=log_size, event_level=event_level)
 
     _ctx = Context(args[0])
     go_home(_ctx)

@@ -37,7 +37,7 @@ Please, make sure you are ANONYMOUS!
 https://github.com/alexmon1989/russia_ddos
 '''
 
-BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine\n'
+BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine'
 CONTROL_CAPTION = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}'
 
 # ==== Error messages ====

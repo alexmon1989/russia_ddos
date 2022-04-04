@@ -54,7 +54,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='log_size', type='int', default=DEFAULT_LOG_SIZE,
                       help='Set the Events Log history frame length.')
     parser.add_option('--log-level',
-                      dest='log_level', type='str', default=DEFAULT_LOG_LEVEL,
+                      dest='event_level', type='str', default=DEFAULT_LOG_LEVEL,
                       help='Log level for events board. Supported levels: info, warn, error, none.')
 
 

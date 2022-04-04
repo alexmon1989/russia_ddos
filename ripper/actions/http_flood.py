@@ -50,6 +50,7 @@ class HttpFlood(AttackMethod):
                 continue
             self._ctx.target.stats.connect.status_failed()
 
+    # TODO remove from flood class, status name is not part of flood program
     def _send_event_with_status(self, code: int):
         base = 'Checked Response status...'
         if code < 300:

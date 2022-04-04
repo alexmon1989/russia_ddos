@@ -85,8 +85,9 @@ class ContextStatsManager:
             box=box.HORIZONTALS,
             min_width=MIN_SCREEN_WIDTH,
             width=MIN_SCREEN_WIDTH,
-            caption=CONTROL_CAPTION,
-            caption_style='bold')
+            # caption=CONTROL_CAPTION,
+            # caption_style='bold',
+        )
 
         details_table.add_column('Description')
         details_table.add_column('Status')

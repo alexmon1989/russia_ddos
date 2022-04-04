@@ -5,46 +5,75 @@ from queue import Queue
 from ripper.constants import *
 from ripper.common import Singleton
 
-# ==== Events template ====
-
-INFO_TEMPLATE  = '[dim][bold][cyan][{0}][/] [blue reverse]{1:^7}[/] {2}'
-WARN_TEMPLATE  = '[dim][bold][cyan][{0}][/] [orange1 reverse]{1:^7}[/] {2}'
-ERROR_TEMPLATE = '[dim][bold][cyan][{0}][/] [red1 reverse]{1:^7}[/] {2}'
+Target = 'Target'
 
 
-class LogLevel:
+class EventLevel:
     none: int = 0
     error: int = 1
     warn: int = 2
     info: int = 3
 
     @staticmethod
-    def get_by_name(name: str) -> int:
+    def get_id_by_name(name: str) -> int:
         if name == 'none':
-            return LogLevel.none
+            return EventLevel.none
         if name == 'error':
-            return LogLevel.error
+            return EventLevel.error
         if name == 'warn':
-            return LogLevel.warn
+            return EventLevel.warn
         if name == 'info':
-            return LogLevel.info
+            return EventLevel.info
+    
+    @staticmethod
+    def get_name_by_id(id: int) -> str:
+        if id == EventLevel.none:
+            return 'none'
+        if id == EventLevel.error:
+            return 'error'
+        if id == EventLevel.warn:
+            return 'warn'
+        if id == EventLevel.info:
+            return 'info'
 
 
-def build_event(log_level: )
+class Event:
+    _level: int = EventLevel.none
+    _target: Target = None
+    _message: str = None
+
+    def __init__(self, level: int, message: str, target: Target = None):
+        self._level = level
+        self._message = message
+    
+    def get_level_color(self):
+        if self._level == EventLevel.warn:
+            return 'orange1 reverse'
+        if self._level == EventLevel.error:
+            return 'red1 reverse'
+        return 'blue reverse'
+
+    def format_message(self):
+        now = datetime.datetime.now().strftime(DATE_TIME_SHORT)
+        thread_name = threading.current_thread().name.lower()
+        # self._target.url
+        log_level_name = EventLevel.get_name_by_id(self._level)
+        log_level_color = self.get_level_color()
+        return f'[dim][bold][cyan][{now}][/] [{log_level_color}]{log_level_name}[/] {self._message}'
 
 
 class EventsJournal(metaclass=Singleton):
     """Collect and represent various logs and events."""
     _lock = None
-    _queue: Queue
-    _buffer: list[str]
-    _log_level: LogLevel = None
+    _queue: Queue = None
+    _buffer: list[str] = None
+    _max_event_level: int = None
 
-    def __init__(self, size: int = DEFAULT_LOG_SIZE, log_level: str = DEFAULT_LOG_LEVEL):
+    def __init__(self, size: int = DEFAULT_LOG_SIZE, max_event_level_name: str = DEFAULT_LOG_LEVEL):
         self._lock = threading.Lock()
         self._queue = Queue()
         self._buffer = [''] * size
-        self._log_level = LogLevel.get_by_name(log_level)
+        self._max_event_level = EventLevel.get_id_by_name(max_event_level_name)
 
     def get_log(self) -> list[str]:
         with self._lock:
@@ -54,26 +83,37 @@ class EventsJournal(metaclass=Singleton):
 
         return self._buffer
 
-    def info(self, message: str):
-        if self._log_level >= LogLevel.info:
-            self._push_event(INFO_TEMPLATE, 'info', message)
+    def info(self, message: str, target: Target = None):
+        if self._max_event_level >= EventLevel.info:
+            self._push_event(Event(
+                level=EventLevel.info,
+                message=message,
+                target=target,
+            ))
 
-    def warn(self, message: str):
-        if self._log_level >= LogLevel.warn:
-            self._push_event(WARN_TEMPLATE, 'warn', message)
+    def warn(self, message: str, target: Target = None):
+        if self._max_event_level >= EventLevel.warn:
+            self._push_event(Event(
+                level=EventLevel.warn,
+                message=message,
+                target=target,
+            ))
 
-    def error(self, message: str):
-        if self._log_level >= LogLevel.error:
-            self._push_event(ERROR_TEMPLATE, 'error', message)
+    def error(self, message: str, target: Target = None):
+        if self._max_event_level >= EventLevel.error:
+            self._push_event(Event(
+                level=EventLevel.error,
+                message=message,
+                target=target,
+            ))
 
-    def exception(self, ex):
-        self._push_event(ERROR_TEMPLATE, f'{type(ex).__name__}: {ex.__str__()[:128]}')
+    def exception(self, ex, target: Target = None):
+        self._push_event(Event(
+            level=EventLevel.error,
+            message=f'{type(ex).__name__}: {ex.__str__()[:128]}',
+            target=target,
+        ))
 
-    def _push_event(self, template: str, level: str, message: str):
+    def _push_event(self, event: Event):
         with self._lock:
-            now = datetime.datetime.now().strftime(DATE_TIME_SHORT)
-            event = template.format(
-                now,
-                level,
-                f'{threading.current_thread().name.lower():11} {message}')
-            self._queue.put(event)
+            self._queue.put(event.format_message())
