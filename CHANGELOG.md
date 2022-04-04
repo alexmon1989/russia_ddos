@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.3.0...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.3.1...HEAD)
+
+
+## [v2.3.1](https://github.com/alexmon1989/russia_ddos/compare/2.3.0...2.3.1)
+
+### Fixed
+- Fixed setup script and Docker builds
 
 
 ## [v2.3.0](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...2.3.0)
