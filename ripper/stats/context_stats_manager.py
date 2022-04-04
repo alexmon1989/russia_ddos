@@ -17,7 +17,7 @@ events_journal = EventsJournal()
 class ContextStatsManager:
     _ctx: Context = None
     """Context we are working with."""
-    
+
     interval_manager: TimeIntervalManager = None
 
     def __init__(self, _ctx: Context):
@@ -62,7 +62,7 @@ class ContextStatsManager:
         ]
 
         return full_stats
-    
+
     def build_target_rotation_header_details_stats(self) -> list[Row]:
         cnt = len(self._ctx.targets)
         if cnt < 2:
@@ -79,11 +79,8 @@ class ContextStatsManager:
 
     def build_details_stats_table(self) -> Table:
         details_table = Table(
-            title=LOGO_COLOR,
-            title_justify='center',
             style='bold',
             box=box.HORIZONTALS,
-            min_width=MIN_SCREEN_WIDTH,
             width=MIN_SCREEN_WIDTH,
             caption=CONTROL_CAPTION if not events_journal.get_max_event_level() else None,
             caption_style='bold',
@@ -100,9 +97,9 @@ class ContextStatsManager:
         for row in rows:
             if row.visible:
                 details_table.add_row(row.label, row.value, end_section=row.end_section)
-        
+
         return details_table
-    
+
     def build_events_table(self) -> Table:
         events_log = Table(
             box=box.SIMPLE,

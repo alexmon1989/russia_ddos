@@ -4,6 +4,10 @@ import sys
 import threading
 import time
 from base64 import b64decode
+
+from rich import box
+from rich.console import Console
+from rich.panel import Panel
 from rich.live import Live
 
 from ripper import common, arg_parser
@@ -29,7 +33,7 @@ def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
     if target.health_check_manager.is_in_progress or \
         not target.interval_manager.check_timer_elapsed(bucket=f'update_host_statuses_{target.url}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
-        return False   
+        return False
     try:
         if target.host_ip:
             target.health_check_manager.update_host_statuses()
@@ -166,7 +170,11 @@ def validate_input(args) -> bool:
 
 def render_statistics(_ctx: Context) -> None:
     """Show DRipper runtime statistics."""
-    with Live(_ctx.stats.build_stats(), vertical_overflow='visible', redirect_stderr=False) as live:
+    console = Console()
+    logo = Panel(LOGO_COLOR, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
+    console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
+
+    with Live(_ctx.stats.build_stats(), vertical_overflow='visible') as live:
         live.start()
         while True:
             time.sleep(0.5)
