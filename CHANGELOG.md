@@ -12,6 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Fixed
 - Fixed setup script and Docker builds
 
+### Added
+- Added support for multiple targets.
+- Threads are distributed uniformly between targets.
+- Irresponsive targets and their threads die in runtime.
+- Added support for the log-level argument.
+
+### Changed
+- Target-related stats are represented on pages. Pages are rotated automatically in 5 seconds intervals.
+- Refactored stats representation. Isolated target-related details builder.
+- Isolated time interval manager.
+
 
 ## [v2.3.0](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...2.3.0)
 
