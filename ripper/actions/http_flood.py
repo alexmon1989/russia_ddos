@@ -43,12 +43,43 @@ class HttpFlood(AttackMethod):
         with suppress(Exception), self.create_connection() as self._http_connect:
             self._http_connect.connect(self._target.hostip_port_tuple())
             self._target.stats.connect.status_success()
-            events.info('Creating HTTP connection...')
+            events.info('Creating HTTP connection...', target=self._target)
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break
                 continue
             self._ctx.target.stats.connect.status_failed()
+
+    def _send_event_with_status(self, code: int):
+        base = 'Checked Response status...'
+        if code < 300:
+            events.info(f'{base} {code}: Success', target=self._target)
+        elif 299 > code < 400:
+            events.warn(f'{base} {code}: Redirection', target=self._target)
+        elif code == 400:
+            events.warn(f'{base} {code}: Bad Request', target=self._target)
+        elif 400 > code <= 403:
+            events.warn(f'{base} {code}: Forbidden', target=self._target)
+        elif code == 404:
+            events.warn(f'{base} {code}: Not Found', target=self._target)
+        elif 404 > code < 408:
+            events.warn(f'{base} {code}: Not Acceptable or Not Allowed', target=self._target)
+        elif code == 408:
+            events.warn(f'{base} {code}: Request Timeout', target=self._target)
+        elif 408 > code < 429:
+            events.error(f'{base} {code}: Client Error', target=self._target)
+        elif code == 429:
+            events.error(f'{base} {code}: Too Many Requests', target=self._target)
+        elif 429 > code < 459:
+            events.error(f'{base} {code}: Client Error', target=self._target)
+        elif 460 >= code <= 463:
+            events.error(f'{base} {code}: AWS Load Balancer Error', target=self._target)
+        elif 499 > code <= 511:
+            events.error(f'{base} {code}: Server Error', target=self._target)
+        elif 520 >= code <= 530:
+            events.error(f'{base} {code}: CloudFlare Reverse Proxy Error', target=self._target)
+        else:
+            events.error(f'{base} {code}: Custom Error', target=self._target)
 
     def check_response_status(self, payload: bytes):
         with suppress(Exception):
@@ -62,38 +93,6 @@ class HttpFlood(AttackMethod):
                 self._target.stats.http_stats[status] += 1
                 self._send_event_with_status(status)
 
-    @staticmethod
-    def _send_event_with_status(code: int):
-        base = 'Checked Response status...'
-        if code < 300:
-            events.info(f'{base} {code}: Success')
-        elif 299 > code < 400:
-            events.warn(f'{base} {code}: Redirection')
-        elif code == 400:
-            events.warn(f'{base} {code}: Bad Request')
-        elif 400 > code <= 403:
-            events.warn(f'{base} {code}: Forbidden')
-        elif code == 404:
-            events.warn(f'{base} {code}: Not Found')
-        elif 404 > code < 408:
-            events.warn(f'{base} {code}: Not Acceptable or Not Allowed')
-        elif code == 408:
-            events.warn(f'{base} {code}: Request Timeout')
-        elif 408 > code < 429:
-            events.error(f'{base} {code}: Client Error')
-        elif code == 429:
-            events.error(f'{base} {code}: Too Many Requests')
-        elif 429 > code < 459:
-            events.error(f'{base} {code}: Client Error')
-        elif 460 >= code <= 463:
-            events.error(f'{base} {code}: AWS Load Balancer Error')
-        elif 499 > code <= 511:
-            events.error(f'{base} {code}: Server Error')
-        elif 520 >= code <= 530:
-            events.error(f'{base} {code}: CloudFlare Reverse Proxy Error')
-        else:
-            events.error(f'{base} {code}: Custom Error')
-
     def send(self, sock: socket) -> bool:
         payload = self.payload().encode('utf-8')
         try:
@@ -103,7 +102,7 @@ class HttpFlood(AttackMethod):
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
             self._target.stats.connect.status_failed()
-            events.exception(e)
+            events.exception(e, target=self._target)
         else:
             self._target.stats.packets.status_sent(sent)
             self._proxy.report_success() if self._proxy is not None else 0

@@ -50,7 +50,7 @@ class HttpBypass(HttpFlood):
         }
         with suppress(Exception), create_scraper(browser=browser) as self._http_connect:
             self._target.stats.connect.status_success()
-            events.info('Creating CloudFlare scraper connection.')
+            events.info('Creating CloudFlare scraper connection.', target=self._target)
             while self.send(self._http_connect):
                 if self._ctx.dry_run:
                     break
@@ -65,11 +65,12 @@ class HttpBypass(HttpFlood):
                 self._target.stats.http_stats[response.status_code] += 1
                 self.check_rate_limit(response)
         except RateLimitException as e:
-            events.warn(f'{type(e).__name__} {e.__str__()}, sleep for 3 sec')
+            events.warn(
+                f'{type(e).__name__} {e.__str__()}, sleep for 3 sec', target=self._target)
             time.sleep(3.01)
             return True
         except Exception as e:
-            events.exception(e)
+            events.exception(e, target=self._target)
         else:
             sent_bytes = self._size_of_request(response.request)
             self._target.stats.packets.status_sent(sent_bytes)

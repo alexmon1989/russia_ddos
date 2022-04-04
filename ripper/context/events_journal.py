@@ -1,22 +1,36 @@
 import datetime
 import threading
 from queue import Queue
-from enum import Enum
 
-from ripper.constants import DATE_TIME_SHORT
+from ripper.constants import *
 from ripper.common import Singleton
 
 # ==== Events template ====
+
 INFO_TEMPLATE  = '[dim][bold][cyan][{0}][/] [blue reverse]{1:^7}[/] {2}'
 WARN_TEMPLATE  = '[dim][bold][cyan][{0}][/] [orange1 reverse]{1:^7}[/] {2}'
 ERROR_TEMPLATE = '[dim][bold][cyan][{0}][/] [red1 reverse]{1:^7}[/] {2}'
 
 
-class LogLevel(Enum):
-    none = 0
-    error = 1
-    warn = 2
-    info = 3
+class LogLevel:
+    none: int = 0
+    error: int = 1
+    warn: int = 2
+    info: int = 3
+
+    @staticmethod
+    def get_by_name(name: str) -> int:
+        if name == 'none':
+            return LogLevel.none
+        if name == 'error':
+            return LogLevel.error
+        if name == 'warn':
+            return LogLevel.warn
+        if name == 'info':
+            return LogLevel.info
+
+
+def build_event(log_level: )
 
 
 class EventsJournal(metaclass=Singleton):
@@ -26,11 +40,11 @@ class EventsJournal(metaclass=Singleton):
     _buffer: list[str]
     _log_level: LogLevel = None
 
-    def __init__(self, size: int = 5, log_level: LogLevel = LogLevel.info):
+    def __init__(self, size: int = DEFAULT_LOG_SIZE, log_level: str = DEFAULT_LOG_LEVEL):
         self._lock = threading.Lock()
         self._queue = Queue()
         self._buffer = [''] * size
-        self._log_level = log_level
+        self._log_level = LogLevel.get_by_name(log_level)
 
     def get_log(self) -> list[str]:
         with self._lock:

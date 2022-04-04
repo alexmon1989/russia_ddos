@@ -35,7 +35,7 @@ def update_host_statuses(target: Target):
             target.health_check_manager.update_host_statuses()
     except:
         pass
-    events.error('Host statuses update failed with check-host.net')
+    events.error(f'Host statuses update failed with check-host.net', target=target)
     return True
 
 
@@ -89,7 +89,7 @@ def refresh_context_details(_ctx: Context) -> None:
     for (target_idx, target) in enumerate(_ctx.targets):
         # TODO Merge validators
         if not target.validate_attack() or not target.stats.packets.validate_connection(SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC):
-            events.error(common.get_no_successful_connection_die_msg())
+            events.error(common.get_no_successful_connection_die_msg(), target=target)
             if len(_ctx.targets) < 2:
                 exit(common.get_no_successful_connection_die_msg())
             else:
@@ -181,6 +181,13 @@ def main():
 
     if len(sys.argv) < 2 or not validate_input(args[0]):
         arg_parser.print_usage()
+
+    # Init Events Log
+    # TODO events journal should not be a singleton as it depends on args. Move it under the context!
+    log_size = getattr(args[0], 'log_size', DEFAULT_LOG_SIZE)
+    log_level = getattr(args[0], 'log_level', DEFAULT_LOG_LEVEL)
+    global events
+    events = EventsJournal(log_size=log_size, log_level=log_level)
 
     _ctx = Context(args[0])
     go_home(_ctx)
