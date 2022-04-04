@@ -1,7 +1,10 @@
 FROM python:3.10-alpine
 ENV PYTHONUNBUFFERED=1
 
+COPY ./ /app
+WORKDIR /app
+
 RUN apk add curl git && \
-    pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git
+    pip install --upgrade pip -e .
 
 ENTRYPOINT ["dripper"]
