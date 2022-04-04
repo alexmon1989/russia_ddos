@@ -60,8 +60,8 @@ class DescribeHealthCheck:
         # state should be updated
         assert distribution == health_check_manager.host_statuses
         assert not health_check_manager.is_in_progress
-        assert health_check_manager.last_host_statuses_update > before_execution
-        assert health_check_manager.last_host_statuses_update < after_execution
+        assert health_check_manager.last_host_statuses_update >= before_execution
+        assert health_check_manager.last_host_statuses_update <= after_execution
 
     @pytest.mark.parametrize('args_data, url', [
         ({'target_uri': 'https://google.com', 'health_check_method': 'http'}, 'https://check-host.net/check-http?host=google.com'),
