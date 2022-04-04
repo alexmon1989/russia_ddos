@@ -20,7 +20,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       action='append',
                       help='Attack target in {scheme}://{hostname}[:{port}][{path}] format. Multiple targets allowed')
     parser.add_option('-m', '--method',
-                      dest='attack-method', type='str',
+                      dest='attack_method', type='str',
                       help=f'Attack method: {", ".join(attack_method_labels)}')
     parser.add_option('-e', '--http-method',
                       dest='http_method', type='str', default=ARGS_DEFAULT_HTTP_ATTACK_METHOD,
