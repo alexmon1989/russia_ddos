@@ -14,8 +14,8 @@ class DescribeContext:
     )
 
     @pytest.mark.parametrize('actual_ip, expected_result', [
-        ('127.0.0.1', '127.*.*.*'),
-        ('42.199.100.200', '42.*.*.*'),
+        ('127.0.0.1', '127.***.***.***'),
+        ('42.199.100.200', '42.***.***.***'),
         ('42', '42'),
         # ('...detecting', '...detecting')
     ])

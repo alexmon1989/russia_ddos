@@ -5,14 +5,14 @@ from ripper.stats.utils import build_http_codes_distribution, rate_color
 
 class DescribeStatsUtils:
     @pytest.mark.parametrize('actual, expected', [
-        (0,  '[red]0[default]'),
-        (15, '[red]15[default]'),
-        (35, '[dark_orange]35[default]'),
-        (55, '[orange1]55[default]'),
-        (65, '[orange1]65[default]'),
-        (75, '[yellow4]75[default]'),
-        (85, '[yellow4]85[default]'),
-        (95, '[green1]95[default]'),
+        (0,  '[red]0[/]'),
+        (15, '[red]15[/]'),
+        (35, '[dark_orange]35[/]'),
+        (55, '[orange1]55[/]'),
+        (65, '[orange1]65[/]'),
+        (75, '[yellow4]75[/]'),
+        (85, '[yellow4]85[/]'),
+        (95, '[green1]95[/]'),
     ])
     def it_applies_different_colors_depending_on_rate(self, actual, expected):
         assert rate_color(actual) == expected

@@ -1,6 +1,6 @@
 import pytest as pytest
 
-from ripper.common import convert_size
+from ripper.common import convert_size, detect_cloudflare
 
 
 class DescribeCommonMethods:
@@ -23,3 +23,6 @@ class DescribeCommonMethods:
     ])
     def it_has_convert_size_with_units(self, actual, units, expected):
         assert convert_size(actual, units) == expected
+
+    # def it_can_check_cloudflare_protection(self):
+    #     assert detect_cloudflare('https://check-host.net') is True

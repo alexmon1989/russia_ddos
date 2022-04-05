@@ -40,6 +40,7 @@ class DescribeHealthCheck:
             assert actual[key] == value
 
     # slow
+    @pytest.mark.skip(reason="Use this test only for dev, it can fail because depends from external service.")
     def it_can_fetch_host_statuses(self):
         args = Args(
             # TODO expect target_uri in args as well
