@@ -1,4 +1,5 @@
 import datetime
+import gzip
 import http.client
 import ipaddress
 import re
@@ -138,23 +139,32 @@ def get_country_by_ipv4(host_ip: str) -> str:
     return country
 
 
-def check_cloud_flare_protection(link: str, user_agents: list) -> bool:
-    """Check if the site is under CloudFlare protection."""
+def detect_cloudflare(uri: str):
+    """Check response and detect if the host protected by CloudFlare."""
+    parsed_uri = urllib.request.urlparse(uri)
+    domain = '{uri.netloc}'.format(uri=parsed_uri)
+    scheme = '{uri.scheme}'.format(uri=parsed_uri)
 
-    parsed_uri = urllib.request.urlparse(link)
-    domain = "{uri.netloc}".format(uri=parsed_uri)
+    check = http.client.HTTPSConnection(domain, timeout=3) if scheme == 'https' \
+        else http.client.HTTPConnection(domain, timeout=3)
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Mobile/12H143',
+        'Origin': 'https://google.com',
+        'Referer': f'https://www.google.com/search?q={domain}&sourceid=chrome&ie=UTF-8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-us,en;q=0.5',
+        'Accept-Encoding': 'gzip,deflate',
+        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+        'Connection': 'keep-alive',
+        'Content-Type': 'text/html'
+    }
     try:
-        origin = socket.gethostbyname(domain)
-        conn = http.client.HTTPSConnection('www.cloudflare.com', timeout=1)
-        headers = {
-            'Cookie': '__cf_bm=OnRKNQTGoxsvaPnhUpTwRi4UGosW61HHYDZ0KratigY-1646567348-0-AXoOT+WpLyPZuVwGPE2Zb1FxFR2oB18wPkJE1UUXfAEbJDKtsZB0X3O8ED29koUfldx63GwHg/sm4TtEkk4hBL3ET83DUUTWCKrb6Z0ZSlcP',
-            'User-Agent': str(random.choice(user_agents))
-        }
-        conn.request('GET', '/ips-v4', '', headers)
-        iprange = conn.getresponse().read().decode('utf-8')
-        ipv4 = [row.rstrip() for row in iprange.splitlines()]
-        for i in range(len(ipv4)):
-            if ipaddress.ip_address(origin) in ipaddress.ip_network(ipv4[i]):
+        check.request(method='GET', url='/', headers=headers)
+        gzipped = check.getresponse().read()
+        response = gzip.decompress(gzipped).decode('utf-8')
+        for tag in CLOUDFLARE_TAGS:
+            if response.__contains__(tag):
                 return True
     except:
         return False

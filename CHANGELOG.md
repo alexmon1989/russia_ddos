@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Isolated time interval manager.
 - Improved error messages and description about error when validates input arguments.
 
+### Fixed
+- Fixed CloudFlare detection logic.
+
 
 ## [v2.3.0](https://github.com/alexmon1989/russia_ddos/compare/2.2.0...2.3.0)
 

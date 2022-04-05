@@ -90,3 +90,11 @@ DEFAULT_LOG_SIZE = 5
 # ==== Sockets ====
 PROXY_MAX_FAILURE_RATIO = 0.8
 PROXY_MIN_VALIDATION_REQUESTS = 8
+
+
+CLOUDFLARE_TAGS = [
+    'cloudflare',
+    'cf-spinner-please-wait',
+    'we are checking your browser...',
+    'Cloudflare Ray ID'
+]

@@ -109,20 +109,18 @@ def refresh_context_details(_ctx: Context) -> None:
 ###############################################
 # Target+Context
 ###############################################
-def connect_host(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
+def check_host_connection(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
+    """Check connection to Host before start script."""
     target.stats.connect.set_state_in_progress()
-    try:
-        sock = _ctx.sock_manager.create_tcp_socket(proxy)
-        sock.connect((target.host, target.port))
-    except:
-        res = False
-        target.stats.connect.failed += 1
-    else:
-        res = True
-        target.stats.connect.success += 1
-        sock.close()
-    target.stats.connect.set_state_is_connected()
-    return res
+    with _ctx.sock_manager.create_tcp_socket(proxy) as http:
+        try:
+            http.connect(target.hostip_port_tuple())
+        except:
+            res = False
+        else:
+            target.stats.connect.set_state_is_connected()
+            res = True
+        return res
 
 
 def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
@@ -131,7 +129,7 @@ def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO
     while i < retry_cnt:
         _ctx.logger.log(
             f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
-        if connect_host(target=target, _ctx=_ctx):
+        if check_host_connection(target=target, _ctx=_ctx):
             break
         time.sleep(timeout_secs)
         i += 1
