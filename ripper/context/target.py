@@ -1,11 +1,17 @@
+import time
 from typing import Tuple
 from urllib.parse import urlparse
 
 from ripper.headers_provider import HeadersProvider
-from ripper.health_check_manager import HealthCheckManager
+from ripper.health_check_manager import HealthCheckManager, HealthStatus
 from ripper import common
 from ripper.constants import *
-from ripper.context.stats import Statistic
+from ripper.stats.target_stats_manager import TargetStatsManager
+from ripper.context.events_journal import EventsJournal
+from ripper.time_interval_manager import TimeIntervalManager
+
+Attack = 'Attack'
+events_journal = EventsJournal()
 
 
 def default_scheme_port(scheme: str):
@@ -36,10 +42,14 @@ class Target:
     """Current attack method."""
     http_method: str
     """HTTP method used in HTTP packets"""
-
+    
+    attack_threads: list[Attack] = None
+    """Attack-related threads."""
+    
     health_check_manager: HealthCheckManager = None
+    interval_manager: TimeIntervalManager = None
 
-    statistic: Statistic = Statistic()
+    stats: TargetStatsManager = None
     """All the statistics collected separately by protocols and operations."""
 
     @staticmethod
@@ -60,9 +70,10 @@ class Target:
         return None
 
     def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD):
+        self.attack_threads = []
         self.http_method = http_method
-
         headers_provider = HeadersProvider()
+        self.interval_manager = TimeIntervalManager()
 
         parts = urlparse(target_uri)
         self.scheme = parts.scheme
@@ -77,8 +88,13 @@ class Target:
         self.country = common.get_country_by_ipv4(self.host_ip)
         self.is_cloud_flare_protection = common.check_cloud_flare_protection(self.host, headers_provider.user_agents)
 
-        self.health_check_manager = HealthCheckManager(target=self)
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
+
+        self.health_check_manager = HealthCheckManager(target=self)
+        self.stats = TargetStatsManager(target=self)
+
+    def add_attack_thread(self, attack: Attack):
+        self.attack_threads.append(attack)
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
         return (self.host_ip, self.port)
@@ -87,14 +103,76 @@ class Target:
         """Validates target."""
         if self.host_ip is None or not common.is_ipv4(self.host_ip):
             raise Exception(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
+        # XXX Should we call validate attack here as well?
         return True
 
     def cloudflare_status(self) -> str:
         """Get human-readable status for CloudFlare target HOST protection."""
         return 'Protected' if self.is_cloud_flare_protection else 'Not protected'
 
+    @property
     def url(self) -> str:
         """Get fully qualified URI for target HOST - schema://host:port"""
         http_protocol = 'https://' if self.port == 443 else 'http://'
 
         return f"{http_protocol}{self.host}:{self.port}{self.http_path}"
+
+    def stop_attack_threads(self):
+        for attack in self.attack_threads:
+            attack.stop()
+
+    ###############################################
+    # Connection validators
+    ###############################################
+    def validate_attack(self) -> bool:
+        """
+        Checks if attack is valid.
+        Attack is valid if target accepted traffic within
+        last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
+        :return: True if valid.
+        """
+        if self.health_check_manager.status == HealthStatus.dead:
+            return False
+        if self.attack_method == 'tcp':
+            return self.check_successful_tcp_attack()
+        return self.check_successful_connections()
+
+    def check_successful_connections(self) -> bool:
+        """
+        Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
+        Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+        """
+        now_ns = time.time_ns()
+        lower_bound = max(self.interval_manager.get_start_time_ns(),
+                        self.stats.connect.last_check_time)
+        diff_sec = common.ns2s(now_ns - lower_bound)
+
+        if self.stats.connect.success == self.stats.connect.success_prev:
+            if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+                events_journal.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
+                return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+        else:
+            self.stats.connect.last_check_time = now_ns
+            self.stats.connect.sync_success()
+
+        return True
+
+    def check_successful_tcp_attack(self) -> bool:
+        """
+        Checks if there are changes in sent bytes count.
+        Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
+        """
+        now_ns = time.time_ns()
+        lower_bound = max(self.interval_manager.get_start_time_ns(),
+                        self.stats.packets.connections_check_time)
+        diff_sec = common.ns2s(now_ns - lower_bound)
+
+        if self.stats.packets.total_sent == self.stats.packets.total_sent:
+            if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
+                events_journal.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
+
+                return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
+        else:
+            self.stats.packets.connections_check_time = now_ns
+
+        return True

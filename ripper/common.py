@@ -17,6 +17,11 @@ from ripper.constants import *
 IPv4_PATTERN = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
 
 
+def get_no_successful_connection_die_msg() -> str:
+    return f"There were no successful connections for more " \
+           f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
+           f"Your attack is ineffective."
+
 def read_file_lines(filename: str) -> list[str]:
     """Read string from fs or http"""
     if filename.startswith('http'):
@@ -75,16 +80,15 @@ def ns2s(time_nano: int):
     return time_nano / 1000000 / 1000
 
 
+def s2ns(time_seconds: int):
+    return int(time_seconds * 1000000 * 1000)
+
+
 def format_dt(dt: datetime, fmt=DATE_TIME_FULL) -> str:
     """Convert datetime to string using specified format pattern."""
     if dt is None:
         return ''
     return dt.strftime(fmt)
-
-
-def is_my_ip_changed(my_start_ip: str, my_current_ip: str) -> bool:
-    """Check if my IPv4 starting address wasn't changed during script run."""
-    return my_start_ip != my_current_ip
 
 
 def is_ipv4(ip: str) -> bool:

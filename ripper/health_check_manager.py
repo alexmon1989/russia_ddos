@@ -7,9 +7,9 @@ import gzip
 import time
 import datetime
 from collections import defaultdict
-from urllib import request
+from enum import Enum
 
-from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
+from ripper.constants import *
 from ripper.headers_provider import HeadersProvider
 
 # Prepare static patterns once at start.
@@ -79,11 +79,33 @@ def count_host_statuses(distribution) -> dict[int]:
     return host_statuses
 
 
+class HealthStatus(Enum):
+    alive = 'alive'
+    undefined = 'undefined'
+    dead = 'dead'
+    start_pending = 'start_pending'
+
+
+class AvailabilityDistribution:
+    failed: int = None
+    succeeded: int = None
+    total: int = None
+
+    def __init__(self, failed: int, succeeded: int, total: int):
+        self.failed = failed
+        self.succeeded = succeeded
+        self.total = total
+    
+    @property
+    def availability_percentage(self):
+        return round(100 * self.succeeded / self.total)
+
+
 class HealthCheckManager:
     """Tracks hosts availability state using check-host.net."""
     headers_provider: HeadersProvider = None
     connections_check_time: int
-    fetching_host_statuses_in_progress: bool = False
+    is_in_progress: bool = False
     last_host_statuses_update: datetime = None
     host_statuses = {}
 
@@ -123,32 +145,37 @@ class HealthCheckManager:
         path = f'/check-{self.health_check_method}'
         return f'https://check-host.net{path}?host={host}'
 
-    def get_health_status(self):
-        if self.last_host_statuses_update is None or len(self.host_statuses.values()) == 0:
-            return f'...detecting ({self.health_check_method.upper()} health check)'
+    @property
+    def is_pending(self) -> bool:
+        return self.is_in_progress or self.last_host_statuses_update is None or sum(self.host_statuses.values()) < 1
+    
+    @property
+    def availability_distribution(self) -> AvailabilityDistribution:
+        failed = self.host_statuses[HOST_FAILED_STATUS] if HOST_FAILED_STATUS in self.host_statuses else 0
+        succeeded = self.host_statuses[HOST_SUCCESS_STATUS] if HOST_SUCCESS_STATUS in self.host_statuses else 0
+        total = sum(self.host_statuses.values())
+        return AvailabilityDistribution(
+            failed=failed,
+            succeeded=succeeded,
+            total=total,
+        )
+    
+    @property
+    def status(self) -> HealthStatus:
+        if self.is_in_progress and not self.last_host_statuses_update:
+            return HealthStatus.start_pending
+        avd = self.availability_distribution
+        if avd.total < 1:
+            return HealthStatus.undefined
+        if avd.availability_percentage < MIN_ALIVE_AVAILABILITY_PERCENTAGE:
+            return HealthStatus.dead
+        return HealthStatus.alive
 
-        failed_cnt = 0
-        succeeded_cnt = 0
-        if HOST_FAILED_STATUS in self.host_statuses:
-            failed_cnt = self.host_statuses[HOST_FAILED_STATUS]
-        if HOST_SUCCESS_STATUS in self.host_statuses:
-            succeeded_cnt = self.host_statuses[HOST_SUCCESS_STATUS]
-
-        total_cnt = failed_cnt + succeeded_cnt
-        if total_cnt < 1:
-            return
-
-        availability_percentage = round(100 * succeeded_cnt / total_cnt)
-        accessible_message = f'Accessible in {succeeded_cnt} of {total_cnt} zones ({availability_percentage}%)'
-        if availability_percentage < 50:
-            accessible_message += f'\n[orange1]It should be dead. Consider another target!'
-
-        return accessible_message
-
-    def fetch_host_statuses(self) -> dict:
+    def update_host_statuses(self) -> dict:
         """Fetches regional availability statuses."""
-        statuses = {}
         with self._lock:
+            self.is_in_progress = True
+            current_host_statuses = {}
             try:
                 body = fetch_zipped_body(self.request_url)
                 # request_code is some sort of trace_id which is provided on every request to master node
@@ -156,12 +183,15 @@ class HealthCheckManager:
                 # it takes time to poll all information from slave nodes
                 time.sleep(5)
                 # to prevent loop, do not wait for more than 30 seconds
-                for i in range(0, 5):
+                for _ in range(5):
                     time.sleep(5)
                     resp_data = json.loads(fetch_zipped_body(f'https://check-host.net/check_result/{request_code}'))
-                    statuses = count_host_statuses(resp_data)
-                    if HOST_IN_PROGRESS_STATUS not in statuses:
-                        return statuses
+                    current_host_statuses = count_host_statuses(resp_data)
+                    if HOST_IN_PROGRESS_STATUS not in current_host_statuses:
+                        break
             except:
                 pass
-        return statuses
+            self.is_in_progress = False
+            self.host_statuses = current_host_statuses
+            self.last_host_statuses_update = datetime.datetime.now()
+            return current_host_statuses

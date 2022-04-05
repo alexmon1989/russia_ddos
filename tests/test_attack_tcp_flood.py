@@ -4,15 +4,17 @@ from collections import namedtuple
 from ripper.actions.tcp_flood import TcpFlood
 from ripper.context.context import Context
 
-Args = namedtuple('Args', 'target')
+Args = namedtuple('Args', 'targets')
 
 
 class DescribeTcpFloodAttackMethod:
     def it_has_correct_name(self):
-        ctx = Context(args=Args(
-            target='tcp://localhost',
-        ))
-        tcp_flood_am = TcpFlood(ctx, ctx.target)
+        args = Args(
+            targets=['tcp://localhost'],
+        )
+        ctx = Context(args)
+        ctx.__init__(args)
+        tcp_flood_am = TcpFlood(ctx, ctx.targets[0])
         assert tcp_flood_am.name == 'TCP Flood'
         assert tcp_flood_am.label == 'tcp-flood'
 

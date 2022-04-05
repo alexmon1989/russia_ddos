@@ -108,6 +108,54 @@ We recommend to use `PowerShell` for Windows users to run the script, Linux/macO
 
 Run `dripper --help` to see detailed params description.
 
+```bash
+
+██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
+██╔══██╗██╔══██║██║██╔══██╗██╔══██╗██╔════╝██╔══██║
+██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
+██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
+██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
+                                           v2.0.0
+
+It is the end user's responsibility to obey all applicable laws.
+It is just like a server testing script and Your IP is visible.
+
+Please, make sure you are ANONYMOUS!
+
+Usage: dripper [options] arg
+
+Options:
+  -h, --help            show this help message and exit
+  -s TARGET, --target=TARGET
+                        Attack target in {scheme}://{hostname}[:{port}][{path}] format. Multiple targets allowed.
+  -t THREADS_COUNT, --threads=THREADS_COUNT (default: 100)
+                        Threads count.
+  -r RANDOM_PACKET_LEN, --random_len=RANDOM_PACKET_LEN (default: 1)
+                        Send random packets with random length. Turn on: 1, turn off: 0.
+  -l MAX_RANDOM_PACKET_LEN, --max_random_packet_len=MAX_RANDOM_PACKET_LEN
+                        Max random packets length (default: 48 for udp, 1000 for tcp, 0 for http).
+  -m ATTACK_METHOD, --method=ATTACK_METHOD
+                        Attack method: udp-flood, tcp-flood, http-flood. Could be auto-detected based on the scheme (protocol) of the target.
+  -y FILENAME, --proxy_list=FILENAME
+                        File (fs or http/https) with proxies in ip:port:username:password or ip:port line format.
+                        Proxies will be ignored in udp attack!
+                        Examples: proxylist.txt, https://proxies.com/fhjhajkdashdja
+  -k PROXY_TYPE, --proxy_type=PROXY_TYPE (default socks5)
+                        Type of proxy to work with. Supported types: socks5, socks4, http.
+  -c STATE, --health_check=STATE (default: 1)
+                        Controls health check availability. Turn on: 1, turn off: 0.
+  -e HTTP_METHOD, --http_method=HTTP_METHOD (default: GET)
+  -o SOCKET_TIMEOUT, --socket_timeout=SOCKET_TIMEOUT (default: 10 without proxy, 20 with proxy)
+                        Timeout in seconds for socket connection is seconds.
+  -d, --dry-run         Print formatted output without full script running.
+  --log-size=LOG_SIZE   Set the Events Log history frame length.
+  --log-level=EVENT_LEVEL
+                        Log level for events board. Supported levels: info,
+                        warn, error, none.
+
+Example: dripper -s http://192.168.0.1 -t 100
+```
 
 ## How to Run
 

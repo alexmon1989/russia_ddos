@@ -1,5 +1,5 @@
 import threading
-from threading import Thread
+from threading import Thread, Event
 
 from ripper.actions.attack_method import AttackMethod
 from ripper.actions.http_bypass import HttpBypass
@@ -12,7 +12,7 @@ from ripper.context.events_journal import EventsJournal
 Context = 'Context'
 Target = 'Target'
 
-Events = EventsJournal()
+events_journal = EventsJournal()
 
 
 attack_methods: list[AttackMethod] = [
@@ -25,39 +25,47 @@ attack_methods: list[AttackMethod] = [
 attack_method_labels: list[str] = list(map(lambda am: am.label, attack_methods))
 
 
-def attack_method_factory(context: Context):
-    target = context.target
+def attack_method_factory(_ctx: Context, target: Target):
     attack_method_name = target.attack_method
-    Events.info(f'Set attack method to {target.attack_method}')
+    # events_journal.info(f'Set attack method to {target.attack_method}', target=target)
     if attack_method_name == 'udp-flood':
-        return UdpFlood(target, context)
+        return UdpFlood(target=target, _ctx=_ctx)
     elif attack_method_name == 'http-flood':
-        return HttpFlood(target, context)
+        return HttpFlood(target=target, _ctx=_ctx)
     elif attack_method_name == 'tcp-flood':
-        return TcpFlood(target, context)
+        return TcpFlood(target=target, _ctx=_ctx)
     elif attack_method_name == 'http-bypass':
-        return HttpBypass(target, context)
+        return HttpBypass(target=target, _ctx=_ctx)
     # Dangerous, may lead to exception
     return None
 
 
 class Attack(Thread):
     """This class creates threads with specified attack method."""
-    _method: str
-    """Attack method."""
     _ctx: Context
-    """Context to collect Statistic."""
+    target: Context
+    stop_event: Event = None
 
-    def __init__(self, context: Context = None):
+    def __init__(self, _ctx: Context, target: Target):
+        """
+        :param target: Target IPv4 address and destination port.
+        :param method: Attack method.
+        """
         Thread.__init__(self, daemon=True)
-        self._ctx = context
+        self._ctx = _ctx
+        self.target = target
+        self.target.add_attack_thread(self)
+        self.stop_event = threading.Event()
+    
+    def stop(self):
+        self.stop_event.set()
 
     def run(self):
-        runner = attack_method_factory(self._ctx)
+        runner = attack_method_factory(target=self.target, _ctx=self._ctx)
 
         if self._ctx.dry_run:
             runner()
             exit(0)
 
-        while not threading.Event().is_set():
+        while not self.stop_event.is_set():
             runner()

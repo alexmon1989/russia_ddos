@@ -1,6 +1,6 @@
 import pytest as pytest
 
-from ripper.context.stats import PacketsStats
+from ripper.stats.packets_stats import PacketsStats
 
 
 class DescribeStats:
