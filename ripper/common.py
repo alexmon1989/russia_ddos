@@ -1,7 +1,6 @@
 import datetime
 import gzip
 import http.client
-import ipaddress
 import re
 import socket
 import string

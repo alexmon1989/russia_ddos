@@ -24,7 +24,7 @@ class EventLevel:
             return EventLevel.warn
         if name == 'info':
             return EventLevel.info
-    
+
     @staticmethod
     def get_name_by_id(id: int) -> str:
         if id == EventLevel.none:
@@ -46,13 +46,13 @@ class Event:
         self._level = level
         self._message = message
         self._target = target
-    
+
     def get_level_color(self):
         if self._level == EventLevel.warn:
-            return 'orange1 reverse'
+            return 'bold orange1 reverse'
         if self._level == EventLevel.error:
-            return 'red1 reverse'
-        return 'blue reverse'
+            return 'bold red1 reverse'
+        return 'bold blue reverse'
 
     def format_message(self):
         now = datetime.datetime.now().strftime(DATE_TIME_SHORT)
@@ -60,7 +60,7 @@ class Event:
         log_level_name = EventLevel.get_name_by_id(self._level)
         log_level_color = self.get_level_color()
         locator = self._target.url if self._target is not None else 'global'
-        return f'[dim][bold][cyan][{now}][/]  [{log_level_color}]{log_level_name: >5}[/]  {locator}  {thread_name}  {self._message}'
+        return f'[dim][bold][cyan][{now}][/]  [{log_level_color}]{log_level_name:^7}[/] {locator} {thread_name:11} {self._message}'
 
 
 class EventsJournal(metaclass=Singleton):
@@ -75,13 +75,13 @@ class EventsJournal(metaclass=Singleton):
         self._queue = Queue()
         self.set_log_size(DEFAULT_LOG_SIZE)
         self.set_max_event_level(DEFAULT_LOG_LEVEL)
-    
+
     def set_log_size(self, size):
         self._buffer = [''] * size
-    
+
     def set_max_event_level(self, max_event_level_name: str):
         self._max_event_level = EventLevel.get_id_by_name(max_event_level_name)
-    
+
     def get_max_event_level(self):
         return self._max_event_level
 

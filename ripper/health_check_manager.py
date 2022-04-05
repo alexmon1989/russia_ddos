@@ -9,13 +9,17 @@ import datetime
 from collections import defaultdict
 from enum import Enum
 
+from ripper.context.events_journal import EventsJournal
 from ripper.constants import *
 from ripper.headers_provider import HeadersProvider
 
 # Prepare static patterns once at start.
 STATUS_PATTERN = re.compile(r"get_check_results\(\n* *'([^']+)")
+
 # Forward ref
 Target = 'Target'
+
+events_journal = EventsJournal()
 
 
 def classify_host_status(node_response):
@@ -95,7 +99,7 @@ class AvailabilityDistribution:
         self.failed = failed
         self.succeeded = succeeded
         self.total = total
-    
+
     @property
     def availability_percentage(self):
         return round(100 * self.succeeded / self.total)
@@ -148,7 +152,7 @@ class HealthCheckManager:
     @property
     def is_pending(self) -> bool:
         return self.is_in_progress or self.last_host_statuses_update is None or sum(self.host_statuses.values()) < 1
-    
+
     @property
     def availability_distribution(self) -> AvailabilityDistribution:
         failed = self.host_statuses[HOST_FAILED_STATUS] if HOST_FAILED_STATUS in self.host_statuses else 0
@@ -159,7 +163,7 @@ class HealthCheckManager:
             succeeded=succeeded,
             total=total,
         )
-    
+
     @property
     def status(self) -> HealthStatus:
         if self.is_in_progress and not self.last_host_statuses_update:
@@ -189,7 +193,8 @@ class HealthCheckManager:
                     current_host_statuses = count_host_statuses(resp_data)
                     if HOST_IN_PROGRESS_STATUS not in current_host_statuses:
                         break
-            except:
+            except Exception as ex:
+                events_journal.exception(ex)
                 pass
             self.is_in_progress = False
             self.host_statuses = current_host_statuses

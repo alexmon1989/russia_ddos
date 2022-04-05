@@ -3,7 +3,7 @@ from rich.table import Table
 from rich import box
 
 from ripper.context.target import Target
-from ripper.stats.utils import Row
+from ripper.stats.utils import Row, badge_error, badge_warn
 from rich.console import Group
 from ripper import common
 from ripper.constants import *
@@ -43,15 +43,15 @@ class ContextStatsManager:
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
         max_length = f' | Max length: {self._ctx.max_random_packet_len}' if self._ctx.max_random_packet_len else ''
-        check_my_ip = self._ctx.myIpInfo.is_ip_changed()
-        your_ip_was_changed = f'\n[orange1]{YOUR_IP_WAS_CHANGED_ERR_MSG}' if check_my_ip else ''
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
-        your_ip_disclaimer = f' (do not use VPN with proxy) ' if is_proxy_list else ''
+
+        your_ip_disclaimer = f'{badge_warn(MSG_DONT_USE_VPN_WITH_PROXY)}' if is_proxy_list else ''
+        your_ip_was_changed = f'{badge_error(MSG_YOUR_IP_WAS_CHANGED)} {badge_warn(MSG_CHECK_VPN_CONNECTION)}[/]' if self._ctx.myIpInfo.is_ip_changed() else ''
 
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Start Time',                common.format_dt(self._ctx.interval_manager.start_time)),
-            Row('Your Public IP | Country',  f'[cyan]{self._ctx.myIpInfo.ip_masked} | [green]{self._ctx.myIpInfo.country}[red]{your_ip_disclaimer}{your_ip_was_changed}'),
+            Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.threads_count}', visible=len(self._ctx.targets) > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
@@ -108,10 +108,10 @@ class ContextStatsManager:
             caption=CONTROL_CAPTION,
             caption_style='bold')
 
-        events_log.add_column('[blue]Events Log', style='dim')
+        events_log.add_column(f'[blue]Events Log', style='dim')
 
         for event in events_journal.get_log():
-            events_log.add_row(f'{event}')
+            events_log.add_row(event)
 
         return events_log
 

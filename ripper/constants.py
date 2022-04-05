@@ -1,7 +1,7 @@
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-VERSION = 'v2.3.1'
+VERSION = 'v2.4.0'
 USAGE = 'Usage: %prog [options] arg'
 EPILOG = 'Example: dripper -s tcp://192.168.0.1:80 -t 100 -m tcp-flood'
 
@@ -83,7 +83,7 @@ ARGS_DEFAULT_PROXY_TYPE = 'socks5'
 # ==== Defaults ====
 GEOIP_NOT_DEFINED = '--'
 CONNECT_TO_HOST_MAX_RETRY = 5
-MIN_SCREEN_WIDTH = 90
+MIN_SCREEN_WIDTH = 100
 MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
 NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC = 180
