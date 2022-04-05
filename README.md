@@ -27,6 +27,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
 
 ### Other features
 
+- Multiple targets support - the script can attack multiple targets at the same time
 - Detailed statistics with deep attack log for better attack analysis during the attack
 - Display average request rate and throughput
 - Periodic checks of your public IP address to ensure your privacy and VPN connection survivability.

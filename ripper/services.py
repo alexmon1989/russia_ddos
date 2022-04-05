@@ -13,9 +13,6 @@ from rich.live import Live
 from ripper import common, arg_parser
 from ripper.actions.attack import Attack, attack_method_labels
 from ripper.constants import *
-from ripper.context.context import Context
-from ripper.context.target import Target
-from ripper.common import get_current_ip
 from ripper.context.context import Context, Target
 from ripper.common import get_current_ip
 from ripper.context.events_journal import EventsJournal
@@ -54,7 +51,7 @@ def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
         events_journal.info(f'Checking my public IP address (period: {check_period_sec} sec)')
         _ctx.myIpInfo.current_ip = get_current_ip()
     if _ctx.myIpInfo.start_ip is None:
-        _ctx.myIpInfo.start_ip = _ctx.myIpInfo.my_current_ip
+        _ctx.myIpInfo.start_ip = _ctx.myIpInfo.current_ip
 
 
 def go_home(_ctx: Context) -> None:
@@ -64,6 +61,7 @@ def go_home(_ctx: Context) -> None:
         if target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(target.host_ip) in home_code.upper():
             target.host_ip = target.host = 'localhost'
             target.host += '*'
+
 
 def refresh_context_details(_ctx: Context) -> None:
     """Check threads, IPs, VPN status, etc."""
@@ -144,25 +142,31 @@ def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO
 ###############################################
 def validate_input(args) -> bool:
     """Validates input params."""
-    for target_uri in args.targets:
+    for target_uri in args.targets.split(','):
         if not Target.validate_format(target_uri):
-            print(f'Wrong target format in {target_uri}.')
+            common.print_panel(f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--host) {args.targets}')
             return False
 
     if int(args.threads_count) < 1:
-        print(f'Wrong threads count.')
+        common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
         return False
 
     if args.attack_method is not None and args.attack_method.lower() not in attack_method_labels:
-        print(f'Wrong attack type. Possible options: {", ".join(attack_method_labels)}.')
+        common.print_panel(
+            f'Wrong attack type. Check param [yellow]-m (--method) {args.attack_method}[/]\n'
+            f'Possible options: {", ".join(attack_method_labels)}')
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
-        print(f'Wrong HTTP method type. Possible options: get, post, head, put, delete, trace, connect, options, patch.')
+        common.print_panel(
+            f'Wrong HTTP method type. Check param [yellow]-e (--http-method) {args.http_method}[/]\n'
+            f'Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         return False
 
     if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
-        print(f'Wrong proxy type. Possible options: http, socks5, socks4.')
+        common.print_panel(
+            f'Wrong Proxy type. Check param [yellow]-k (--proxy-type) {args.proxy_type}[/]\n'
+            f'Possible options: http, socks5, socks4.')
         return False
 
     return True
@@ -189,12 +193,12 @@ def main():
     args = arg_parser.create_parser().parse_args()
 
     if len(sys.argv) < 2 or not validate_input(args[0]):
-        arg_parser.print_usage()
+        exit("\nRun 'dripper -h' for help.")
 
     # Init Events Log
     global events
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
-    events_journal = EventsJournal()
+    # events_journal = EventsJournal()
     events_journal.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
     events_journal.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
 

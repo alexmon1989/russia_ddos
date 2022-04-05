@@ -74,7 +74,7 @@ class Context(metaclass=common.Singleton):
         if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
             self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
-    
+
     def add_target(self, target):
         self.targets.append(target)
         # NOTE We will merge error on visualization step
@@ -127,9 +127,10 @@ class Context(metaclass=common.Singleton):
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:
             self.sock_manager.socket_timeout *= 2
-        
+
         if args and getattr(args, 'targets', None):
-            for target_uri in getattr(args, 'targets', []):
+            input_targets = getattr(args, 'targets', '').split(',')
+            for target_uri in input_targets:
                 target = Target(
                     target_uri = target_uri,
                     attack_method = getattr(args, 'attack_method', None),

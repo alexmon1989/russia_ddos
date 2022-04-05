@@ -10,17 +10,24 @@ import subprocess
 import json
 import urllib.request
 
+from rich import box
+from rich.console import Console
+from rich.panel import Panel
+
 from ripper.constants import *
 
 
 # Prepare static patterns once at start.
 IPv4_PATTERN = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
 
+console = Console()
+
 
 def get_no_successful_connection_die_msg() -> str:
     return f"There were no successful connections for more " \
            f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
            f"Your attack is ineffective."
+
 
 def read_file_lines(filename: str) -> list[str]:
     """Read string from fs or http"""
@@ -175,6 +182,14 @@ def get_cpu_load() -> str:
         cpu_usage = (load15 / os.cpu_count()) * 100
 
         return f"{cpu_usage:.2f}%"
+
+
+def print_panel(message: str, style: str = 'bold white on red') -> None:
+    """Output message in the colorful box."""
+    console.print(
+        Panel(message, box=box.ROUNDED),
+        width=MIN_SCREEN_WIDTH,
+        style=style)
 
 
 class Singleton(type):
