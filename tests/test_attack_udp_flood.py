@@ -10,11 +10,11 @@ Args = namedtuple('Args', 'targets')
 class DescribeTcpFloodAttackMethod:
     def it_has_correct_name(self):
         args = Args(
-            targets=['udp://localhost'],
+            targets='udp://localhost',
         )
         ctx = Context(args)
         ctx.__init__(args)
-        tcp_flood_am = UdpFlood(ctx, ctx.targets[0])
+        tcp_flood_am = UdpFlood(ctx.targets[0], ctx)
         assert tcp_flood_am.name == 'UDP Flood'
         assert tcp_flood_am.label == 'udp-flood'
 

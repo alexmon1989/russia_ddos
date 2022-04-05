@@ -162,12 +162,12 @@ def check_cloud_flare_protection(link: str, user_agents: list) -> bool:
     return False
 
 
-def convert_size(size_bytes: int) -> str:
+def convert_size(size_bytes: int, units: str = 'B') -> str:
     """Converts size in bytes to human-readable format."""
     for x in ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']:
-        if size_bytes < 1024.: return "%3.2f %sB" % (size_bytes, x)
+        if size_bytes < 1024.: return '{0:3.2f} {1}{2}'.format(size_bytes, x, units)
         size_bytes /= 1024.
-    return "%3.2f PB" % size_bytes
+    return '{0:3.2f} P{1}'.format(size_bytes, units)
 
 
 def get_cpu_load() -> str:
