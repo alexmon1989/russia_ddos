@@ -37,7 +37,7 @@ Please, make sure you are ANONYMOUS!
 https://github.com/alexmon1989/russia_ddos
 '''
 
-BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine'
+BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine[/]'
 CONTROL_CAPTION = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}\n'
 
 # ==== Error messages ====
@@ -48,11 +48,19 @@ NO_SUCCESSFUL_CONNECTIONS_ERR_MSG = 'There are no successful connections more th
 YOUR_IP_WAS_CHANGED_ERR_MSG = 'Your IP was changed!!! Check VPN connection.'
 CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not respond.'
 NO_MORE_PROXIES_ERR_MSG = 'There are no more operational proxies to work with host.'
+MSG_YOUR_IP_WAS_CHANGED = 'IP changed'
+MSG_CHECK_VPN_CONNECTION = 'Check VPN'
+MSG_DONT_USE_VPN_WITH_PROXY = 'Do not use VPN with proxy'
 
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
 HOST_FAILED_STATUS = 'HOST_FAILED'
 HOST_SUCCESS_STATUS = 'HOST_SUCCESS'
+
+# ==== Badge templates ====
+BADGE_INFO = '[bold gray0 on cyan] {message} [/]'
+BADGE_WARN = '[bold gray0 on orange1] {message} [/]'
+BADGE_ERROR = '[bold white on red1] {message} [/]'
 
 
 # ==== Formats and Constants

@@ -1,3 +1,23 @@
+from ripper.constants import BADGE_WARN, BADGE_INFO, BADGE_ERROR
+
+
+def badge(message: str, badge_template: str) -> str:
+    """Create color badge with message using template."""
+    return badge_template.format(message=message)
+
+
+def badge_info(message: str) -> str:
+    return badge(message, BADGE_INFO)
+
+
+def badge_warn(message: str) -> str:
+    return badge(message, BADGE_WARN)
+
+
+def badge_error(message: str) -> str:
+    return badge(message, BADGE_ERROR)
+
+
 def rate_color(rate: int, units: str = '') -> str:
     """
     Get color schema for percentage value.
@@ -15,7 +35,7 @@ def rate_color(rate: int, units: str = '') -> str:
     if rate >= 90:
         color = '[green1]'
 
-    return f'{color}{rate}{units}[default]'
+    return f'{color}{rate}{units}[/]'
 
 
 def build_http_codes_distribution(http_codes_counter) -> str:
