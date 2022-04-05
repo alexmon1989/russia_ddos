@@ -31,9 +31,9 @@ class UdpFlood(AttackMethod):
     _ctx: Context
     _proxy: Proxy = None
 
-    def __init__(self, target: Target, _ctx: Context):
+    def __init__(self, target: Target, context: Context):
         self._target = target
-        self._ctx = _ctx
+        self._ctx = context
 
     def create_connection(self) -> socket:
         self._proxy = self._ctx.proxy_manager.get_random_proxy()

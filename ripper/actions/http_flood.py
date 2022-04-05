@@ -2,7 +2,6 @@ import random
 import re
 from contextlib import suppress
 from socket import socket
-from typing import Any
 from socks import ProxyError
 
 from ripper.constants import HTTP_STATUS_CODE_CHECK_PERIOD_SEC
@@ -29,9 +28,9 @@ class HttpFlood(AttackMethod):
     _proxy: Proxy = None
     _http_connect: socket = None
 
-    def __init__(self, target: Target, _ctx: Context):
+    def __init__(self, target: Target, context: Context):
         self._target = target
-        self._ctx = _ctx
+        self._ctx = context
 
     def create_connection(self):
         self._proxy = self._ctx.proxy_manager.get_random_proxy()

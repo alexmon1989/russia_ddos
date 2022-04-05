@@ -10,12 +10,12 @@ Args = namedtuple('Args', 'targets')
 
 class DescribeContext:
     args: Args = Args(
-        targets=['http://localhost']
+        targets='http://localhost'
     )
 
     @pytest.mark.parametrize('actual_ip, expected_result', [
-        ('127.0.0.1', '127.*.*.*'),
-        ('42.199.100.200', '42.*.*.*'),
+        ('127.0.0.1', '127.***.***.***'),
+        ('42.199.100.200', '42.***.***.***'),
         ('42', '42'),
         # ('...detecting', '...detecting')
     ])
@@ -45,7 +45,7 @@ class DescribeContext:
     ])
     def it_detects_attack_by_target_in_context(self, target_uri, attack_method):
         args = Args(
-            targets=[target_uri],
+            targets=target_uri,
         )
         context = Context(args)
         # context is singleton now, so it should be reinitialized manually

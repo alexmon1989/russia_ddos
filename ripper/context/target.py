@@ -42,10 +42,10 @@ class Target:
     """Current attack method."""
     http_method: str
     """HTTP method used in HTTP packets"""
-    
+
     attack_threads: list[Attack] = None
     """Attack-related threads."""
-    
+
     health_check_manager: HealthCheckManager = None
     interval_manager: TimeIntervalManager = None
 
@@ -86,7 +86,7 @@ class Target:
 
         self.host_ip = common.get_ipv4(self.host)
         self.country = common.get_country_by_ipv4(self.host_ip)
-        self.is_cloud_flare_protection = common.check_cloud_flare_protection(self.host, headers_provider.user_agents)
+        self.is_cloud_flare_protection = common.detect_cloudflare(target_uri)
 
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 

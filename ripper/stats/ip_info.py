@@ -21,14 +21,14 @@ class IpInfo:
         """
         Get my initial IPv4 address with masked octets.
 
-        127.0.0.1 -> 127.*.*.*
+        127.0.0.1 -> 127.***.***.***
         """
         parts = self.start_ip.split('.')
         if not parts[0].isdigit():
             return DEFAULT_CURRENT_IP_VALUE
 
         if len(parts) > 1 and parts[0].isdigit():
-            return f'{parts[0]}.*.*.*'
+            return f'{parts[0]}.***.***.***'
         else:
             return parts[0]
 

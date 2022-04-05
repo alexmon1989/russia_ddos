@@ -1,15 +1,10 @@
 import os
-import time
 from rich.console import Console
 
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
-from ripper.headers_provider import HeadersProvider
 from ripper.stats.context_stats_manager import ContextStatsManager
-from ripper.time_interval_manager import TimeIntervalManager
 from ripper.stats.ip_info import IpInfo
-from ripper.context.target import Target
-from ripper.context.events_journal import EventsJournal
 from ripper.context.target import *
 
 events_journal = EventsJournal()
@@ -74,7 +69,7 @@ class Context(metaclass=common.Singleton):
         if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
             self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)
-    
+
     def add_target(self, target):
         self.targets.append(target)
         # NOTE We will merge error on visualization step
@@ -127,17 +122,18 @@ class Context(metaclass=common.Singleton):
         # Proxies are slower, so wee needs to increase timeouts 2x times
         if self.proxy_manager.proxy_list_initial_len:
             self.sock_manager.socket_timeout *= 2
-        
+
         if args and getattr(args, 'targets', None):
-            for target_uri in getattr(args, 'targets', []):
+            input_targets = getattr(args, 'targets', '').split(',')
+            for target_uri in input_targets:
                 target = Target(
-                    target_uri = target_uri,
-                    attack_method = getattr(args, 'attack_method', None),
+                    target_uri=target_uri,
+                    attack_method=getattr(args, 'attack_method', None),
                     # TODO move http_method to target_uri to allow each target have its own method
-                    http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+                    http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
                 )
                 self.add_target(target)
 
         self.stats = ContextStatsManager(_ctx=self)
-        # We can't have less threads than targets
+        # We can't have fewer threads than targets
         self.threads_count = max(self.threads_count, len(self.targets))
