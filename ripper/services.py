@@ -144,7 +144,7 @@ def validate_input(args) -> bool:
     """Validates input params."""
     for target_uri in args.targets.split(','):
         if not Target.validate_format(target_uri):
-            common.print_panel(f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--host) {args.targets}')
+            common.print_panel(f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}')
             return False
 
     if int(args.threads_count) < 1:
@@ -198,7 +198,6 @@ def main():
     # Init Events Log
     global events
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
-    # events_journal = EventsJournal()
     events_journal.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
     events_journal.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
 

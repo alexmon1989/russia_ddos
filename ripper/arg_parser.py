@@ -1,5 +1,5 @@
 import sys
-from optparse import OptionParser
+from optparse import OptionParser, IndentedHelpFormatter
 
 from ripper.constants import *
 from ripper.actions.attack import attack_method_labels
@@ -7,7 +7,13 @@ from ripper.actions.attack import attack_method_labels
 
 def create_parser() -> OptionParser:
     """Initialize parser with options."""
-    parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}')
+    formatter = IndentedHelpFormatter(
+        indent_increment=2,
+        max_help_position=56,
+        width=120,
+        short_first=1
+    )
+    parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}', formatter=formatter)
     parser_add_options(parser)
 
     return parser
@@ -16,9 +22,8 @@ def create_parser() -> OptionParser:
 def parser_add_options(parser: OptionParser) -> None:
     """Add options to a parser."""
     parser.add_option('-s', '--targets',
-                      dest='targets',
-                    #   action='append',
-                      help='Attack target in {scheme}://{hostname}[:{port}][{path}] format. Multiple targets allowed')
+                      dest='targets', type='str',
+                      help='Attack target in {scheme}://{hostname}[:{port}][{path}] format. Multiple targets allowed, separated by comma.')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str',
                       help=f'Attack method: {", ".join(attack_method_labels)}')
