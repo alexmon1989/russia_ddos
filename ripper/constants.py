@@ -40,18 +40,6 @@ https://github.com/alexmon1989/russia_ddos
 BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine[/]'
 CONTROL_CAPTION = f'[grey53]Press [green]CTRL+C[grey53] to interrupt process.{BANNER}\n'
 
-# ==== Error messages ====
-GETTING_SERVER_IP_ERR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
-NO_SUCCESSFUL_CONNECTIONS_ERR_MSG = 'There are no successful connections more than 2 min. ' \
-                                      'Check your VPN or change host/port.' \
-                                      'If you are using the proxylist then proxy validation might be in progress.'
-YOUR_IP_WAS_CHANGED_ERR_MSG = 'Your IP was changed!!! Check VPN connection.'
-CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not respond.'
-NO_MORE_PROXIES_ERR_MSG = 'There are no more operational proxies to work with host.'
-MSG_YOUR_IP_WAS_CHANGED = 'IP changed'
-MSG_CHECK_VPN_CONNECTION = 'Check VPN'
-MSG_DONT_USE_VPN_WITH_PROXY = 'Do not use VPN with proxy'
-
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 HOST_IN_PROGRESS_STATUS = 'HOST_IN_PROGRESS'
 HOST_FAILED_STATUS = 'HOST_FAILED'
@@ -106,3 +94,20 @@ CLOUDFLARE_TAGS = [
     'we are checking your browser...',
     'Cloudflare Ray ID'
 ]
+
+# ==== Error messages ====
+GETTING_SERVER_IP_ERR_MSG = 'Can\'t get server IP. Packet sending failed. Check your VPN.'
+NO_SUCCESSFUL_CONNECTIONS_ERR_MSG = 'There are no successful connections more than 2 min. ' \
+    'Check your VPN or change host/port.' \
+    'If you are using the proxylist then proxy validation might be in progress.'
+YOUR_IP_WAS_CHANGED_ERR_MSG = 'Your IP was changed!!! Check VPN connection.'
+CANNOT_SEND_REQUEST_ERR_MSG = 'Cannot send Request or Packet. Host does not respond.'
+NO_MORE_PROXIES_ERR_MSG = 'There are no more operational proxies to work with host.'
+MSG_YOUR_IP_WAS_CHANGED = 'IP changed'
+MSG_CHECK_VPN_CONNECTION = 'Check VPN'
+MSG_DONT_USE_VPN_WITH_PROXY = 'Do not use VPN with proxy'
+NO_CONNECTIONS_ERR_MSG = f"There were no successful connections for more " \
+    f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
+    f"Your attack is ineffective."
+TARGET_DEAD_ERR_MSG = "[orange1]Target should be dead!"
+NO_MORE_TARGETS_LEFT_ERR_MSG = 'No more valid targets left'

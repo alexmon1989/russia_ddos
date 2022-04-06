@@ -59,7 +59,7 @@ class Event:
         thread_name = threading.current_thread().name.lower()
         log_level_name = EventLevel.get_name_by_id(self._level)
         log_level_color = self.get_level_color()
-        locator = self._target.url if self._target is not None else 'global'
+        locator = self._target.uri if self._target is not None else 'global'
         return f'[dim][bold][cyan][{now}][/]  [{log_level_color}]{log_level_name:^7}[/] {locator} {thread_name:11} {self._message}'
 
 
