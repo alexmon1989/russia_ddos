@@ -18,7 +18,7 @@ class DescribeHttpFloodAttackMethod:
         )
         ctx = Context(args)
         ctx.__init__(args)
-        http_flood_am = HttpFlood(target=ctx.targets[0], context=ctx)
+        http_flood_am = HttpFlood(target=ctx.targets_manager.targets[0], context=ctx)
 
         actual = http_flood_am.headers()
         assert actual.get('Content-Length') == '0'
@@ -33,7 +33,7 @@ class DescribeHttpFloodAttackMethod:
         ctx = Context(args)
         ctx.__init__(args)
         ctx.headers_provider.user_agents = ['Mozilla/5.0 (Windows NT 6.3; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0']
-        http_flood_am = HttpFlood(target=ctx.targets[0], context=ctx)
+        http_flood_am = HttpFlood(target=ctx.targets_manager.targets[0], context=ctx)
 
         body = '{"test":1}'
         headers = '\r\n'.join([f'{key}: {value}' for (key, value) in http_flood_am.headers().items()])
@@ -54,7 +54,7 @@ class DescribeHttpFloodAttackMethod:
         )
         ctx = Context(args)
         ctx.__init__(args)
-        http_flood_am = HttpFlood(target=ctx.targets[0], context=ctx)
+        http_flood_am = HttpFlood(target=ctx.targets_manager.targets[0], context=ctx)
         assert http_flood_am.name == 'HTTP Flood'
         assert http_flood_am.label == 'http-flood'
 

@@ -50,4 +50,4 @@ class DescribeContext:
         context = Context(args)
         # context is singleton now, so it should be reinitialized manually
         context.__init__(args)
-        assert context.targets[0].attack_method == attack_method
+        assert context.targets_manager.targets[0].attack_method == attack_method

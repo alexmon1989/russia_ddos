@@ -48,9 +48,9 @@ class DescribeHealthCheck:
         )
         context = Context(args)
         context.__init__(args)
-        assert len(context.targets[0].host_ip) > 0
+        assert len(context.targets_manager.targets[0].host_ip) > 0
 
-        health_check_manager = context.targets[0].health_check_manager
+        health_check_manager = context.targets_manager.targets[0].health_check_manager
 
         before_execution = datetime.now()
         distribution = health_check_manager.update_host_statuses()
@@ -78,10 +78,10 @@ class DescribeHealthCheck:
         )
         context = Context(args)
         context.__init__(args)
-        assert context.targets[0].health_check_manager.health_check_method == args_data['health_check_method']
+        assert context.targets_manager.targets[0].health_check_manager.health_check_method == args_data['health_check_method']
         if 'host_ip' in args_data:
-            context.targets[0].host_ip = args_data['host_ip']
-        assert context.targets[0].health_check_manager.request_url == url
+            context.targets_manager.targets[0].host_ip = args_data['host_ip']
+        assert context.targets_manager.targets[0].health_check_manager.request_url == url
 
     @pytest.fixture(scope='session', autouse=True)
     def refresh_headers_provider(self):

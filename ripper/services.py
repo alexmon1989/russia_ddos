@@ -57,7 +57,7 @@ def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
 def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules."""
     home_code = b64decode('dWE=').decode('utf-8')
-    for target in _ctx.targets:
+    for target in _ctx.targets_manager.targets:
         if target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(target.host_ip) in home_code.upper():
             target.host_ip = target.host = 'localhost'
             target.host += '*'
@@ -65,37 +65,38 @@ def go_home(_ctx: Context) -> None:
 
 def refresh_context_details(_ctx: Context) -> None:
     """Check threads, IPs, VPN status, etc."""
-    _ctx._lock.acquire()
+    lock = threading.Lock()
+    lock.acquire()
 
     threading.Thread(
         target=update_current_ip,
         args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC]).start()
 
     if _ctx.is_health_check:
-        for target in _ctx.targets:
+        for target in _ctx.targets_manager.targets:
             threading.Thread(target=update_host_statuses, args=[target]).start()
 
     if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
         threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.current_ip]).start()
 
-    for target in _ctx.targets:
+    for target in _ctx.targets_manager.targets:
         if target.country == GEOIP_NOT_DEFINED:
             threading.Thread(target=common.get_country_by_ipv4, args=[target.host_ip]).start()
 
-    _ctx._lock.release()
+    lock.release()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
         events_journal.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
 
-    for target in _ctx.targets[:]:
+    for target in _ctx.targets_manager.targets[:]:
         if not target.validate_connection():
             events_journal.error(NO_CONNECTIONS_ERR_MSG, target=target)
-            _ctx.delete_target(target)
+            _ctx.targets_manager.delete_target(target)
         if target.health_check_manager.status == HealthStatus.dead:
             events_journal.error(TARGET_DEAD_ERR_MSG, target=target)
-            _ctx.delete_target(target)
-        if len(_ctx.targets) < 1:
+            _ctx.targets_manager.delete_target(target)
+        if _ctx.targets_manager.len() < 1:
             _ctx.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             exit(1)
 
@@ -205,22 +206,18 @@ def main():
     go_home(_ctx)
 
     _ctx.logger.rule('[bold]Starting DRipper')
-    for target in _ctx.targets[:]:
+    for target in _ctx.targets_manager.targets[:]:
         # Proxies should be validated during the runtime
         retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
         # TODO Make it concurrent for each target
         if not connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt):
-            _ctx.delete_target(target)
+            _ctx.targets_manager.delete_target(target)
     _ctx.logger.rule()
     _ctx.validate()
 
     # Start Threads
     time.sleep(.5)
-    threads_range = _ctx.threads_count if not _ctx.dry_run else 1
-    # TODO create targets manager
-    for idx in range(threads_range):
-        target = _ctx.targets[idx % len(_ctx.targets)]
-        Attack(_ctx=_ctx, target=target).start()
+    _ctx.targets_manager.allocate_attacks()
 
     render_statistics(_ctx)
 
