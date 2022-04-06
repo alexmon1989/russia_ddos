@@ -9,6 +9,7 @@ EPILOG = 'Example: dripper -s tcp://192.168.0.1:80 -t 100 -m tcp-flood'
 GITHUB_OWNER = 'alexmon1989'
 GITHUB_REPO = 'russia_ddos'
 GITHUB_ID = f'{GITHUB_OWNER}/{GITHUB_REPO}'
+GITHUB_URL = f'https://github.com/{GITHUB_ID}'
 
 LOGO_COLOR = f'''[deep_sky_blue1]
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
@@ -23,7 +24,7 @@ It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 Please, make sure you are ANONYMOUS!
 
-[u blue link=https://github.com/{GITHUB_ID}]https://github.com/{GITHUB_ID}
+[u blue link={GITHUB_URL}]{GITHUB_URL}
 '''
 
 LOGO_NOCOLOR = f'''
@@ -39,7 +40,7 @@ It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 Please, make sure you are ANONYMOUS!
 
-https://github.com/{GITHUB_ID}
+{GITHUB_URL}
 '''
 
 BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine[/]'

@@ -24,7 +24,7 @@ class Version:
     
     @property
     def version(self):
-        return '.'.join(self._parts)
+        return '.'.join([str(ps) for ps in self._parts])
     
     def calc_positional_value(self):
         return self._parts[2] + self._parts[1] * 1000 + self._parts[0] * 1000_000
@@ -37,10 +37,6 @@ class Version:
 
     def __eq__(self, other):
         return self.calc_positional_value() == other.calc_positional_value()
-
-
-def ref_to_tag_name(ref: str):
-    return ''.join(ref.split('/')[2:])
 
 
 class GithubUpdatesChecker:
@@ -59,14 +55,17 @@ class GithubUpdatesChecker:
         raw = urllib.request.urlopen(url).read().decode('utf8')
         data = json.loads(raw)
         return data
+
+    def _ref_to_tag_name(self, ref: str):
+        return ''.join(ref.split('/')[2:])
     
     def fetch_tag_names(self) -> list[str]:
         tags_data = self.fetch_tags_data()
-        return [ref_to_tag_name(data['ref']) for data in tags_data]
+        return [self._ref_to_tag_name(data['ref']) for data in tags_data]
     
     def fetch_versions(self) -> list[Version]:
         tag_names = self.fetch_tag_names()
         return [Version(vs) for vs in filter(lambda tag_name: Version.validate(tag_name), tag_names)]
 
-    def get_last_version(self):
-        return None
+    def fetch_lastest_version(self) -> Version:
+        return self.fetch_versions()[-1]
