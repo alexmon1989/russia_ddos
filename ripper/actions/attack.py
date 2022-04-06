@@ -70,5 +70,3 @@ class Attack(Thread):
 
         while not self.stop_event.is_set():
             runner()
-
-        Thread.join()
