@@ -96,7 +96,7 @@ def refresh_context_details(_ctx: Context) -> None:
         if target.health_check_manager.status == HealthStatus.dead:
             events_journal.error(TARGET_DEAD_ERR_MSG, target=target)
             _ctx.targets_manager.delete_target(target)
-        if len(_ctx.targets_manager.targets) < 1:
+        if _ctx.targets_manager.len() < 1:
             _ctx.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             exit(1)
 

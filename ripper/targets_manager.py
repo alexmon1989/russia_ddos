@@ -57,3 +57,6 @@ class TargetsManager:
             target = self._targets[idx % targets_cnt]
             Attack(_ctx=self._ctx, target=target).start()
         self._lock.release()
+    
+    def len(self):
+      return len(self._targets)

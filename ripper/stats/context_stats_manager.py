@@ -32,7 +32,7 @@ class ContextStatsManager:
         Method calculates current index of target to display based on script execution duration.
         """
         duration = self.interval_manager.get_start_duration().total_seconds()
-        cnt = len(self._ctx.targets_manager.targets)
+        cnt = self._ctx.targets_manager.len()
         change_interval = TARGET_STATS_AUTO_PAGINATION_INTERVAL_SECONDS
         return floor((duration/change_interval) % cnt)
 
@@ -53,7 +53,7 @@ class ContextStatsManager:
             #   Description                  Status
             Row('Start Time, Duration',      f'{common.format_dt(self._ctx.interval_manager.start_time)}  ({str(duration).split(".", 2)[0]})'),
             Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
-            Row('Total Threads',             f'{self._ctx.threads_count}', visible=len(self._ctx.targets_manager.targets) > 1),
+            Row('Total Threads',             f'{self._ctx.threads_count}', visible=self._ctx.targets_manager.len() > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
             Row('vCPU Count',                f'{self._ctx.cpu_count}'),
@@ -65,7 +65,7 @@ class ContextStatsManager:
         return full_stats
 
     def build_target_rotation_header_details_stats(self) -> list[Row]:
-        cnt = len(self._ctx.targets_manager.targets)
+        cnt = self._ctx.targets_manager.len()
         if cnt < 2:
             return []
 

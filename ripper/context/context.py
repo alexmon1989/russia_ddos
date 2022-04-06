@@ -125,11 +125,11 @@ class Context(metaclass=common.Singleton):
 
         self.stats = ContextStatsManager(_ctx=self)
         # We can't have fewer threads than targets
-        self.threads_count = max(self.threads_count, len(self.targets_manager.targets)) if not self.dry_run else 1
+        self.threads_count = max(self.threads_count, self.targets_manager.len()) if not self.dry_run else 1
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
-        if len(self.targets_manager.targets) < 1:
+        if self.targets_manager.len() < 1:
             self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             exit(1)
 
