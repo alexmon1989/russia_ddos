@@ -120,6 +120,10 @@ def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO
     """Tries to connect host in permanent loop."""
     i = 0
     (host_ip, port) = target.hostip_port_tuple()
+    if not host_ip:
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target.uri} Target\'s host ip wasn\'t detected...')
+        return False
+
     target_uri_extended = f'{target.uri} ({host_ip}:{port})'
     while i < retry_cnt and not target.stats.connect.is_connected:
         _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} Trying to connect...')
