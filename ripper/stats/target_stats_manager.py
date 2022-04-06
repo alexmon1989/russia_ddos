@@ -40,7 +40,7 @@ class TargetStatsManager:
         if status == HealthStatus.alive:
             return accessible_message
         if status == HealthStatus.dead:
-            return f'{accessible_message}\n[orange1]It should be dead. Consider another target!'
+            return f'{accessible_message}\n{TARGET_DEAD_ERR_MSG}'
 
     def build_target_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
@@ -55,7 +55,7 @@ class TargetStatsManager:
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Country, Host IP',          f'[red]{self.target.country:4}[/][cyan]{self.target.host_ip}:{self.target.port}'),
-            Row('HTTP Request',              f'[cyan]{self.target.http_method}: {self.target.url}', visible=self.target.attack_method.lower() == 'http-flood'),
+            Row('HTTP Request',              f'[cyan]{self.target.http_method}: {self.target.http_url}', visible=self.target.attack_method.lower() == 'http-flood'),
             Row('Attack Method',             self.target.attack_method.upper()),
             Row('Threads',                   len(self.target.attack_threads)),
             Row('CloudFlare Protection',     ('[red]' if self.target.is_cloud_flare_protection else '[green]') + self.target.cloudflare_status(), end_section=not is_health_check),

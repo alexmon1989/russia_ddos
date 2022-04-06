@@ -16,17 +16,13 @@ from rich.panel import Panel
 
 from ripper.constants import *
 
+Target = 'Target'
+
 
 # Prepare static patterns once at start.
 IPv4_PATTERN = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
 
 console = Console()
-
-
-def get_no_successful_connection_die_msg() -> str:
-    return f"There were no successful connections for more " \
-           f"than {NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC // 60} minutes. " \
-           f"Your attack is ineffective."
 
 
 def read_file_lines(filename: str) -> list[str]:

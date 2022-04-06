@@ -111,11 +111,17 @@ class Target:
         return 'Protected' if self.is_cloud_flare_protection else 'Not protected'
 
     @property
-    def url(self) -> str:
-        """Get fully qualified URI for target HOST - schema://host:port"""
+    def http_url(self) -> str:
+        """Get fully qualified HTTP URL for target HOST - http(s)://host:port/path"""
         http_protocol = 'https://' if self.port == 443 else 'http://'
 
         return f"{http_protocol}{self.host}:{self.port}{self.http_path}"
+
+    @property
+    def uri(self) -> str:
+        """Get fully qualified URI for target HOST - schema://host:port"""
+
+        return f"{self.scheme}://{self.host}:{self.port}{self.http_path}"
 
     def stop_attack_threads(self):
         for attack in self.attack_threads:
@@ -124,55 +130,11 @@ class Target:
     ###############################################
     # Connection validators
     ###############################################
-    def validate_attack(self) -> bool:
+    def validate_connection(self, period_sec: int = SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC) -> bool:
         """
-        Checks if attack is valid.
-        Attack is valid if target accepted traffic within
-        last SUCCESSFUL_CONNECTIONS_CHECK_PERIOD seconds (about 3 minutes)
-        :return: True if valid.
+        Check if there was successful connection for last time with interval of `period_sec`.
+        Args:
+            period_sec: Time interval in seconds to check for successful connection.
         """
-        if self.health_check_manager.status == HealthStatus.dead:
-            return False
-        if self.attack_method == 'tcp':
-            return self.check_successful_tcp_attack()
-        return self.check_successful_connections()
-
-    def check_successful_connections(self) -> bool:
-        """
-        Checks if there are no successful connections more than SUCCESSFUL_CONNECTIONS_CHECK_PERIOD sec.
-        Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
-        """
-        now_ns = time.time_ns()
-        lower_bound = max(self.interval_manager.get_start_time_ns(),
-                        self.stats.connect.last_check_time)
-        diff_sec = common.ns2s(now_ns - lower_bound)
-
-        if self.stats.connect.success == self.stats.connect.success_prev:
-            if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                events_journal.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
-                return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-        else:
-            self.stats.connect.last_check_time = now_ns
-            self.stats.connect.sync_success()
-
-        return True
-
-    def check_successful_tcp_attack(self) -> bool:
-        """
-        Checks if there are changes in sent bytes count.
-        Returns True if there was successful connection for last NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC sec.
-        """
-        now_ns = time.time_ns()
-        lower_bound = max(self.interval_manager.get_start_time_ns(),
-                        self.stats.packets.connections_check_time)
-        diff_sec = common.ns2s(now_ns - lower_bound)
-
-        if self.stats.packets.total_sent == self.stats.packets.total_sent:
-            if diff_sec > SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC:
-                events_journal.error(NO_SUCCESSFUL_CONNECTIONS_ERR_MSG, target=self)
-
-                return diff_sec <= NO_SUCCESSFUL_CONNECTIONS_DIE_PERIOD_SEC
-        else:
-            self.stats.packets.connections_check_time = now_ns
-
-        return True
+        period_ns = period_sec * 1000000 * 1000
+        return self.stats.packets.connections_check_time + period_ns > time.time_ns()

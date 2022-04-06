@@ -16,11 +16,11 @@ from ripper.constants import *
 from ripper.context.context import Context, Target
 from ripper.common import get_current_ip
 from ripper.context.events_journal import EventsJournal
+from ripper.health_check_manager import HealthStatus
 from ripper.proxy import Proxy
 
 exit_event = threading.Event()
 events_journal = EventsJournal()
-lock = threading.Lock()
 
 
 ###############################################
@@ -29,7 +29,7 @@ lock = threading.Lock()
 def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
     if target.health_check_manager.is_in_progress or \
-        not target.interval_manager.check_timer_elapsed(bucket=f'update_host_statuses_{target.url}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
+        not target.interval_manager.check_timer_elapsed(bucket=f'update_host_statuses_{target.uri}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
         return False
     try:
         if target.host_ip:
@@ -65,8 +65,7 @@ def go_home(_ctx: Context) -> None:
 
 def refresh_context_details(_ctx: Context) -> None:
     """Check threads, IPs, VPN status, etc."""
-    global lock
-    lock.acquire()
+    _ctx._lock.acquire()
 
     threading.Thread(
         target=update_current_ip,
@@ -83,56 +82,55 @@ def refresh_context_details(_ctx: Context) -> None:
         if target.country == GEOIP_NOT_DEFINED:
             threading.Thread(target=common.get_country_by_ipv4, args=[target.host_ip]).start()
 
-    lock.release()
+    _ctx._lock.release()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
         events_journal.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
 
-    for (target_idx, target) in enumerate(_ctx.targets):
-        # TODO Merge validators
-        if not target.validate_attack() or not target.stats.packets.validate_connection(SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC):
-            events_journal.error(common.get_no_successful_connection_die_msg(), target=target)
-            if len(_ctx.targets) < 2:
-                exit(common.get_no_successful_connection_die_msg())
-            else:
-                target.stop_attack_threads()
-                lock.acquire()
-                _ctx.targets.pop(target_idx)
-                lock.release()
+    for target in _ctx.targets[:]:
+        if not target.validate_connection():
+            events_journal.error(NO_CONNECTIONS_ERR_MSG, target=target)
+            _ctx.delete_target(target)
+        if target.health_check_manager.status == HealthStatus.dead:
+            events_journal.error(TARGET_DEAD_ERR_MSG, target=target)
+            _ctx.delete_target(target)
+        if len(_ctx.targets) < 1:
+            _ctx.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
+            exit(1)
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
         events_journal.error(NO_MORE_PROXIES_ERR_MSG)
-        exit(NO_MORE_PROXIES_ERR_MSG)
+        _ctx.logger.log(NO_MORE_PROXIES_ERR_MSG)
+        exit(1)
 
 
 ###############################################
 # Target+Context
 ###############################################
-def check_host_connection(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
+def connect_host(target: Target, _ctx: Context, proxy: Proxy = None):
     """Check connection to Host before start script."""
     target.stats.connect.set_state_in_progress()
     with _ctx.sock_manager.create_tcp_socket(proxy) as http:
-        try:
-            http.connect(target.hostip_port_tuple())
-        except:
-            res = False
-        else:
-            target.stats.connect.set_state_is_connected()
-            res = True
-        return res
+        http.connect(target.hostip_port_tuple())
+        target.stats.connect.set_state_is_connected()
 
 
 def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
     """Tries to connect host in permanent loop."""
     i = 0
-    while i < retry_cnt:
-        _ctx.logger.log(
-            f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
-        if check_host_connection(target=target, _ctx=_ctx):
-            break
-        time.sleep(timeout_secs)
+    (host_ip, port) = target.hostip_port_tuple()
+    target_uri_extended = f'{target.uri} ({host_ip}:{port})'
+    while i < retry_cnt and not target.stats.connect.is_connected:
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} Trying to connect...')
+        try:
+            connect_host(target=target, _ctx=_ctx)
+            _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} [green]connected[/]')
+            return True
+        except Exception as e:
+            _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} [red]{e}[/]')
         i += 1
+    return False
 
 
 ###############################################
@@ -203,10 +201,12 @@ def main():
     go_home(_ctx)
 
     _ctx.logger.rule('[bold]Starting DRipper')
-    for target in _ctx.targets:
+    for target in _ctx.targets[:]:
         # Proxies should be validated during the runtime
         retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
-        connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt)
+        # TODO Make it concurrent for each target
+        if not connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt):
+            _ctx.delete_target(target)
     _ctx.logger.rule()
     _ctx.validate()
 
