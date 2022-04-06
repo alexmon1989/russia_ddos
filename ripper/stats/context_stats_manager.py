@@ -74,7 +74,7 @@ class ContextStatsManager:
         current_position = duration/change_interval
         next_target_in_seconds = 1 + floor(change_interval * (1 - (current_position - floor(current_position))))
         return [
-            Row(f'[cyan][bold]Target ({self.current_target.uri}) {self.current_target_idx + 1}/{cnt} (next in {next_target_in_seconds})', end_section=True),
+            Row(f'[cyan][bold]Target ({self.current_target.uri})', f'{self.current_target_idx + 1}/{cnt} (next in {next_target_in_seconds})', end_section=True),
             # ===================================
         ]
 
@@ -87,8 +87,8 @@ class ContextStatsManager:
             caption_style='bold',
         )
 
-        details_table.add_column('Description')
-        details_table.add_column('Status')
+        details_table.add_column('Description', width=45)
+        details_table.add_column('Status', width=MIN_SCREEN_WIDTH - 45)
 
         rows = self.build_global_details_stats()
         rows += self.build_target_rotation_header_details_stats()

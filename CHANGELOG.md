@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.4.0...HEAD)
 
+### Changed
+- Moved target specific validation from statistic and context to Target class
+- Targets manager can allocate attacks after target is removed and encapsulates logic related to the targets collection management.
 
 ## [v2.4.0](https://github.com/alexmon1989/russia_ddos/compare/2.3.1...2.4.0)
 

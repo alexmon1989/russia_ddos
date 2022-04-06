@@ -117,7 +117,7 @@ def connect_host(target: Target, _ctx: Context, proxy: Proxy = None):
         target.stats.connect.set_state_is_connected()
 
 
-def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
+def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY) -> bool:
     """Tries to connect host in permanent loop."""
     i = 0
     (host_ip, port) = target.hostip_port_tuple()
