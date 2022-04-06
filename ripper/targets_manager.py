@@ -21,16 +21,18 @@ class TargetsManager:
         total = self._ctx.threads_count
         self._lock.acquire()
         for target in self._targets:
-          total -= len(target.attack_threads)
+            total -= len(target.attack_threads)
         self._lock.release()
         return total
-    
+
     @property
     def targets(self):
         return self._targets[:]
 
     def add_target(self, target):
         self._targets.append(target)
+        target_idx = self._targets.index(target)
+        target.index = target_idx
 
     def delete_target(self, target: Target, is_stop_attack: bool = True, is_allocate_attacks: bool = True):
         if is_stop_attack:
@@ -43,7 +45,7 @@ class TargetsManager:
             pass
         self._lock.release()
         if is_allocate_attacks:
-          self.allocate_attacks()
+            self.allocate_attacks()
 
     def allocate_attacks(self):
         free_threads_count = self.free_threads_count
@@ -57,6 +59,6 @@ class TargetsManager:
             target = self._targets[idx % targets_cnt]
             Attack(_ctx=self._ctx, target=target).start()
         self._lock.release()
-    
+
     def len(self):
-      return len(self._targets)
+        return len(self._targets)

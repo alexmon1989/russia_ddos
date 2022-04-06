@@ -55,10 +55,10 @@ class TargetStatsManager:
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Country, Host IP',               f'[red]{self.target.country:4}[/][cyan]{self.target.host_ip}:{self.target.port}'),
+            Row('Country, Host IP',               f'[red]{self.target.country:4}[/][cyan]{self.target.host_ip}:{self.target.port} [dim](target-{self.target.index})[/]'),
             Row('HTTP Request',                   f'[cyan]{self.target.http_method}: {self.target.http_url}', visible=self.target.attack_method.lower() == 'http-flood'),
             Row('Attack Method',                  self.target.attack_method.upper()),
-            Row('Threads',                        len(self.target.attack_threads)),
+            Row('Threads',                        str(len(self.target.attack_threads))),
             Row('CloudFlare Protection',          ('[red]' if self.target.is_cloud_flare_protection else '[green]') + self.target.cloudflare_status(), end_section=not is_health_check),
             Row('Availability (check-host.net)',  f'{self.get_availability_msg()}', visible=is_health_check),
             Row('Sent Bytes @ AVG speed',         f'{common.convert_size(self.target.stats.packets.total_sent_bytes):>12} @ [green]{common.convert_size(data_rps, "B/s")}'),

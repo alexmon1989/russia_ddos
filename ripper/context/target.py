@@ -26,6 +26,9 @@ def default_scheme_port(scheme: str):
 
 
 class Target:
+    index: int = 0
+    """Target index for statistic."""
+
     scheme: str
     """Connection scheme"""
     host: str
@@ -72,7 +75,6 @@ class Target:
     def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD):
         self.attack_threads = []
         self.http_method = http_method
-        headers_provider = HeadersProvider()
         self.interval_manager = TimeIntervalManager()
 
         parts = urlparse(target_uri)
