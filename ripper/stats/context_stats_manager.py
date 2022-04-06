@@ -42,6 +42,7 @@ class ContextStatsManager:
 
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
+        duration = self.interval_manager.get_start_duration()
         max_length = f' | Max length: {self._ctx.max_random_packet_len}' if self._ctx.max_random_packet_len else ''
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
 
@@ -50,7 +51,7 @@ class ContextStatsManager:
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Start Time',                common.format_dt(self._ctx.interval_manager.start_time)),
+            Row('Start Time, Duration',      f'{common.format_dt(self._ctx.interval_manager.start_time)}  ({str(duration).split(".", 2)[0]})'),
             Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.threads_count}', visible=len(self._ctx.targets) > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
@@ -73,7 +74,7 @@ class ContextStatsManager:
         current_position = duration/change_interval
         next_target_in_seconds = 1 + floor(change_interval * (1 - (current_position - floor(current_position))))
         return [
-            Row(f'[cyan][bold]Target {self.current_target_idx + 1}/{cnt} (next in {next_target_in_seconds})', end_section=True),
+            Row(f'[cyan][bold]Target ({self.current_target.uri}) {self.current_target_idx + 1}/{cnt} (next in {next_target_in_seconds})', end_section=True),
             # ===================================
         ]
 
