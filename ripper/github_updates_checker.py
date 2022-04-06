@@ -1,5 +1,6 @@
 import urllib.request
 import json
+import threading
 
 from ripper.constants import *
 
@@ -27,6 +28,8 @@ class Version:
         return '.'.join([str(ps) for ps in self._parts])
     
     def calc_positional_value(self):
+        if not self._parts:
+            return 0
         return self._parts[2] + self._parts[1] * 1000 + self._parts[0] * 1000_000
     
     def __ge__(self, other):
@@ -42,6 +45,7 @@ class Version:
 class GithubUpdatesChecker:
     _owner: str = ''
     _repo: str = ''
+    latest_version: Version = None
 
     def __init__(self, owner: str = GITHUB_OWNER, repo: str = GITHUB_REPO):
         self._owner = owner
@@ -52,8 +56,11 @@ class GithubUpdatesChecker:
     
     def fetch_tags_data(self):
         url = self.get_request_url()
-        raw = urllib.request.urlopen(url).read().decode('utf8')
-        data = json.loads(raw)
+        try:
+            raw = urllib.request.urlopen(url).read().decode('utf8')
+            data = json.loads(raw)
+        except:
+            data = []
         return data
 
     def _ref_to_tag_name(self, ref: str):
@@ -68,4 +75,11 @@ class GithubUpdatesChecker:
         return [Version(vs) for vs in filter(lambda tag_name: Version.validate(tag_name), tag_names)]
 
     def fetch_lastest_version(self) -> Version:
-        return self.fetch_versions()[-1]
+        versions = self.fetch_versions()
+        if not versions or len(versions) < 1:
+            return None
+        self.latest_version = versions[-1]
+        return self.latest_version
+    
+    def demon_update_latest_version(self):
+        threading.Thread(target=self.fetch_lastest_version).start()

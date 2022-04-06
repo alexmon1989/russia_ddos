@@ -9,7 +9,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
 
-from _version import __version__
 from ripper import common, arg_parser
 from ripper.actions.attack import attack_method_labels
 from ripper.constants import *
@@ -18,7 +17,6 @@ from ripper.common import get_current_ip
 from ripper.context.events_journal import EventsJournal
 from ripper.health_check_manager import HealthStatus
 from ripper.proxy import Proxy
-from ripper.github_updates_checker import GithubUpdatesChecker, Version
 
 exit_event = threading.Event()
 events_journal = EventsJournal()
@@ -180,12 +178,6 @@ def render_statistics(_ctx: Context) -> None:
     logo = Panel(LOGO_COLOR, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
     console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
 
-    current_version = Version(__version__)
-    guc = GithubUpdatesChecker()
-    latest_version = guc.fetch_lastest_version()
-    if current_version < latest_version:
-        console.print(f'[b][red]Newer version {latest_version.version} is available!', justify='center', width=MIN_SCREEN_WIDTH)
-
     with Live(_ctx.stats.build_stats(), vertical_overflow='visible') as live:
         live.start()
         while True:
@@ -194,8 +186,6 @@ def render_statistics(_ctx: Context) -> None:
             live.update(_ctx.stats.build_stats())
             if _ctx.dry_run:
                 break
-
-
 
 
 def main():
