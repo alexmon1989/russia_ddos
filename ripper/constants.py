@@ -1,9 +1,14 @@
+from _version import __version__
+
 ###############################################
 # Constants | Logo and help messages
 ###############################################
-VERSION = 'v2.4.0'
+VERSION = f'v{__version__}'
 USAGE = 'Usage: %prog [options] arg'
 EPILOG = 'Example: dripper -s tcp://192.168.0.1:80 -t 100 -m tcp-flood'
+GITHUB_OWNER = 'alexmon1989'
+GITHUB_REPO = 'russia_ddos'
+GITHUB_ID = f'{GITHUB_OWNER}/{GITHUB_REPO}'
 
 LOGO_COLOR = f'''[deep_sky_blue1]
 ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
@@ -18,7 +23,7 @@ It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 Please, make sure you are ANONYMOUS!
 
-[u blue link=https://github.com/alexmon1989/russia_ddos]https://github.com/alexmon1989/russia_ddos
+[u blue link=https://github.com/{GITHUB_ID}]https://github.com/{GITHUB_ID}
 '''
 
 LOGO_NOCOLOR = f'''
@@ -34,7 +39,7 @@ It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 Please, make sure you are ANONYMOUS!
 
-https://github.com/alexmon1989/russia_ddos
+https://github.com/{GITHUB_ID}
 '''
 
 BANNER = '\n\n[r][deep_sky_blue1]#StandWith[bright_yellow]Ukraine[/]'

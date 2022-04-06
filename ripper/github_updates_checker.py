@@ -1,0 +1,72 @@
+import urllib.request
+import json
+
+from ripper.constants import *
+
+
+class Version:
+    @staticmethod
+    def validate(version: str):
+        parts = version.split('.')
+        if len(parts) != 3:
+            return False
+        for ps in parts:
+            if not ps.isdigit():
+                return False
+        return True
+
+    _parts: list[int] = None
+
+    def __init__(self, version: str):
+        if not Version.validate(version):
+            raise ValueError()
+        self._parts = [int(ps) for ps in version.split('.')]
+    
+    @property
+    def version(self):
+        return '.'.join(self._parts)
+    
+    def calc_positional_value(self):
+        return self._parts[2] + self._parts[1] * 1000 + self._parts[0] * 1000_000
+    
+    def __ge__(self, other):
+        return self.calc_positional_value() >= other.calc_positional_value()
+
+    def __lt__(self, other):
+        return self.calc_positional_value() < other.calc_positional_value()
+
+    def __eq__(self, other):
+        return self.calc_positional_value() == other.calc_positional_value()
+
+
+def ref_to_tag_name(ref: str):
+    return ''.join(ref.split('/')[2:])
+
+
+class GithubUpdatesChecker:
+    _owner: str = ''
+    _repo: str = ''
+
+    def __init__(self, owner: str = GITHUB_OWNER, repo: str = GITHUB_REPO):
+        self._owner = owner
+        self._repo = repo
+
+    def get_request_url(self):
+        return f'https://api.github.com/repos/{self._owner}/{self._repo}/git/refs/tags'
+    
+    def fetch_tags_data(self):
+        url = self.get_request_url()
+        raw = urllib.request.urlopen(url).read().decode('utf8')
+        data = json.loads(raw)
+        return data
+    
+    def fetch_tag_names(self) -> list[str]:
+        tags_data = self.fetch_tags_data()
+        return [ref_to_tag_name(data['ref']) for data in tags_data]
+    
+    def fetch_versions(self) -> list[Version]:
+        tag_names = self.fetch_tag_names()
+        return [Version(vs) for vs in filter(lambda tag_name: Version.validate(tag_name), tag_names)]
+
+    def get_last_version(self):
+        return None
