@@ -14,7 +14,7 @@ class DescribeTcpFloodAttackMethod:
         )
         ctx = Context(args)
         ctx.__init__(args)
-        tcp_flood_am = UdpFlood(ctx.targets[0], ctx)
+        tcp_flood_am = UdpFlood(ctx.targets_manager.targets[0], ctx)
         assert tcp_flood_am.name == 'UDP Flood'
         assert tcp_flood_am.label == 'udp-flood'
 

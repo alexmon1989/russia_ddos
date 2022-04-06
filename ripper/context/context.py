@@ -1,12 +1,18 @@
 import os
-from threading import Lock
+import time
 from rich.console import Console
 
+from ripper import common
+from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.stats.context_stats_manager import ContextStatsManager
 from ripper.stats.ip_info import IpInfo
-from ripper.context.target import *
+from ripper.context.events_journal import EventsJournal
+from ripper.targets_manager import TargetsManager
+from ripper.headers_provider import HeadersProvider
+from ripper.time_interval_manager import TimeIntervalManager
+from ripper.context.target import Target
 
 events_journal = EventsJournal()
 
@@ -14,7 +20,7 @@ events_journal = EventsJournal()
 class Context(metaclass=common.Singleton):
     """Class (Singleton) for passing a context to a parallel processes."""
 
-    targets: list[Target] = None
+    targets_manager: TargetsManager = None
 
     # ==== Input params ====
     threads_count: int
@@ -29,8 +35,6 @@ class Context(metaclass=common.Singleton):
     """Type of proxy to work with. Supported types: socks5, socks4, http."""
     dry_run: bool = False
     """Is dry run mode."""
-
-    _lock: Lock = None
 
     # ==== Statistics ====
     myIpInfo: IpInfo = None
@@ -61,8 +65,7 @@ class Context(metaclass=common.Singleton):
         return value if value is not None else default
 
     def __init__(self, args):
-        self._lock = Lock()
-        self.targets = []
+        self.targets_manager = TargetsManager(_ctx=self)
         self.myIpInfo = IpInfo(common.get_current_ip())
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
@@ -118,36 +121,20 @@ class Context(metaclass=common.Singleton):
                     # TODO move http_method to target_uri to allow each target have its own method
                     http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
                 )
-                self.add_target(target)
+                self.targets_manager.add_target(target)
 
         self.stats = ContextStatsManager(_ctx=self)
         # We can't have fewer threads than targets
-        self.threads_count = max(self.threads_count, len(self.targets))
-
-    def add_target(self, target):
-        self.targets.append(target)
-        # NOTE We will merge error on visualization step
-        # self.errors_manager.add_submanager(target.errors_manager)
-
-    def delete_target(self, target: Target, is_stop_attack: bool = True):
-        if is_stop_attack:
-            target.stop_attack_threads()
-        self._lock.acquire()
-        try:
-            target_idx = self.targets.index(target)
-            self.targets.pop(target_idx)
-        except:
-            pass
-        self._lock.release()
+        self.threads_count = max(self.threads_count, len(self.targets_manager.targets)) if not self.dry_run else 1
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
-        if len(self.targets) < 1:
+        if len(self.targets_manager.targets) < 1:
             self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             exit(1)
 
         try:
-            for target in self.targets:
+            for target in self.targets_manager.targets:
                 target.validate()
         except Exception as e:
             self.logger.log(str(e))
