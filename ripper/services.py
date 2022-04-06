@@ -129,7 +129,7 @@ def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO
         _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} Trying to connect...')
         try:
             connect_host(target=target, _ctx=_ctx)
-            _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} [green]connected[/]')
+            _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} [green]Connected[/]')
             return True
         except Exception as e:
             _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} [red]{e}[/]')
