@@ -65,28 +65,28 @@ def go_home(_ctx: Context) -> None:
 
 def refresh_context_details(_ctx: Context) -> None:
     """Check threads, IPs, VPN status, etc."""
-    lock = threading.Lock()
-    lock.acquire()
 
-    threading.Thread(
-        name='update-ip', target=update_current_ip, args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC], daemon=True
-    ).start()
-
-    if _ctx.is_health_check:
-        for target in _ctx.targets_manager.targets:
-            threading.Thread(
-                name='check-host', target=update_host_statuses, args=[target], daemon=True).start()
-
-    if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
+    with threading.Lock():
         threading.Thread(
-            name='upd-country', target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.current_ip], daemon=True).start()
+            name='update-ip', target=update_current_ip,
+            args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC], daemon=True).start()
 
-    for target in _ctx.targets_manager.targets:
-        if target.country == GEOIP_NOT_DEFINED:
+        if _ctx.is_health_check:
+            for target in _ctx.targets_manager.targets:
+                threading.Thread(
+                    name='check-host', target=update_host_statuses,
+                    args=[target], daemon=True).start()
+
+        if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
             threading.Thread(
-                name='upd-country', target=common.get_country_by_ipv4, args=[target.host_ip], daemon=True).start()
+                name='upd-country', target=common.get_country_by_ipv4,
+                args=[_ctx.myIpInfo.current_ip], daemon=True).start()
 
-    lock.release()
+        for target in _ctx.targets_manager.targets:
+            if target.country == GEOIP_NOT_DEFINED:
+                threading.Thread(
+                    name='upd-country', target=common.get_country_by_ipv4,
+                    args=[target.host_ip], daemon=True).start()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
