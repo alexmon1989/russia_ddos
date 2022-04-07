@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
 
+from ripper.github_updates_checker import GithubUpdatesChecker
 from ripper import common, arg_parser
 from ripper.actions.attack import attack_method_labels
 from ripper.constants import *
@@ -175,7 +176,12 @@ def validate_input(args) -> bool:
 def render_statistics(_ctx: Context) -> None:
     """Show DRipper runtime statistics."""
     console = Console()
-    logo = Panel(LOGO_COLOR, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
+
+    update_available = ''
+    if _ctx.latest_version is not None and _ctx.current_version < _ctx.latest_version:
+        update_available = f'\n[u green reverse link={GITHUB_URL}/releases] Newer version {_ctx.latest_version.version} is available! [/]'
+
+    logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
     console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
 
     with Live(_ctx.stats.build_stats(), vertical_overflow='visible') as live:
@@ -203,6 +209,9 @@ def main():
 
     _ctx = Context(args[0])
     go_home(_ctx)
+
+    guc = GithubUpdatesChecker()
+    _ctx.latest_version = guc.fetch_lastest_version()
 
     _ctx.logger.rule('[bold]Starting DRipper')
     for target in _ctx.targets_manager.targets[:]:

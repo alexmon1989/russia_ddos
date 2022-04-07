@@ -1,9 +1,7 @@
 from math import floor
 from rich.table import Table
-from rich.text import Text
 from rich import box
 
-from _version import __version__
 from ripper.context.target import Target
 from ripper.stats.utils import Row, badge_error, badge_warn
 from rich.console import Group
@@ -11,10 +9,11 @@ from ripper import common
 from ripper.constants import *
 from ripper.time_interval_manager import TimeIntervalManager
 from ripper.context.events_journal import EventsJournal
-from ripper.github_updates_checker import GithubUpdatesChecker, Version
+from ripper.github_updates_checker import GithubUpdatesChecker
 
 Context = 'Context'
 events_journal = EventsJournal()
+
 
 class ContextStatsManager:
     _ctx: Context = None
@@ -121,22 +120,10 @@ class ContextStatsManager:
 
         return events_log
 
-    def build_update_message(self):
-        current_version = Version(__version__)
-        guc = GithubUpdatesChecker()
-        latest_version = guc.fetch_lastest_version()
-        if latest_version is not None and current_version < latest_version:
-            return Text(f'  Newer version {latest_version.version} is available!\n'
-                        f'  Update at {GITHUB_URL}',
-                        style='bold red',
-                        justify='left')
-        return None
-
     def build_stats(self):
         """Create statistics from aggregated RAW Statistics data."""
         details_table = self.build_details_stats_table()
         events_table = self.build_events_table() if events_journal.get_max_event_level() else None
-        update_msg = self.build_update_message()
         parts = filter(lambda v: v is not None, [
-                       update_msg, details_table, events_table])
+                       details_table, events_table])
         return Group(*parts)

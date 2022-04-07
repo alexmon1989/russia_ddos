@@ -5,7 +5,7 @@ from _version import __version__
 ###############################################
 VERSION = f'v{__version__}'
 USAGE = 'Usage: %prog [options] arg'
-EPILOG = 'Example: dripper -s tcp://192.168.0.1:80 -t 100 -m tcp-flood'
+EPILOG = 'Example: dripper -t 100 -m tcp-flood -s tcp://192.168.0.1:80'
 GITHUB_OWNER = 'alexmon1989'
 GITHUB_REPO = 'russia_ddos'
 GITHUB_ID = f'{GITHUB_OWNER}/{GITHUB_REPO}'
@@ -24,7 +24,7 @@ It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 Please, make sure you are ANONYMOUS!
 
-[u blue link={GITHUB_URL}]{GITHUB_URL}
+[u blue link={GITHUB_URL}]{GITHUB_URL}[/]
 '''
 
 LOGO_NOCOLOR = f'''

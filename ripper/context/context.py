@@ -2,6 +2,9 @@ import os
 import time
 from rich.console import Console
 
+from _version import __version__
+
+from ripper.github_updates_checker import Version
 from ripper import common
 from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
@@ -37,6 +40,8 @@ class Context(metaclass=common.Singleton):
     """Is dry run mode."""
 
     # ==== Statistics ====
+    latest_version: Version = None
+    current_version: Version = None
     myIpInfo: IpInfo = None
     """All the info about IP addresses and GeoIP information."""
 
@@ -88,6 +93,8 @@ class Context(metaclass=common.Singleton):
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:
             self.max_random_packet_len = 1024
+
+        self.current_version = Version(__version__)
 
         # to avoid situation when vCPU might be 0
         self.cpu_count = max(os.cpu_count(), 1)

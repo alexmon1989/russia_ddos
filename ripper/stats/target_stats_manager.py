@@ -53,6 +53,12 @@ class TargetStatsManager:
         data_rps = int(self.target.stats.packets.total_sent_bytes / duration.total_seconds())
         is_health_check = bool(self.target.health_check_manager)
 
+        _sent_bytes_formatted = common.convert_size(self.target.stats.packets.total_sent_bytes)
+        _indent = max(
+            len(str(self.target.stats.packets.total_sent)),
+            len(_sent_bytes_formatted)
+        )
+
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Country, Host IP',               f'[red]{self.target.country:4}[/][cyan]{self.target.host_ip}:{self.target.port} [dim](target-{self.target.index})[/]'),
@@ -61,8 +67,8 @@ class TargetStatsManager:
             Row('Threads',                        str(len(self.target.attack_threads))),
             Row('CloudFlare Protection',          ('[red]' if self.target.is_cloud_flare_protection else '[green]') + self.target.cloudflare_status(), end_section=not is_health_check),
             Row('Availability (check-host.net)',  f'{self.get_availability_msg()}', visible=is_health_check),
-            Row('Sent Bytes @ AVG speed',         f'{common.convert_size(self.target.stats.packets.total_sent_bytes):>12} @ [green]{common.convert_size(data_rps, "B/s")}'),
-            Row(f'Sent {sent_units} @ AVG speed', f'{self.target.stats.packets.total_sent:>12,} @ [green]{packets_rps} {sent_units.lower()}/s'),
+            Row('Sent Bytes @ AVG speed',         f'{_sent_bytes_formatted:{_indent}} @ [green]{common.convert_size(data_rps, "B/s")}'),
+            Row(f'Sent {sent_units} @ AVG speed', f'{self.target.stats.packets.total_sent:{_indent},} @ [green]{packets_rps} {sent_units.lower()}/s'),
             # === Info UDP/TCP => insert Sent bytes statistic
             Row('Connections',                    f'success: [green]{self.target.stats.connect.success}[/], failed: [red]{self.target.stats.connect.failed}[/], success rate: {rate_color(conn_success_rate, " %")}', end_section=True),
             # ===================================
