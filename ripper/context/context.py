@@ -149,5 +149,5 @@ class Context(metaclass=common.Singleton):
 
         if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
             self.logger.log(
-                f'Cannot get your public IPv4 address. Check your VPN connection.')
+                'Cannot get your public IPv4 address. Check your VPN connection.')
             exit(1)

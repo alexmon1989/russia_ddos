@@ -69,19 +69,22 @@ def refresh_context_details(_ctx: Context) -> None:
     lock.acquire()
 
     threading.Thread(
-        target=update_current_ip,
-        args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC]).start()
+        name='update-ip', target=update_current_ip, args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC], daemon=True
+    ).start()
 
     if _ctx.is_health_check:
         for target in _ctx.targets_manager.targets:
-            threading.Thread(target=update_host_statuses, args=[target]).start()
+            threading.Thread(
+                name='check-host', target=update_host_statuses, args=[target], daemon=True).start()
 
     if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
-        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.current_ip]).start()
+        threading.Thread(
+            name='upd-country', target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.current_ip], daemon=True).start()
 
     for target in _ctx.targets_manager.targets:
         if target.country == GEOIP_NOT_DEFINED:
-            threading.Thread(target=common.get_country_by_ipv4, args=[target.host_ip]).start()
+            threading.Thread(
+                name='upd-country', target=common.get_country_by_ipv4, args=[target.host_ip], daemon=True).start()
 
     lock.release()
 
