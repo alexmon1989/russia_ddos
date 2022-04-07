@@ -4,14 +4,13 @@ import sys
 import threading
 import time
 from base64 import b64decode
-
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
 
 from ripper import common, arg_parser
-from ripper.actions.attack import Attack, attack_method_labels
+from ripper.actions.attack import attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context, Target
 from ripper.common import get_current_ip
