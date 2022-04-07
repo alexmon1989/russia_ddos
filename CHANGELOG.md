@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### Added
 - Check DRipper updates from GitHub tags and show notification to user about it.
+- Added check for anti-DDoS page protection for check-host.net service.
 
 ### Changed
 - Moved target specific validation from statistic and context to Target class

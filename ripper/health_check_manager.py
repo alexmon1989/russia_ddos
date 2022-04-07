@@ -8,6 +8,7 @@ import time
 import datetime
 from collections import defaultdict
 from enum import Enum
+from urllib.error import HTTPError
 
 from ripper.context.events_journal import EventsJournal
 from ripper.constants import *
@@ -113,6 +114,9 @@ class HealthCheckManager:
     last_host_statuses_update: datetime = None
     host_statuses = {}
 
+    is_forbidden: bool = False
+    """Flag to avoid periodical checks if check-host.net is blocked ours checks."""
+
     target: Target = None
     _lock: threading.Lock
 
@@ -193,6 +197,10 @@ class HealthCheckManager:
                     current_host_statuses = count_host_statuses(resp_data)
                     if HOST_IN_PROGRESS_STATUS not in current_host_statuses:
                         break
+            except HTTPError as http_err:
+                if http_err.status == 403:
+                    self.is_forbidden = True
+                events_journal.exception(http_err)
             except Exception as ex:
                 events_journal.exception(ex)
                 pass

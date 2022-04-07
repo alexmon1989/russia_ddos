@@ -32,14 +32,21 @@ class TargetStatsManager:
         self.packets.status_sent(sent_bytes)
 
     def get_availability_msg(self) -> str:
+        if self.target.health_check_manager.is_forbidden:
+            return f'[orange1]Your IP was blocked with anti-bot or anti DDoS[/]' \
+                   f'\nCheck status - CTRL+click on [u blue link={self.target.health_check_manager.request_url}]link'
+
         status: HealthStatus = self.target.health_check_manager.status
         if status == HealthStatus.start_pending or status == HealthStatus.undefined:
             return f'...detecting ({self.target.health_check_manager.health_check_method.upper()} method)'
+
         avd: AvailabilityDistribution = self.target.health_check_manager.availability_distribution
         time_str = common.format_dt(self.target.health_check_manager.last_host_statuses_update, DATE_TIME_SHORT)
         accessible_message = f'[{time_str}] Accessible in {avd.succeeded} of {avd.total} zones ({avd.availability_percentage}%)'
+
         if status == HealthStatus.alive:
             return accessible_message
+
         if status == HealthStatus.dead:
             return f'{accessible_message}\n{TARGET_DEAD_ERR_MSG}'
 

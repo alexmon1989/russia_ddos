@@ -28,17 +28,18 @@ events_journal = EventsJournal()
 ###############################################
 def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
-    if target.health_check_manager.is_in_progress or \
-        not target.interval_manager.check_timer_elapsed(bucket=f'update_host_statuses_{target.uri}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
-        return False
-    try:
-        if target.host_ip:
-            target.health_check_manager.update_host_statuses()
-    except:
-        events_journal.error(f'Host statuses update failed with check-host.net', target=target)
-    else:
-        events_journal.error(f'Host statuses updated with check-host.net', target=target)
-    return True
+    if target.health_check_manager.is_forbidden:  # Do not check health status when service blocking your IP
+        return
+
+    if target.health_check_manager.is_in_progress or not target.interval_manager.check_timer_elapsed(
+            bucket=f'update_host_statuses_{target.uri}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
+        return
+
+    if target.host_ip:
+        if target.health_check_manager.update_host_statuses() == {}:
+            events_journal.error(f'Host statuses update failed with check-host.net', target=target)
+        else:
+            events_journal.info(f'Host statuses updated with check-host.net', target=target)
 
 
 ###############################################
