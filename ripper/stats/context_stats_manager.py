@@ -108,7 +108,6 @@ class ContextStatsManager:
     def build_events_table(self) -> Table:
         events_log = Table(
             box=box.SIMPLE,
-            min_width=MIN_SCREEN_WIDTH,
             width=MIN_SCREEN_WIDTH,
             caption=CONTROL_CAPTION,
             caption_style='bold')

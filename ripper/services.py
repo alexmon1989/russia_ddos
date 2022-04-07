@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
 
+from _version import __version__
 from ripper.github_updates_checker import GithubUpdatesChecker
 from ripper import common, arg_parser
 from ripper.actions.attack import attack_method_labels
@@ -145,6 +146,29 @@ def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO
 ###############################################
 # Console
 ###############################################
+def generate_valid_commands(uri):
+    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN} -s {uri}'
+    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN} -s {uri}'
+    http_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -e {ARGS_DEFAULT_HTTP_ATTACK_METHOD} -s {uri}'
+
+    res = ''
+    for a in ['tcp-flood', 'udp-flood', 'http-flood']:
+        if a == 'tcp-flood':
+            attack_args = tcp_attack
+        elif a == 'udp-flood':
+            attack_args = udp_attack
+        else:
+            attack_args = http_attack
+
+        res += '[green]{attack} attack:[/]\n'.format(attack=a.upper())
+        for c in ['dripper', 'python  DRipper.py', 'python3 DRipper.py', f'docker run -it --rm alexmon1989/dripper:{__version__}']:
+            res += '{command} -m {attack} {attack_args}\n'.format(command=c, attack=a, attack_args=attack_args)
+            if c.startswith('dripper') or c.startswith('python3'):
+                res += '\n'
+        res += '\n'
+    Console().print(res, new_line_start=True)
+
+
 def validate_input(args) -> bool:
     """Validates input params."""
     for target_uri in args.targets.split(','):
@@ -154,24 +178,28 @@ def validate_input(args) -> bool:
 
     if int(args.threads_count) < 1:
         common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
+        generate_valid_commands(args.targets)
         return False
 
     if args.attack_method is not None and args.attack_method.lower() not in attack_method_labels:
         common.print_panel(
             f'Wrong attack type. Check param [yellow]-m (--method) {args.attack_method}[/]\n'
             f'Possible options: {", ".join(attack_method_labels)}')
+        generate_valid_commands(args.targets)
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
         common.print_panel(
             f'Wrong HTTP method type. Check param [yellow]-e (--http-method) {args.http_method}[/]\n'
             f'Possible options: get, post, head, put, delete, trace, connect, options, patch.')
+        generate_valid_commands(args.targets)
         return False
 
     if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
         common.print_panel(
             f'Wrong Proxy type. Check param [yellow]-k (--proxy-type) {args.proxy_type}[/]\n'
             f'Possible options: http, socks5, socks4.')
+        generate_valid_commands(args.targets)
         return False
 
     return True
@@ -188,12 +216,12 @@ def render_statistics(_ctx: Context) -> None:
     logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
     console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
 
-    with Live(_ctx.stats.build_stats(), vertical_overflow='visible') as live:
+    with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
         live.start()
         while True:
-            time.sleep(0.5)
             refresh_context_details(_ctx)
             live.update(_ctx.stats.build_stats())
+            # time.sleep(0.2)
             if _ctx.dry_run:
                 break
 
