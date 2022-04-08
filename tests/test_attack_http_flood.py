@@ -13,7 +13,7 @@ class DescribeHttpFloodAttackMethod:
 
     def it_has_some_headers(self):
         args = Args(
-            targets=self.target_uri,
+            targets=[self.target_uri],
             http_method='GET',
         )
         ctx = Context(args)
@@ -27,7 +27,7 @@ class DescribeHttpFloodAttackMethod:
 
     def it_has_payload(self):
         args = Args(
-            targets=self.target_uri,
+            targets=[self.target_uri],
             http_method='POST',
         )
         ctx = Context(args)
@@ -49,7 +49,7 @@ class DescribeHttpFloodAttackMethod:
 
     def it_has_correct_name(self):
         args = Args(
-            targets=self.target_uri,
+            targets=[self.target_uri],
             http_method='GET',
         )
         ctx = Context(args)

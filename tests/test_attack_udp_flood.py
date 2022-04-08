@@ -10,7 +10,7 @@ Args = namedtuple('Args', 'targets')
 class DescribeTcpFloodAttackMethod:
     def it_has_correct_name(self):
         args = Args(
-            targets='udp://localhost',
+            targets=['udp://localhost'],
         )
         ctx = Context(args)
         ctx.__init__(args)

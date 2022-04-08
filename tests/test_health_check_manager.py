@@ -44,7 +44,7 @@ class DescribeHealthCheck:
     def it_can_fetch_host_statuses(self):
         args = Args(
             # TODO expect target_uri in args as well
-            targets='https://httpbin.org',
+            targets=['https://httpbin.org'],
         )
         context = Context(args)
         context.__init__(args)
@@ -74,7 +74,7 @@ class DescribeHealthCheck:
     def it_constructs_request_url(self, args_data, url):
         args = Args(
             # TODO expect target_uri in args as well
-            targets=args_data['target_uri'],
+            targets=[args_data['target_uri']],
         )
         context = Context(args)
         context.__init__(args)

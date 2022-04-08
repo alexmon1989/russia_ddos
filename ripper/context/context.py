@@ -120,7 +120,7 @@ class Context(metaclass=common.Singleton):
             self.sock_manager.socket_timeout *= 2
 
         if args and getattr(args, 'targets', None):
-            input_targets = getattr(args, 'targets', '').split(',')
+            input_targets = getattr(args, 'targets', [])
             for target_uri in input_targets:
                 target = Target(
                     target_uri=target_uri,

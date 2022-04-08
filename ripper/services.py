@@ -171,7 +171,7 @@ def generate_valid_commands(uri):
 
 def validate_input(args) -> bool:
     """Validates input params."""
-    for target_uri in args.targets.split(','):
+    for target_uri in args.targets:
         if not Target.validate_format(target_uri):
             common.print_panel(f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}')
             return False

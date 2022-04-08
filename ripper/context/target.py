@@ -2,8 +2,7 @@ import time
 from typing import Tuple
 from urllib.parse import urlparse
 
-from ripper.headers_provider import HeadersProvider
-from ripper.health_check_manager import HealthCheckManager, HealthStatus
+from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
 from ripper.stats.target_stats_manager import TargetStatsManager

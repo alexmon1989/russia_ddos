@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.4.0...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.5.0...HEAD)
+
+
+## [v2.5.0](https://github.com/alexmon1989/russia_ddos/compare/2.4.0...2.5.0)
 
 ### Added
 - Check DRipper updates from GitHub tags and show notification to user about it.
@@ -12,8 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Script command parameter generator to help users with incorrect command line parameters or errors with parameters
 
 ### Changed
+- Changed multiple target argument pass. Targets should be passed separately with `-s` flag.
 - Moved target specific validation from statistic and context to Target class
 - Targets manager can allocate attacks after target is removed and encapsulates logic related to the targets collection management.
+
 
 ## [v2.4.0](https://github.com/alexmon1989/russia_ddos/compare/2.3.1...2.4.0)
 
