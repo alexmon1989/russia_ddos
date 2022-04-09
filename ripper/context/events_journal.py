@@ -1,4 +1,5 @@
 import datetime
+import textwrap
 import threading
 from queue import Queue
 
@@ -51,7 +52,7 @@ class Event:
         if self._level == EventLevel.warn:
             return 'bold orange1 reverse'
         if self._level == EventLevel.error:
-            return 'bold red1 reverse'
+            return 'bold white on red3'
         return 'bold blue reverse'
 
     def format_message(self):
@@ -59,8 +60,9 @@ class Event:
         thread_name = threading.current_thread().name.lower()
         log_level_name = EventLevel.get_name_by_id(self._level)
         log_level_color = self.get_level_color()
-        locator = self._target.url if self._target is not None else 'global'
-        return f'[dim][bold][cyan][{now}][/]  [{log_level_color}]{log_level_name:^7}[/] {locator} {thread_name:11} {self._message}'
+        locator = f'target-{self._target.index}' if self._target is not None else 'global'
+        msg_limited = textwrap.shorten(self._message, width=50, placeholder='...')
+        return f'[dim][bold][cyan][{now}][/]  [{log_level_color}]{log_level_name:^7}[/] {locator:9} {thread_name:11} {msg_limited}'
 
 
 class EventsJournal(metaclass=Singleton):

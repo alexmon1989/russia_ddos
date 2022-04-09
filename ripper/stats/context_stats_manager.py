@@ -9,6 +9,7 @@ from ripper import common
 from ripper.constants import *
 from ripper.time_interval_manager import TimeIntervalManager
 from ripper.context.events_journal import EventsJournal
+from ripper.github_updates_checker import GithubUpdatesChecker
 
 Context = 'Context'
 events_journal = EventsJournal()
@@ -19,10 +20,13 @@ class ContextStatsManager:
     """Context we are working with."""
 
     interval_manager: TimeIntervalManager = None
+    guc: GithubUpdatesChecker = None
 
     def __init__(self, _ctx: Context):
         self._ctx = _ctx
         self.interval_manager = TimeIntervalManager()
+        guc = GithubUpdatesChecker()
+        guc.demon_update_latest_version()
 
     @property
     def current_target_idx(self) -> int:
@@ -32,16 +36,17 @@ class ContextStatsManager:
         Method calculates current index of target to display based on script execution duration.
         """
         duration = self.interval_manager.get_start_duration().total_seconds()
-        cnt = len(self._ctx.targets)
+        cnt = self._ctx.targets_manager.len()
         change_interval = TARGET_STATS_AUTO_PAGINATION_INTERVAL_SECONDS
         return floor((duration/change_interval) % cnt)
 
     @property
     def current_target(self) -> Target:
-        return self._ctx.targets[self.current_target_idx]
+        return self._ctx.targets_manager.targets[self.current_target_idx]
 
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
+        duration = self.interval_manager.get_start_duration()
         max_length = f' | Max length: {self._ctx.max_random_packet_len}' if self._ctx.max_random_packet_len else ''
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
 
@@ -50,9 +55,9 @@ class ContextStatsManager:
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Start Time',                common.format_dt(self._ctx.interval_manager.start_time)),
+            Row('Start Time, Duration',      f'{common.format_dt(self._ctx.interval_manager.start_time)}  ({str(duration).split(".", 2)[0]})'),
             Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
-            Row('Total Threads',             f'{self._ctx.threads_count}', visible=len(self._ctx.targets) > 1),
+            Row('Total Threads',             f'{self._ctx.threads_count}', visible=self._ctx.targets_manager.len() > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
             Row('vCPU Count',                f'{self._ctx.cpu_count}'),
@@ -64,7 +69,7 @@ class ContextStatsManager:
         return full_stats
 
     def build_target_rotation_header_details_stats(self) -> list[Row]:
-        cnt = len(self._ctx.targets)
+        cnt = self._ctx.targets_manager.len()
         if cnt < 2:
             return []
 
@@ -73,7 +78,7 @@ class ContextStatsManager:
         current_position = duration/change_interval
         next_target_in_seconds = 1 + floor(change_interval * (1 - (current_position - floor(current_position))))
         return [
-            Row(f'[cyan][bold]Target {self.current_target_idx + 1}/{cnt} (next in {next_target_in_seconds})', end_section=True),
+            Row(f'[cyan][bold]Target ({self.current_target.uri})', f'{self.current_target_idx + 1}/{cnt} (next in {next_target_in_seconds})', end_section=True),
             # ===================================
         ]
 
@@ -86,8 +91,8 @@ class ContextStatsManager:
             caption_style='bold',
         )
 
-        details_table.add_column('Description')
-        details_table.add_column('Status')
+        details_table.add_column('Description', width=45)
+        details_table.add_column('Status', width=MIN_SCREEN_WIDTH - 45)
 
         rows = self.build_global_details_stats()
         rows += self.build_target_rotation_header_details_stats()
@@ -103,7 +108,6 @@ class ContextStatsManager:
     def build_events_table(self) -> Table:
         events_log = Table(
             box=box.SIMPLE,
-            min_width=MIN_SCREEN_WIDTH,
             width=MIN_SCREEN_WIDTH,
             caption=CONTROL_CAPTION,
             caption_style='bold')
@@ -119,5 +123,6 @@ class ContextStatsManager:
         """Create statistics from aggregated RAW Statistics data."""
         details_table = self.build_details_stats_table()
         events_table = self.build_events_table() if events_journal.get_max_event_level() else None
-        group = Group(details_table) if events_table is None else Group(details_table, events_table)
-        return group
+        parts = filter(lambda v: v is not None, [
+                       details_table, events_table])
+        return Group(*parts)

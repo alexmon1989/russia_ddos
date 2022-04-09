@@ -1,11 +1,21 @@
 import os
+import time
 from rich.console import Console
 
+from _version import __version__
+
+from ripper.github_updates_checker import Version
+from ripper import common
+from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
 from ripper.stats.context_stats_manager import ContextStatsManager
 from ripper.stats.ip_info import IpInfo
-from ripper.context.target import *
+from ripper.context.events_journal import EventsJournal
+from ripper.targets_manager import TargetsManager
+from ripper.headers_provider import HeadersProvider
+from ripper.time_interval_manager import TimeIntervalManager
+from ripper.context.target import Target
 
 events_journal = EventsJournal()
 
@@ -13,7 +23,7 @@ events_journal = EventsJournal()
 class Context(metaclass=common.Singleton):
     """Class (Singleton) for passing a context to a parallel processes."""
 
-    targets: list[Target] = None
+    targets_manager: TargetsManager = None
 
     # ==== Input params ====
     threads_count: int
@@ -30,6 +40,8 @@ class Context(metaclass=common.Singleton):
     """Is dry run mode."""
 
     # ==== Statistics ====
+    latest_version: Version = None
+    current_version: Version = None
     myIpInfo: IpInfo = None
     """All the info about IP addresses and GeoIP information."""
 
@@ -57,26 +69,8 @@ class Context(metaclass=common.Singleton):
 
         return value if value is not None else default
 
-    def validate(self):
-        """Validates context before Run script. Order is matter!"""
-        try:
-            for target in self.targets:
-                target.validate()
-        except Exception as e:
-            self.logger.log(str(e))
-            exit(1)
-
-        if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
-            self.logger.log(f'Cannot get your public IPv4 address. Check your VPN connection.')
-            exit(1)
-
-    def add_target(self, target):
-        self.targets.append(target)
-        # NOTE We will merge error on visualization step
-        # self.errors_manager.add_submanager(target.errors_manager)
-
     def __init__(self, args):
-        self.targets = []
+        self.targets_manager = TargetsManager(_ctx=self)
         self.myIpInfo = IpInfo(common.get_current_ip())
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
@@ -99,6 +93,8 @@ class Context(metaclass=common.Singleton):
             self.max_random_packet_len = 0
         elif self.random_packet_len and not self.max_random_packet_len:
             self.max_random_packet_len = 1024
+
+        self.current_version = Version(__version__)
 
         # to avoid situation when vCPU might be 0
         self.cpu_count = max(os.cpu_count(), 1)
@@ -124,7 +120,7 @@ class Context(metaclass=common.Singleton):
             self.sock_manager.socket_timeout *= 2
 
         if args and getattr(args, 'targets', None):
-            input_targets = getattr(args, 'targets', '').split(',')
+            input_targets = getattr(args, 'targets', [])
             for target_uri in input_targets:
                 target = Target(
                     target_uri=target_uri,
@@ -132,8 +128,26 @@ class Context(metaclass=common.Singleton):
                     # TODO move http_method to target_uri to allow each target have its own method
                     http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
                 )
-                self.add_target(target)
+                self.targets_manager.add_target(target)
 
         self.stats = ContextStatsManager(_ctx=self)
         # We can't have fewer threads than targets
-        self.threads_count = max(self.threads_count, len(self.targets))
+        self.threads_count = max(self.threads_count, self.targets_manager.len()) if not self.dry_run else 1
+
+    def validate(self):
+        """Validates context before Run script. Order is matter!"""
+        if self.targets_manager.len() < 1:
+            self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
+            exit(1)
+
+        try:
+            for target in self.targets_manager.targets:
+                target.validate()
+        except Exception as e:
+            self.logger.log(str(e))
+            exit(1)
+
+        if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
+            self.logger.log(
+                'Cannot get your public IPv4 address. Check your VPN connection.')
+            exit(1)

@@ -13,6 +13,7 @@ class ConnectionStats:
     """Last check connection time."""
     in_progress: bool = False
     """Connection state used for checking liveness of Socket."""
+    is_connected: bool = False
     _lock: Lock = None
 
     def __init__(self):
@@ -36,6 +37,7 @@ class ConnectionStats:
     def set_state_is_connected(self):
         """Set connection State - is connected."""
         self.in_progress = False
+        self.is_connected = True
 
     def status_success(self):
         """Collect successful connections."""

