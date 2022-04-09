@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-20.04, macos-10.15, windows-2019 ]
+        os: [ ubuntu-20.04, macos-11, windows-2019 ]
 
     steps:
       - name: Checkout
@@ -47,7 +47,7 @@ jobs:
           dripper -t 1 -s https://httpbin.org:443 --dry-run
 
       - name: Run Tests with coverage
-        run: python3 -m pytest --cov=ripper tests/
+        run: pytest
 
       - name: Set up QEMU
         if: runner.os == 'Linux'

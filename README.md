@@ -192,7 +192,7 @@ pip install -r requirements.test.txt
 pytest
 
 # with code coverage report:
-pytest --cov=ripper tests/
+pytest --cov-report=html:./htmlcov
 ```
 
 # License

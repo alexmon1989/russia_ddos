@@ -1,0 +1,16 @@
+# .coveragerc to control coverage.py
+# https://coverage.readthedocs.io/en/latest/config.html
+
+[run]
+branch = true
+source = tests/*
+
+[paths]
+source = ripper
+
+[html]
+show_contexts = True
+directory = htmlcov
+
+[report]
+ignore_errors = True
