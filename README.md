@@ -184,12 +184,15 @@ For details - see the [README][kube-dripper-readme] from **kube-dripper** projec
 
 #### Prepare
 ```bash
-pip install pytest
+pip install -r requirements.test.txt
 ```
 
 #### Run
 ```bash
 pytest
+
+# with code coverage report:
+pytest --cov=ripper tests/
 ```
 
 # License

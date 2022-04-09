@@ -38,16 +38,16 @@ jobs:
 
       - name: Setup Python packages
         run: |
-          python3 -m pip install pytest
+          python3 -m pip install -r requirements.test.txt
           python3 -m pip install --upgrade pip -e .
 
       - name: Fast attack test
         if: runner.os == 'Linux'
         run: |
-          dripper -s https://httpbin.org:443 -t 1 -m tcp-flood --dry-run
+          dripper -t 1 -s https://httpbin.org:443 --dry-run
 
-      - name: Run Tests
-        run: python3 -m pytest tests/
+      - name: Run Tests with coverage
+        run: python3 -m pytest --cov=ripper tests/
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
@@ -121,4 +121,4 @@ jobs:
         if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux'
         run: |
           docker build -t alexmon1989/dripper:ci-test --no-cache --rm .
-          docker run -i --rm alexmon1989/dripper:ci-test -s https://httpbin.org:443 -t 1 -m tcp-flood --dry-run
+          docker run -i --rm alexmon1989/dripper:ci-test -t 1 -s https://httpbin.org:443 --dry-run
