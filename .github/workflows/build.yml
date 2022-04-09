@@ -47,7 +47,7 @@ jobs:
           dripper -t 1 -s https://httpbin.org:443 --dry-run
 
       - name: Run Tests with coverage
-        run: pytest
+        run: python3 -m pytest tests/
 
       - name: Set up QEMU
         if: runner.os == 'Linux'
