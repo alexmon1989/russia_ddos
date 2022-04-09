@@ -6,7 +6,7 @@ import time
 from ripper.github_updates_checker import GithubUpdatesChecker, Version
 
 
-@pytest.mark.skipif(os.getenv('CI', False), reason='May freeze CI test...')
+@pytest.mark.skipif(os.getenv('CI') == 'true', reason='May freeze CI test...')
 class DescribeGithubUpdatesChecker:
     def it_can_read_tag_names(self):
         guc = GithubUpdatesChecker()
