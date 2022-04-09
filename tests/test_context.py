@@ -10,7 +10,7 @@ Args = namedtuple('Args', 'targets')
 
 class DescribeContext:
     args: Args = Args(
-        targets=['http://localhost']
+        targets=['https://httpbin.org']
     )
 
     @pytest.mark.parametrize('actual_ip, expected_result', [
