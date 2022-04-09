@@ -66,9 +66,10 @@ class GithubUpdatesChecker:
         return data
 
     def _get_headers(self):
-        return {
-            'Authorization': f'Bearer {os.getenv("GITHUB_TOKEN", "dummy-token")}'
-        }
+        if os.getenv("GITHUB_TOKEN", False):
+            return {'Authorization': f'Bearer {os.getenv("GITHUB_TOKEN")}'}
+        else:
+            return {}
 
     def _ref_to_tag_name(self, ref: str):
         return ''.join(ref.split('/')[2:])
