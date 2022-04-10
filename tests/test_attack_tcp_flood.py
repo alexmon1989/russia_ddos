@@ -4,13 +4,14 @@ from collections import namedtuple
 from ripper.actions.tcp_flood import TcpFlood
 from ripper.context.context import Context
 
-Args = namedtuple('Args', 'targets')
+Args = namedtuple('Args', 'targets threads_count')
 
 
 class DescribeTcpFloodAttackMethod:
     def it_has_correct_name(self):
         args = Args(
             targets=['tcp://localhost'],
+            threads_count=100,
         )
         ctx = Context(args)
         ctx.__init__(args)

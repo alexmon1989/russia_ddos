@@ -5,12 +5,13 @@ import pytest as pytest
 
 from ripper.context.context import Context
 
-Args = namedtuple('Args', 'targets')
+Args = namedtuple('Args', 'targets threads_count')
 
 
 class DescribeContext:
     args: Args = Args(
-        targets=['https://httpbin.org']
+        targets=['https://httpbin.org'],
+        threads_count=100,
     )
 
     @pytest.mark.parametrize('actual_ip, expected_result', [
@@ -46,6 +47,7 @@ class DescribeContext:
     def it_detects_attack_by_target_in_context(self, target_uri, attack_method):
         args = Args(
             targets=[target_uri],
+            threads_count=100,
         )
         context = Context(args)
         # context is singleton now, so it should be reinitialized manually

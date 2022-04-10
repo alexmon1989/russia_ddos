@@ -5,7 +5,7 @@ from ripper.actions.http_flood import HttpFlood
 from ripper.context.context import Context
 from ripper.headers_provider import HeadersProvider
 
-Args = namedtuple('Args', 'targets http_method')
+Args = namedtuple('Args', 'targets http_method threads_count')
 
 
 class DescribeHttpFloodAttackMethod:
@@ -15,6 +15,7 @@ class DescribeHttpFloodAttackMethod:
         args = Args(
             targets=[self.target_uri],
             http_method='GET',
+            threads_count=100,
         )
         ctx = Context(args)
         ctx.__init__(args)
@@ -29,6 +30,7 @@ class DescribeHttpFloodAttackMethod:
         args = Args(
             targets=[self.target_uri],
             http_method='POST',
+            threads_count=100,
         )
         ctx = Context(args)
         ctx.__init__(args)
@@ -51,6 +53,7 @@ class DescribeHttpFloodAttackMethod:
         args = Args(
             targets=[self.target_uri],
             http_method='GET',
+            threads_count=100,
         )
         ctx = Context(args)
         ctx.__init__(args)
