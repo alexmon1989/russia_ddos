@@ -130,11 +130,13 @@ class Context(metaclass=common.Singleton):
                     http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
                 )
                 self.targets_manager.add_target(target)
-                # We can't have fewer threads than targets
-        
-        threads_count = max(getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT),
-                                self.targets_manager.len()) if not self.dry_run else 1
-        self.targets_manager.set_threads_count(threads_count)
+
+        arg_threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
+        if arg_threads_count == 'auto':
+            self.targets_manager.set_auto_threads_distribution()
+        else:
+            threads_count = int(arg_threads_count) if not self.dry_run else 1
+            self.targets_manager.set_threads_count(threads_count)
 
         self.stats = ContextStatsManager(_ctx=self)
 

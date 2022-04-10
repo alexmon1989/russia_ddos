@@ -11,8 +11,6 @@ class ThreadsDistribution(Enum):
     Fixed = 'fixed',
     Auto = 'auto',
 
-# Add support for ThreadsDistribution
-# Add arg option (str) for threads count, "auto"
 # If auto selected, start with minimal number of threads and grow till packets sent grows (total) and till CPU < 100%
 
 class TargetsManager:
@@ -51,7 +49,8 @@ class TargetsManager:
         return self._threads_distribution
     
     def set_threads_count(self, threads_count: int):
-        self._threads_count = threads_count
+        # We can't have fewer threads than targets
+        self._threads_count = max(threads_count, len(self._targets))
 
     def set_auto_threads_distribution(self):
         self._threads_distribution = ThreadsDistribution.Auto
@@ -60,6 +59,8 @@ class TargetsManager:
         self._targets.append(target)
         target_idx = self._targets.index(target)
         target.index = target_idx
+        # We can't have fewer threads than targets
+        self._threads_count = max(self._threads_count, len(self._targets))
 
     def delete_target(self, target: Target, is_stop_attack: bool = True, is_allocate_attacks: bool = True):
         if is_stop_attack:

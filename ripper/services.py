@@ -189,7 +189,7 @@ def validate_input(args) -> bool:
             )
             return False
 
-    if int(args.threads_count) < 1:
+    if args.threads_count != 'auto' and (not args.threads_count.isdigit() or int(args.threads_count) < 1):
         common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
         generate_valid_commands(args.targets)
         return False
