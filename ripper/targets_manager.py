@@ -1,4 +1,5 @@
 from threading import Lock
+from enum import Enum
 
 from ripper.context.target import Target
 from ripper.actions.attack import Attack
@@ -6,19 +7,29 @@ from ripper.actions.attack import Attack
 Context = 'Context'
 
 
+class ThreadsDistribution(Enum):
+    Fixed = 'fixed',
+    Auto = 'auto',
+
+# Add support for ThreadsDistribution
+# Add arg option (str) for threads count, "auto"
+# If auto selected, start with minimal number of threads and grow till packets sent grows (total) and till CPU < 100%
+
 class TargetsManager:
     _targets: list[Target] = None
     _ctx: Context = None
     _lock: Lock = None
+    _threads_count: int = None
 
-    def __init__(self, _ctx: Context):
+    def __init__(self, _ctx: Context, threads_count: int = 1):
         self._targets = []
         self._ctx = _ctx
         self._lock = Lock()
+        self._threads_count = threads_count
 
     @property
     def free_threads_count(self):
-        total = self._ctx.threads_count
+        total = self.threads_count
         self._lock.acquire()
         for target in self._targets:
             total -= len(target.attack_threads)
@@ -28,6 +39,13 @@ class TargetsManager:
     @property
     def targets(self):
         return self._targets[:]
+    
+    @property
+    def threads_count(self):
+        return self._threads_count
+    
+    def set_threads_count(self, threads_count: int):
+        self._threads_count = threads_count
 
     def add_target(self, target):
         self._targets.append(target)
