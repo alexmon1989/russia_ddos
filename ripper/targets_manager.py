@@ -20,12 +20,14 @@ class TargetsManager:
     _ctx: Context = None
     _lock: Lock = None
     _threads_count: int = None
+    _threads_distribution: ThreadsDistribution = None
 
-    def __init__(self, _ctx: Context, threads_count: int = 1):
+    def __init__(self, _ctx: Context, threads_count: int = 1, threads_distribution: ThreadsDistribution = ThreadsDistribution.Fixed):
         self._targets = []
         self._ctx = _ctx
         self._lock = Lock()
         self._threads_count = threads_count
+        self._threads_distribution = threads_distribution
 
     @property
     def free_threads_count(self):
@@ -44,8 +46,15 @@ class TargetsManager:
     def threads_count(self):
         return self._threads_count
     
+    @property
+    def threads_distribution(self):
+        return self._threads_distribution
+    
     def set_threads_count(self, threads_count: int):
         self._threads_count = threads_count
+
+    def set_auto_threads_distribution(self):
+        self._threads_distribution = ThreadsDistribution.Auto
 
     def add_target(self, target):
         self._targets.append(target)
