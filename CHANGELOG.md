@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.5.0...HEAD)
 
+### Added
+- Attack duration param (in seconds). After this duration script will stop its execution.
+
+### Fixed
+- Fixed command parameter generator to help users with incorrect command line parameters or errors with parameters
+
 
 ## [v2.5.0](https://github.com/alexmon1989/russia_ddos/compare/2.4.0...2.5.0)
 
