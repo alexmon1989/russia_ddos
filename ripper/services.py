@@ -147,9 +147,17 @@ def connect_host_loop(target: Target, _ctx: Context, retry_cnt: int = CONNECT_TO
 # Console
 ###############################################
 def generate_valid_commands(uri):
-    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN} -s {uri}'
-    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN} -s {uri}'
-    http_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -e {ARGS_DEFAULT_HTTP_ATTACK_METHOD} -s {uri}'
+    tcp_uri = http_uri = udp_uri = ''
+    for t in uri:
+        hostname = t.split(':')
+        port = f':{hostname[2]}' if len(hostname) == 3 else ''
+        udp_uri += f' -s udp:{hostname[1]}{port}'
+        tcp_uri += f' -s tcp:{hostname[1]}{port}'
+        http_uri += f' -s http:{hostname[1]}{port}'
+
+    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN}{tcp_uri}'
+    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN}{udp_uri}'
+    http_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -e {ARGS_DEFAULT_HTTP_ATTACK_METHOD}{http_uri}'
 
     res = ''
     for a in ['tcp-flood', 'udp-flood', 'http-flood']:
@@ -162,7 +170,7 @@ def generate_valid_commands(uri):
 
         res += '[green]{attack} attack:[/]\n'.format(attack=a.upper())
         for c in ['dripper', 'python  DRipper.py', 'python3 DRipper.py', f'docker run -it --rm alexmon1989/dripper:{__version__}']:
-            res += '{command} -m {attack} {attack_args}\n'.format(command=c, attack=a, attack_args=attack_args)
+            res += '{command} {attack_args}\n'.format(command=c, attack_args=attack_args)
             if c.startswith('dripper') or c.startswith('python3'):
                 res += '\n'
         res += '\n'
@@ -173,7 +181,12 @@ def validate_input(args) -> bool:
     """Validates input params."""
     for target_uri in args.targets:
         if not Target.validate_format(target_uri):
-            common.print_panel(f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}')
+            common.print_panel(
+                f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}\n'
+                f'Target should be in next format: ' + '{scheme}://{hostname}[:{port}][{path}]\n\n' +
+                f'Possible target format may be:\n'
+                f'[yellow]tcp://{target_uri}, udp://{target_uri}, http://{target_uri}, https://{target_uri}[/]'
+            )
             return False
 
     if int(args.threads_count) < 1:
