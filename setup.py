@@ -1,3 +1,4 @@
+import check_python_version
 from setuptools import setup, find_packages
 from ripper.constants import VERSION
 
