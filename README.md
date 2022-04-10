@@ -125,11 +125,13 @@ Options:
   -c HEALTH_CHECK, --health-check=HEALTH_CHECK          Controls health check availability. Turn on: 1, turn off: 0.
                                                         Default: 1
   -o SOCKET_TIMEOUT, --socket-timeout=SOCKET_TIMEOUT    Timeout for socket connection is seconds. Default (seconds): 1
-                                                        without proxy, 2 with proxy
-  -d, --dry-run                                         Print formatted output without full script running.
+                                                        without proxy, 2 with proxy                                                    
+  --dry-run                                             Print formatted output without full script running.
   --log-size=LOG_SIZE                                   Set the Events Log history frame length.
   --log-level=EVENT_LEVEL                               Log level for events board. Supported levels: info, warn, error,
                                                         none.
+  -d DURATION_SECONDS, --duration=DURATION_SECONDS      Attack duration in seconds. After this duration script will 
+                                                        stop its execution.                                                   
 
 Example: dripper -t 100 -m tcp-flood -s tcp://192.168.0.1:80
 ```
