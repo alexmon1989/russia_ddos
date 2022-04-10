@@ -31,6 +31,13 @@ class DescribeGithubUpdatesChecker:
     def it_can_read_latest_version_on_background(self):
         guc = GithubUpdatesChecker()
         guc.demon_update_latest_version()
-        while guc.latest_version is None:
-            time.sleep(1)
+
+        for _ in range(5):
+            if guc.latest_version is None:
+                time.sleep(1)
+            else:
+                break
+        if guc.latest_version is None:
+            # rate limiter
+            assert False
         assert Version('1.0.0') <= guc.latest_version

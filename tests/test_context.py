@@ -29,14 +29,14 @@ class DescribeContext:
         context = Context(self.args)
         context.__init__(self.args)
         last_2mins = datetime.now() - timedelta(minutes=2)
-        context.interval_manager.start_time = last_2mins
+        context.time_interval_manager._start_time = last_2mins
 
-        assert datetime.now() > context.interval_manager.start_time
-        assert context.interval_manager.check_timer_elapsed(5) is True
-        assert context.interval_manager.check_timer_elapsed(5) is False
+        assert datetime.now() > context.time_interval_manager.start_time
+        assert context.time_interval_manager.check_timer_elapsed(5) is True
+        assert context.time_interval_manager.check_timer_elapsed(5) is False
         time.sleep(2)
-        assert context.interval_manager.check_timer_elapsed(5) is False
-        assert context.interval_manager.check_timer_elapsed(1) is True
+        assert context.time_interval_manager.check_timer_elapsed(5) is False
+        assert context.time_interval_manager.check_timer_elapsed(1) is True
 
     @pytest.mark.parametrize('target_uri, attack_method', [
         ('http://google.com', 'http-flood'),

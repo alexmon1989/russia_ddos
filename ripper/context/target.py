@@ -49,7 +49,7 @@ class Target:
     """Attack-related threads."""
 
     health_check_manager: HealthCheckManager = None
-    interval_manager: TimeIntervalManager = None
+    time_interval_manager: TimeIntervalManager = None
 
     stats: TargetStatsManager = None
     """All the statistics collected separately by protocols and operations."""
@@ -74,7 +74,7 @@ class Target:
     def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD):
         self.attack_threads = []
         self.http_method = http_method
-        self.interval_manager = TimeIntervalManager()
+        self.time_interval_manager = TimeIntervalManager()
 
         parts = urlparse(target_uri)
         self.scheme = parts.scheme

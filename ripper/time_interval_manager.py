@@ -5,14 +5,29 @@ from ripper.common import Singleton, s2ns
 
 
 class TimeIntervalManager(metaclass=Singleton):
-    timer_bucket: dict[str, datetime] = None
+    _timer_bucket: dict[str, datetime] = None
     """Internal stopwatch."""
-    start_time: datetime = None
+    _start_time: datetime = None
     """Script start time."""
 
     def __init__(self):
-      self.start_time = datetime.now()
-      self.timer_bucket = defaultdict(dict[str, datetime])
+      self._start_time = datetime.now()
+      self._timer_bucket = defaultdict(dict[str, datetime])
+    
+    @property
+    def start_time(self) -> datetime:
+        return self._start_time
+
+    @property
+    def execution_duration(self) -> timedelta:
+        return datetime.now() - self._start_time
+
+    @property
+    def start_time_ns(self) -> int:
+        """Get start time in nanoseconds."""
+        if not self._start_time:
+            return 0
+        return s2ns(self._start_time.timestamp())
     
     def _get_key_name(self, bucket: str = None) -> str:
         if bucket:
@@ -31,21 +46,12 @@ class TimeIntervalManager(metaclass=Singleton):
         if int(delta) < sec:
             return False
         else:
-            self.timer_bucket[key] = datetime.now()
+            self._timer_bucket[key] = datetime.now()
             return True
 
     def get_timer_seconds(self, bucket: str = None) -> int:
         key = self._get_key_name(bucket)
-        if key not in self.timer_bucket:
+        if key not in self._timer_bucket:
             return int(datetime.now().timestamp())
 
-        return int((datetime.now() - self.timer_bucket[bucket]).total_seconds())
-
-    def get_start_time_ns(self) -> int:
-        """Get start time in nanoseconds."""
-        if not self.start_time:
-            return 0
-        return s2ns(self.start_time.timestamp())
-
-    def get_start_duration(self) -> timedelta:
-        return datetime.now() - self.start_time
+        return int((datetime.now() - self._timer_bucket[bucket]).total_seconds())
