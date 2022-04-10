@@ -74,6 +74,7 @@ class AutomaticThreadsDistribution:
             events_journal.error(f'{current_packet_stats.avg_sent_bytes_per_second}, {current_packet_stats.avg_sent_per_second}')
             if self._packet_stats:
                 if self._packet_stats < current_packet_stats and cpu_percent() < MAX_AUTOSCALE_CPU_PERCENTAGE:
+                    self._failed_tests_cnt = 0
                     self.scale_up()
                 else:
                     self._failed_tests_cnt += 1
