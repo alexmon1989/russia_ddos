@@ -32,7 +32,7 @@ def update_host_statuses(target: Target):
     if target.health_check_manager.is_forbidden:  # Do not check health status when service blocking your IP
         return
 
-    if target.health_check_manager.is_in_progress or not target.interval_manager.check_timer_elapsed(
+    if target.health_check_manager.is_in_progress or not target.time_interval_manager.check_timer_elapsed(
             bucket=f'update_host_statuses_{target.uri}', sec=MIN_UPDATE_HOST_STATUSES_TIMEOUT):
         return
 
@@ -49,7 +49,7 @@ def update_host_statuses(target: Target):
 # TODO use context as an argument name
 def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
-    if _ctx.interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
+    if _ctx.time_interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
         events_journal.info(f'Checking my public IP address (period: {check_period_sec} sec)')
         _ctx.myIpInfo.current_ip = get_current_ip()
     if _ctx.myIpInfo.start_ip is None:
@@ -258,6 +258,7 @@ def main():
     # Start Threads
     time.sleep(.5)
     _ctx.targets_manager.allocate_attacks()
+    _ctx.duration_manager.start_countdown()
 
     render_statistics(_ctx)
 

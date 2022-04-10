@@ -1,3 +1,4 @@
+from datetime import timedelta
 from math import floor
 from rich.table import Table
 from rich import box
@@ -19,12 +20,12 @@ class ContextStatsManager:
     _ctx: Context = None
     """Context we are working with."""
 
-    interval_manager: TimeIntervalManager = None
+    time_interval_manager: TimeIntervalManager = None
     guc: GithubUpdatesChecker = None
 
     def __init__(self, _ctx: Context):
         self._ctx = _ctx
-        self.interval_manager = TimeIntervalManager()
+        self.time_interval_manager = TimeIntervalManager()
         guc = GithubUpdatesChecker()
         guc.demon_update_latest_version()
 
@@ -35,7 +36,7 @@ class ContextStatsManager:
         Pagination happens automatically.
         Method calculates current index of target to display based on script execution duration.
         """
-        duration = self.interval_manager.get_start_duration().total_seconds()
+        duration = self.time_interval_manager.execution_duration.total_seconds()
         cnt = self._ctx.targets_manager.len()
         change_interval = TARGET_STATS_AUTO_PAGINATION_INTERVAL_SECONDS
         return floor((duration/change_interval) % cnt)
@@ -43,10 +44,15 @@ class ContextStatsManager:
     @property
     def current_target(self) -> Target:
         return self._ctx.targets_manager.targets[self.current_target_idx]
+    
+    @property
+    def duration(self) -> timedelta:
+        return self.time_interval_manager.execution_duration \
+               if self._ctx.duration_manager.duration is None \
+               else self._ctx.duration_manager.remaining_duration
 
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
-        duration = self.interval_manager.get_start_duration()
         max_length = f' | Max length: {self._ctx.max_random_packet_len}' if self._ctx.max_random_packet_len else ''
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
 
@@ -55,7 +61,7 @@ class ContextStatsManager:
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Start Time, Duration',      f'{common.format_dt(self._ctx.interval_manager.start_time)}  ({str(duration).split(".", 2)[0]})'),
+            Row('Start Time, Duration',      f'{common.format_dt(self._ctx.time_interval_manager.start_time)}  ({str(self.duration).split(".", 2)[0]})'),
             Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.threads_count}', visible=self._ctx.targets_manager.len() > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
@@ -73,7 +79,7 @@ class ContextStatsManager:
         if cnt < 2:
             return []
 
-        duration = self.interval_manager.get_start_duration().total_seconds()
+        duration = self.time_interval_manager.execution_duration.total_seconds()
         change_interval = TARGET_STATS_AUTO_PAGINATION_INTERVAL_SECONDS
         current_position = duration/change_interval
         next_target_in_seconds = 1 + floor(change_interval * (1 - (current_position - floor(current_position))))

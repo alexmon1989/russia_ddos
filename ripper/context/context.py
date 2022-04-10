@@ -3,6 +3,7 @@ import time
 from rich.console import Console
 
 from _version import __version__
+from ripper.duration_manager import DurationManager
 
 from ripper.github_updates_checker import Version
 from ripper import common
@@ -15,6 +16,7 @@ from ripper.context.events_journal import EventsJournal
 from ripper.targets_manager import TargetsManager
 from ripper.headers_provider import HeadersProvider
 from ripper.time_interval_manager import TimeIntervalManager
+from ripper.duration_manager import DurationManager
 from ripper.context.target import Target
 
 events_journal = EventsJournal()
@@ -56,7 +58,8 @@ class Context(metaclass=common.Singleton):
     # External API and services info
     sock_manager: SocketManager = None
     proxy_manager: ProxyManager = None
-    interval_manager: TimeIntervalManager = None
+    time_interval_manager: TimeIntervalManager = None
+    duration_manager: DurationManager = None
     logger: Console = None
     stats: ContextStatsManager = None
 
@@ -75,7 +78,8 @@ class Context(metaclass=common.Singleton):
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
-        self.interval_manager = TimeIntervalManager()
+        self.time_interval_manager = TimeIntervalManager()
+        self.duration_manager = DurationManager(duration_seconds=getattr(args, 'duration', None))
         self.logger = Console(width=MIN_SCREEN_WIDTH)
         self.threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))

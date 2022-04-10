@@ -55,7 +55,7 @@ class TargetStatsManager:
         sent_units = 'Requests' if self.target.attack_method.lower() == 'http' else 'Packets'
         conn_success_rate = self.target.stats.connect.get_success_rate()
 
-        duration = self.target.interval_manager.get_start_duration()
+        duration = self.target.time_interval_manager.execution_duration
         packets_rps = int(self.target.stats.packets.total_sent / duration.total_seconds())
         data_rps = int(self.target.stats.packets.total_sent_bytes / duration.total_seconds())
         is_health_check = bool(self.target.health_check_manager)
