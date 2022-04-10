@@ -142,7 +142,7 @@ class Context(metaclass=common.Singleton):
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
-        if self.targets_manager.len() < 1:
+        if self.targets_manager.targets_count() < 1:
             self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             exit(1)
 

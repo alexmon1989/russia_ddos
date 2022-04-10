@@ -84,13 +84,11 @@ class Target:
         path = parts.path if parts.path else '/'
         query = parts.query if parts.query else ''
         self.http_path = path if not query else f'{path}?{query}'
+        self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
         self.host_ip = common.get_ipv4(self.host)
         self.country = common.get_country_by_ipv4(self.host_ip)
         self.is_cloud_flare_protection = common.detect_cloudflare(target_uri)
-
-        self.attack_method = attack_method if attack_method else self.guess_attack_method()
-
         self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
 

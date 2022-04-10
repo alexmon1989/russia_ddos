@@ -1,17 +1,94 @@
-from threading import Lock
+import time
 from enum import Enum
+from threading import Thread, Event, Lock
+from psutil import cpu_percent
 
 from ripper.context.target import Target
 from ripper.actions.attack import Attack
+from ripper.constants import *
+from ripper.context.events_journal import EventsJournal
 
 Context = 'Context'
+events_journal = EventsJournal()
 
 
 class ThreadsDistribution(Enum):
     Fixed = 'fixed',
     Auto = 'auto',
 
-# If auto selected, start with minimal number of threads and grow till packets sent grows (total) and till CPU < 100%
+
+class TargetsManagerPacketsStats:
+    total_sent: int = 0
+    total_sent_bytes: int = 0
+    avg_sent_per_second: int = 0
+    avg_sent_bytes_per_second: int = 0
+    
+    def __init__(self, targets: list[Target]) -> None:
+        duration_seconds = None
+        for target in targets:
+            self.total_sent += target.stats.packets.total_sent
+            self.total_sent_bytes += target.stats.packets.total_sent_bytes
+            if duration_seconds is None:
+                duration_seconds = target.time_interval_manager.execution_duration.total_seconds()
+        if duration_seconds:
+            self.avg_sent_per_second = self.total_sent / duration_seconds
+            self.avg_sent_bytes_per_second = self.total_sent / duration_seconds
+    
+    def __ge__(self, other: 'TargetsManagerPacketsStats'):
+        return self.avg_sent_per_second > other.avg_sent_per_second \
+            and self.avg_sent_bytes_per_second > other.avg_sent_bytes_per_second
+
+    def __lt__(self, other: 'TargetsManagerPacketsStats'):
+        return self.avg_sent_per_second < other.avg_sent_per_second \
+            and self.avg_sent_bytes_per_second < other.avg_sent_bytes_per_second
+
+    def __eq__(self, other: 'TargetsManagerPacketsStats'):
+        return self.avg_sent_per_second == other.avg_sent_per_second \
+            and self.avg_sent_bytes_per_second == other.avg_sent_bytes_per_second
+
+
+class AutomaticThreadsDistribution:
+    _packet_stats: TargetsManagerPacketsStats = None
+    _targets_manager: 'TargetsManager' = None
+    _interval_delay_seconds: int = None
+    _stop_event: Event = None
+    _failed_tests_cnt: int = 0
+    """Count of failed performance improvements checks after scale up"""
+
+    def __init__(self, targets_manager: 'TargetsManager', interval_delay_seconds: int = DEFAULT_AUTOSCALE_TEST_SECONDS) -> None:
+        self._targets_manager = targets_manager
+        self._interval_delay_seconds = interval_delay_seconds
+        self._stop_event = Event()
+    
+    def scale_up(self):
+        threads_count = self._targets_manager.threads_count
+        new_threads_count = threads_count + self._targets_manager.targets_count()
+        events_journal.info(f'Scale up from {threads_count} to {new_threads_count}')
+        self._targets_manager.set_threads_count(new_threads_count)
+        self._targets_manager.allocate_attacks()
+
+    def __runner__(self):
+        while not self._stop_event.is_set():
+            time.sleep(self._interval_delay_seconds)
+            current_packet_stats = TargetsManagerPacketsStats(targets=self._targets_manager.targets)
+            events_journal.error(f'{current_packet_stats.avg_sent_bytes_per_second}, {current_packet_stats.avg_sent_per_second}')
+            if self._packet_stats:
+                if self._packet_stats < current_packet_stats and cpu_percent() < MAX_AUTOSCALE_CPU_PERCENTAGE:
+                    self.scale_up()
+                else:
+                    self._failed_tests_cnt += 1
+                    if self._failed_tests_cnt >= MAX_FAILED_FAILED_AUTOSCALE_TESTS:
+                        self.stop()
+            self._packet_stats = current_packet_stats
+    
+    def start(self):
+        events_journal.info(f'Start automatic threads distribution')
+        Thread(target=self.__runner__).start()
+
+    def stop(self):
+        events_journal.info(f'Stop automatic threads distribution')
+        self._stop_event.set()
+
 
 class TargetsManager:
     _targets: list[Target] = None
@@ -54,6 +131,8 @@ class TargetsManager:
 
     def set_auto_threads_distribution(self):
         self._threads_distribution = ThreadsDistribution.Auto
+        atd = AutomaticThreadsDistribution(targets_manager=self)
+        atd.start()
 
     def add_target(self, target):
         self._targets.append(target)
@@ -88,5 +167,5 @@ class TargetsManager:
             Attack(_ctx=self._ctx, target=target).start()
         self._lock.release()
 
-    def len(self):
+    def targets_count(self):
         return len(self._targets)

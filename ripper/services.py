@@ -101,7 +101,7 @@ def refresh_context_details(_ctx: Context) -> None:
         if target.health_check_manager.status == HealthStatus.dead:
             events_journal.error(TARGET_DEAD_ERR_MSG, target=target)
             _ctx.targets_manager.delete_target(target)
-        if _ctx.targets_manager.len() < 1:
+        if _ctx.targets_manager.targets_count() < 1:
             _ctx.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             exit(1)
 
@@ -189,7 +189,7 @@ def validate_input(args) -> bool:
             )
             return False
 
-    if args.threads_count != 'auto' and (not args.threads_count.isdigit() or int(args.threads_count) < 1):
+    if args.threads_count != 'auto' and (not str(args.threads_count).isdigit() or int(args.threads_count) < 1):
         common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
         generate_valid_commands(args.targets)
         return False
