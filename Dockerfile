@@ -4,7 +4,10 @@ ENV PYTHONUNBUFFERED=1
 COPY ./ /app
 WORKDIR /app
 
-RUN apk add curl git gcc && \
-    pip install --upgrade pip -e .
+RUN apk add --update \
+    curl git \
+    gcc libc-dev fortify-headers linux-headers && \
+    rm -rf /var/cache/apk/*
+RUN pip install --upgrade pip -e .
 
 ENTRYPOINT ["dripper"]
