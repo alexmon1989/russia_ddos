@@ -7,7 +7,7 @@ from ripper.health_check_manager import classify_host_status, count_host_statuse
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 from ripper.headers_provider import HeadersProvider
 
-Args = namedtuple('Args', 'targets')
+Args = namedtuple('Args', 'targets threads_count')
 
 
 class DescribeHealthCheck:
@@ -45,6 +45,7 @@ class DescribeHealthCheck:
         args = Args(
             # TODO expect target_uri in args as well
             targets=['https://httpbin.org'],
+            threads_count=100,
         )
         context = Context(args)
         context.__init__(args)
@@ -75,6 +76,7 @@ class DescribeHealthCheck:
         args = Args(
             # TODO expect target_uri in args as well
             targets=[args_data['target_uri']],
+            threads_count=100,
         )
         context = Context(args)
         context.__init__(args)

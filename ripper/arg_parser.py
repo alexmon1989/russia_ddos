@@ -31,8 +31,8 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='http_method', type='str', default=ARGS_DEFAULT_HTTP_ATTACK_METHOD,
                       help=f'HTTP method. Default: {ARGS_DEFAULT_HTTP_ATTACK_METHOD}')
     parser.add_option('-t', '--threads',
-                      dest='threads_count', type='int', default=ARGS_DEFAULT_THREADS_COUNT,
-                      help=f'Total threads count. Default: {ARGS_DEFAULT_THREADS_COUNT}')
+                      dest='threads_count', type='str', default=ARGS_DEFAULT_THREADS_COUNT,
+                      help=f'Total fixed threads count (number) or "auto" (text) for automatic threads selection. Default: {ARGS_DEFAULT_THREADS_COUNT}')
     parser.add_option('-r', '--random-len',
                       dest='random_packet_len', type='int', default=ARGS_DEFAULT_RND_PACKET_LEN,
                       help=f'Send random packets with random length. Default: {ARGS_DEFAULT_RND_PACKET_LEN}')

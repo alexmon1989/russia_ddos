@@ -28,8 +28,6 @@ class Context(metaclass=common.Singleton):
     targets_manager: TargetsManager = None
 
     # ==== Input params ====
-    threads_count: int
-    """The number of threads."""
     max_random_packet_len: int
     """Limit for Random Packet Length."""
     random_packet_len: bool
@@ -81,7 +79,6 @@ class Context(metaclass=common.Singleton):
         self.time_interval_manager = TimeIntervalManager()
         self.duration_manager = DurationManager(duration_seconds=getattr(args, 'duration', None))
         self.logger = Console(width=MIN_SCREEN_WIDTH)
-        self.threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
         self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
         self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', ARGS_DEFAULT_MAX_RND_PACKET_LEN))
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
@@ -134,13 +131,18 @@ class Context(metaclass=common.Singleton):
                 )
                 self.targets_manager.add_target(target)
 
+        arg_threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
+        if arg_threads_count == 'auto':
+            self.targets_manager.set_auto_threads_distribution()
+        else:
+            threads_count = int(arg_threads_count) if not self.dry_run else 1
+            self.targets_manager.set_threads_count(threads_count)
+
         self.stats = ContextStatsManager(_ctx=self)
-        # We can't have fewer threads than targets
-        self.threads_count = max(self.threads_count, self.targets_manager.len()) if not self.dry_run else 1
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
-        if self.targets_manager.len() < 1:
+        if self.targets_manager.targets_count() < 1:
             self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             exit(1)
 
