@@ -49,3 +49,11 @@ class DescribeCommonMethods:
             max_len = min_len + random.randint(1, 1000)
             bt = generate_random_bytes(min_len, max_len)
             assert max_len >= len(bt) >= min_len
+
+    def it_can_generate_random_bytes_with_empty_length(self):
+        bt = generate_random_bytes(0, 0)
+        assert not bt
+
+    def it_can_generate_long_fixed_random_bytes(self):
+        bt = generate_random_bytes(10000, 10000)
+        assert len(bt) == 10000

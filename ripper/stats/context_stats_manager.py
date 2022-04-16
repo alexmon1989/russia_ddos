@@ -53,7 +53,6 @@ class ContextStatsManager:
 
     def build_global_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
-        max_length = f' | Max length: {self._ctx.max_random_packet_len}' if self._ctx.max_random_packet_len else ''
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
 
         your_ip_disclaimer = f'{badge_warn(MSG_DONT_USE_VPN_WITH_PROXY)}' if is_proxy_list else ''
@@ -67,8 +66,7 @@ class ContextStatsManager:
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),
             Row('vCPU Count',                f'{self._ctx.cpu_count}'),
-            Row('Socket Timeout (seconds)',  f'{self._ctx.sock_manager.socket_timeout}'),
-            Row('Random Packet Length',      f'{self._ctx.random_packet_len}{max_length}', end_section=True),
+            Row('Socket Timeout (seconds)',  f'{self._ctx.sock_manager.socket_timeout}', end_section=True),
             # ===================================
         ]
 

@@ -1,3 +1,4 @@
+from pickletools import int4
 import time
 from typing import Tuple
 from urllib.parse import urlparse
@@ -6,11 +7,9 @@ from ripper.health_check_manager import HealthCheckManager
 from ripper import common
 from ripper.constants import *
 from ripper.stats.target_stats_manager import TargetStatsManager
-from ripper.context.events_journal import EventsJournal
 from ripper.time_interval_manager import TimeIntervalManager
 
 Attack = 'Attack'
-events_journal = EventsJournal()
 
 
 def default_scheme_port(scheme: str):
@@ -45,6 +44,11 @@ class Target:
     http_method: str
     """HTTP method used in HTTP packets"""
 
+    min_random_packet_len: int
+    """Minimum size for random packet length."""
+    max_random_packet_len: int
+    """Limit for random packet length."""
+
     attack_threads: list[Attack] = None
     """Attack-related threads."""
 
@@ -71,7 +75,8 @@ class Target:
             return 'udp-flood'
         return None
 
-    def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD):
+    def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD, 
+                 min_random_packet_len: int = None, max_random_packet_len: int = None):
         self.attack_threads = []
         self.http_method = http_method
         self.time_interval_manager = TimeIntervalManager()
@@ -91,6 +96,15 @@ class Target:
         self.is_cloud_flare_protection = common.detect_cloudflare(target_uri)
         self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
+
+        if self.attack_method in ['http-flood', 'http-bypass']:
+            self.min_random_packet_len = 0 if min_random_packet_len is None else min_random_packet_len
+            self.max_random_packet_len = 0 if max_random_packet_len is None else max_random_packet_len
+        else:
+            self.min_random_packet_len = DEFAULT_MIN_RND_PACKET_LEN if min_random_packet_len is None else min_random_packet_len
+            self.max_random_packet_len = DEFAULT_MAX_RND_PACKET_LEN if max_random_packet_len is None else max_random_packet_len
+        self.min_random_packet_len = max(self.min_random_packet_len, 0)
+        self.max_random_packet_len = max(self.max_random_packet_len, self.min_random_packet_len)
 
     def add_attack_thread(self, attack: Attack):
         self.attack_threads.append(attack)

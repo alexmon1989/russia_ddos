@@ -33,12 +33,12 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-t', '--threads',
                       dest='threads_count', type='str', default=ARGS_DEFAULT_THREADS_COUNT,
                       help=f'Total fixed threads count (number) or "auto" (text) for automatic threads selection. Default: {ARGS_DEFAULT_THREADS_COUNT}')
-    parser.add_option('-r', '--random-len',
-                      dest='random_packet_len', type='int', default=ARGS_DEFAULT_RND_PACKET_LEN,
-                      help=f'Send random packets with random length. Default: {ARGS_DEFAULT_RND_PACKET_LEN}')
-    parser.add_option('-l', '--max-random_packet-len',
-                      dest='max_random_packet_len', type='int', default=ARGS_DEFAULT_MAX_RND_PACKET_LEN,
-                      help=f'Max random packets length. Default: {ARGS_DEFAULT_MAX_RND_PACKET_LEN} for udp/tcp')
+    parser.add_option('-l', '--min-random-packet-len',
+                      dest='min_random_packet_len', type='int',
+                      help=f'Min random packets length. Default: {DEFAULT_MIN_RND_PACKET_LEN}')
+    parser.add_option('--max-random-packet-len',
+                      dest='max_random_packet_len', type='int',
+                      help=f'Max random packets length. Default: {DEFAULT_MAX_RND_PACKET_LEN} for udp/tcp')
     parser.add_option('-y', '--proxy-list',
                       dest='proxy_list',
                       help='File (fs or http/https) with proxies in ip:port:username:password line format. Proxies will be ignored in udp attack!')

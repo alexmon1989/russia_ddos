@@ -54,10 +54,8 @@ class UdpFlood(AttackMethod):
             # self._ctx.sock_manager.close_socket()
 
     def sendto(self, sock: socket) -> bool:
-        send_bytes = generate_random_bytes(
-            self._ctx.random_packet_len,
-            self._ctx.max_random_packet_len)
         try:
+            send_bytes = generate_random_bytes(self._target.min_random_packet_len, self._target.max_random_packet_len)
             sent = sock.sendto(send_bytes, self._target.hostip_port_tuple())
         except socket.gaierror as e:
             events_journal.exception(e, target=self._target)
