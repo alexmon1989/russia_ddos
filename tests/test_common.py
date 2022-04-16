@@ -1,7 +1,8 @@
 import pytest as pytest
 import time
+import random
 
-from ripper.common import convert_size, detect_cloudflare, generate_fixed_size_random_bytes
+from ripper.common import convert_size, detect_cloudflare, generate_fixed_size_random_bytes, generate_random_bytes
 
 
 class DescribeCommonMethods:
@@ -41,3 +42,10 @@ class DescribeCommonMethods:
         duration = time.time() - start
         # 1K packets per second
         assert duration < 1
+
+    def it_can_generate_random_bytes(self):
+        for _ in range(10):
+            min_len = random.randint(1, 1000)
+            max_len = min_len + random.randint(1, 1000)
+            bt = generate_random_bytes(min_len, max_len)
+            assert max_len >= len(bt) >= min_len

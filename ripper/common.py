@@ -48,27 +48,12 @@ def strip_lines(lines: list[str]) -> list[str]:
     return list(map(lambda line: line.strip(), lines))
 
 
-def get_random_string(len_from: int, len_to: int) -> str:
-    """Random string with different length"""
-    length = random.randint(len_from, len_to)
-    letters = string.ascii_lowercase
-    result_str = ''.join(random.choice(letters) for i in range(length))
-
-    return result_str
-
-
-# def generate_random_bytes(random_packet_len: bool, max_random_packet_len: int) -> bytes:
-#     """Generate Random packet bytes."""
-#     if random_packet_len:
-#         return get_random_string(1, max_random_packet_len).encode('utf-8')
-#     else:
-#         return random.randbytes(max_random_packet_len)
-
-def generate_random_bytes(max_len: int, min_len: int = 1) -> bytes:
+def generate_random_bytes(min_len: int, max_len: int) -> bytes:
     """Generate random packet bytes."""
+    # No need to generate random int if we max_len = min_len
     if min_len == max_len:
-        return generate_random_bytes(max_len)
-    return generate_random_bytes(random.randint(min_len, max_len))
+        return generate_fixed_size_random_bytes(max_len)
+    return generate_fixed_size_random_bytes(random.randint(min_len, max_len))
 
 
 def generate_fixed_size_random_bytes(len: int) -> bytes:
