@@ -69,12 +69,12 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
   Total Threads                               200
   vCPU Count                                  8
   Socket Timeout (seconds)                    1
-  Random Packet Length                        True | Max length: 1024
  ──────────────────────────────────────────────────────────────────────────────────────────────────
   Target (tcp://www.site1.ru:80/)             1/2 (next in 1)
  ──────────────────────────────────────────────────────────────────────────────────────────────────
   Country, Host IP                            RU  192.168.0.101:80 (target-0)
   Attack Method                               TCP-FLOOD
+  Random Packet Length (bytes)                From 1 to 1024
   Threads                                     100
   CloudFlare Protection                       Not protected
   Availability (check-host.net)               ...detecting (TCP method)
@@ -114,7 +114,8 @@ Options:
   -m ATTACK_METHOD, --method=ATTACK_METHOD              Attack method: udp-flood, tcp-flood, http-flood, http-bypass
   -e HTTP_METHOD, --http-method=HTTP_METHOD             HTTP method. Default: GET
   -t THREADS_COUNT, --threads=THREADS_COUNT             Total threads count. Default: 100
-  -r RANDOM_PACKET_LEN, --random-len=RANDOM_PACKET_LEN  Send random packets with random length. Default: 1
+  --min-random-packet-len=MIN_RANDOM_PACKET_LEN
+                                                        Min random packets length. Default: 1 for udp/tcp
   -l MAX_RANDOM_PACKET_LEN, --max-random_packet-len=MAX_RANDOM_PACKET_LEN
                                                         Max random packets length. Default: 1024 for udp/tcp
   -y PROXY_LIST, --proxy-list=PROXY_LIST                File (fs or http/https) with proxies in
