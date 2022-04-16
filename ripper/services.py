@@ -15,7 +15,7 @@ from ripper import common, arg_parser
 from ripper.actions.attack import attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context, Target
-from ripper.common import get_current_ip
+from ripper.common import get_current_ip, generate_random_bytes
 from ripper.context.events_journal import EventsJournal
 from ripper.health_check_manager import HealthStatus
 from ripper.proxy import Proxy
@@ -117,8 +117,21 @@ def refresh_context_details(_ctx: Context) -> None:
 def connect_host(target: Target, _ctx: Context, proxy: Proxy = None):
     """Check connection to Host before start script."""
     target.stats.connect.set_state_in_progress()
-    with _ctx.sock_manager.create_tcp_socket(proxy) as http:
-        http.connect(target.hostip_port_tuple())
+    try:
+        with _ctx.sock_manager.create_tcp_socket(proxy) as http_socket:
+            http_socket.connect(target.hostip_port_tuple())
+    except Exception as e:
+        if target.scheme == 'udp':
+            with _ctx.sock_manager.create_udp_socket() as udp_socket:
+                send_bytes = generate_random_bytes(
+                    random_packet_len = False,
+                    max_random_packet_len = 100,
+                )
+                udp_socket.sendto(send_bytes, target.hostip_port_tuple())
+                udp_socket.recvfrom(100)
+        else:
+            raise e 
+    finally:
         target.stats.connect.set_state_is_connected()
 
 
@@ -247,7 +260,6 @@ def main():
         exit("\nRun 'dripper -h' for help.")
 
     # Init Events Log
-    global events
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
     events_journal.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
     events_journal.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
