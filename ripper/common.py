@@ -57,12 +57,23 @@ def get_random_string(len_from: int, len_to: int) -> str:
     return result_str
 
 
-def generate_random_bytes(random_packet_len: bool, max_random_packet_len: int) -> bytes:
-    """Generate Random packet bytes."""
-    if random_packet_len:
-        return get_random_string(1, max_random_packet_len).encode('utf-8')
-    else:
-        return random.randbytes(max_random_packet_len)
+# def generate_random_bytes(random_packet_len: bool, max_random_packet_len: int) -> bytes:
+#     """Generate Random packet bytes."""
+#     if random_packet_len:
+#         return get_random_string(1, max_random_packet_len).encode('utf-8')
+#     else:
+#         return random.randbytes(max_random_packet_len)
+
+def generate_random_bytes(max_len: int, min_len: int = 1) -> bytes:
+    """Generate random packet bytes."""
+    if min_len == max_len:
+        return generate_random_bytes(max_len)
+    return generate_random_bytes(random.randint(min_len, max_len))
+
+
+def generate_fixed_size_random_bytes(len: int) -> bytes:
+    """Generate random packet bytes."""
+    return random.randbytes(len)
 
 
 def get_current_ip() -> str:
