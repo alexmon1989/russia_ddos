@@ -28,10 +28,6 @@ class Context(metaclass=common.Singleton):
     targets_manager: TargetsManager = None
 
     # ==== Input params ====
-    max_random_packet_len: int
-    """Limit for Random Packet Length."""
-    random_packet_len: bool
-    """Is Random Packet Length enabled."""
     proxy_list: str
     """File with proxies in ip:port:username:password or ip:port line format."""
     proxy_type: str
@@ -71,6 +67,9 @@ class Context(metaclass=common.Singleton):
         return value if value is not None else default
 
     def __init__(self, args):
+        self.current_version = Version(__version__)
+        attack_method = getattr(args, 'attack_method', None)
+
         self.targets_manager = TargetsManager(_ctx=self)
         self.myIpInfo = IpInfo(common.get_current_ip())
         self.headers_provider = HeadersProvider()
@@ -79,32 +78,14 @@ class Context(metaclass=common.Singleton):
         self.time_interval_manager = TimeIntervalManager()
         self.duration_manager = DurationManager(duration_seconds=getattr(args, 'duration', None))
         self.logger = Console(width=MIN_SCREEN_WIDTH)
-        self.random_packet_len = bool(getattr(args, 'random_packet_len', ARGS_DEFAULT_RND_PACKET_LEN))
-        self.max_random_packet_len = int(getattr(args, 'max_random_packet_len', ARGS_DEFAULT_MAX_RND_PACKET_LEN))
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
         self.dry_run = getattr(args, 'dry_run', False)
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
         self.proxy_type = getattr(args, 'proxy_type', ARGS_DEFAULT_PROXY_TYPE)
         self.proxy_list = getattr(args, 'proxy_list', None)
 
-        attack_method = getattr(args, 'attack_method', None)
-
-        if attack_method in ['http-flood', 'http-bypass']:
-            self.random_packet_len = False
-            self.max_random_packet_len = 0
-        elif self.random_packet_len and not self.max_random_packet_len:
-            self.max_random_packet_len = 1024
-
-        self.current_version = Version(__version__)
-
         # to avoid situation when vCPU might be 0
         self.cpu_count = max(os.cpu_count(), 1)
-
-        if attack_method == 'http-flood':
-            self.random_packet_len = False
-            self.max_random_packet_len = 0
-        elif self.random_packet_len and not self.max_random_packet_len:
-            self.max_random_packet_len = 1024
 
         self.connections_check_time = time.time_ns()
 
@@ -125,9 +106,11 @@ class Context(metaclass=common.Singleton):
             for target_uri in input_targets:
                 target = Target(
                     target_uri=target_uri,
-                    attack_method=getattr(args, 'attack_method', None),
+                    attack_method=attack_method,
                     # TODO move http_method to target_uri to allow each target have its own method
                     http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+                    min_random_packet_len=getattr(args, 'min_random_packet_len', None),
+                    max_random_packet_len=getattr(args, 'max_random_packet_len', None),
                 )
                 self.targets_manager.add_target(target)
 

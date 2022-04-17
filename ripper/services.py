@@ -123,10 +123,7 @@ def connect_host(target: Target, _ctx: Context, proxy: Proxy = None):
     except Exception as e:
         if target.scheme == 'udp':
             with _ctx.sock_manager.create_udp_socket() as udp_socket:
-                send_bytes = generate_random_bytes(
-                    random_packet_len = False,
-                    max_random_packet_len = 100,
-                )
+                send_bytes = generate_random_bytes(1, 100)
                 udp_socket.sendto(send_bytes, target.hostip_port_tuple())
                 udp_socket.recvfrom(100)
         else:

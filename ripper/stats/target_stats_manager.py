@@ -49,6 +49,11 @@ class TargetStatsManager:
 
         if status == HealthStatus.dead:
             return f'{accessible_message}\n{TARGET_DEAD_ERR_MSG}'
+    
+    def get_packet_length_msg(self) -> str:
+        if self.target.min_random_packet_len == self.target.max_random_packet_len:
+            return f'{self.target.max_random_packet_len}'
+        return f'From {self.target.min_random_packet_len} to {self.target.max_random_packet_len}'
 
     def build_target_details_stats(self) -> list[Row]:
         """Prepare data for global part of statistics."""
@@ -67,10 +72,11 @@ class TargetStatsManager:
         )
 
         full_stats: list[Row] = [
-            #   Description                  Status
+            #   Description                       Status
             Row('Country, Host IP',               f'[red]{self.target.country:4}[/][cyan]{self.target.host_ip}:{self.target.port} [dim](target-{self.target.index})[/]'),
             Row('HTTP Request',                   f'[cyan]{self.target.http_method}: {self.target.http_url}', visible=self.target.attack_method.lower() == 'http-flood'),
             Row('Attack Method',                  self.target.attack_method.upper()),
+            Row('Random Packet Length (bytes)',   self.get_packet_length_msg(), visible=(self.target.min_random_packet_len or self.target.max_random_packet_len)),
             Row('Threads',                        str(len(self.target.attack_threads))),
             Row('CloudFlare Protection',          ('[red]' if self.target.is_cloud_flare_protection else '[green]') + self.target.cloudflare_status(), end_section=not is_health_check),
             Row('Availability (check-host.net)',  f'{self.get_availability_msg()}', visible=is_health_check),

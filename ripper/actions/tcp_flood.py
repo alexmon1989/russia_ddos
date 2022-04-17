@@ -50,9 +50,7 @@ class TcpFlood(AttackMethod):
             # self._ctx.sock_manager.close_socket()
 
     def send(self, sock: socket) -> bool:
-        send_bytes = generate_random_bytes(
-            self._ctx.random_packet_len,
-            self._ctx.max_random_packet_len)
+        send_bytes = generate_random_bytes(self._target.min_random_packet_len, self._target.max_random_packet_len)
         try:
             sent = sock.send(send_bytes)
         except ProxyError as ep:
