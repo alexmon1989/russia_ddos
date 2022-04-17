@@ -189,15 +189,17 @@ def generate_valid_commands(uri):
 
 def validate_input(args) -> bool:
     """Validates input params."""
-    for target_uri in args.targets:
-        if not Target.validate_format(target_uri):
-            common.print_panel(
-                f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}\n'
-                f'Target should be in next format: ' + '{scheme}://{hostname}[:{port}][{path}]\n\n' +
-                f'Possible target format may be:\n'
-                f'[yellow]tcp://{target_uri}, udp://{target_uri}, http://{target_uri}, https://{target_uri}[/]'
-            )
-            return False
+    # Do not validate targets if reads targets from file or remote location
+    if args.targets_list is None:
+        for target_uri in args.targets:
+            if not Target.validate_format(target_uri):
+                common.print_panel(
+                    f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}\n'
+                    f'Target should be in next format: ' + '{scheme}://{hostname}[:{port}][{path}]\n\n' +
+                    f'Possible target format may be:\n'
+                    f'[yellow]tcp://{target_uri}, udp://{target_uri}, http://{target_uri}, https://{target_uri}[/]'
+                )
+                return False
 
     if args.threads_count != 'auto' and (not str(args.threads_count).isdigit() or int(args.threads_count) < 1):
         common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
@@ -230,14 +232,14 @@ def validate_input(args) -> bool:
 
 def render_statistics(_ctx: Context) -> None:
     """Show DRipper runtime statistics."""
-    console = Console()
+    console = Console(width=MIN_SCREEN_WIDTH)
 
     update_available = ''
     if _ctx.latest_version is not None and _ctx.current_version < _ctx.latest_version:
         update_available = f'\n[u green reverse link={GITHUB_URL}/releases] Newer version {_ctx.latest_version.version} is available! [/]'
 
-    logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
-    console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
+    logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE)
+    console.print(logo, justify='center')
 
     with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
         live.start()
@@ -251,6 +253,9 @@ def render_statistics(_ctx: Context) -> None:
 
 def main():
     """The main function to run the script from the command line."""
+    console = Console(width=MIN_SCREEN_WIDTH)
+    console.rule(f'[bold]Starting DRipper {VERSION}')
+
     args = arg_parser.create_parser().parse_args()
 
     if len(sys.argv) < 2 or not validate_input(args[0]):

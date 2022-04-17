@@ -70,14 +70,17 @@ class Context(metaclass=common.Singleton):
         self.current_version = Version(__version__)
         attack_method = getattr(args, 'attack_method', None)
 
+        self.logger = Console(width=MIN_SCREEN_WIDTH)
+
         self.targets_manager = TargetsManager(_ctx=self)
+        self.logger.print('Getting your current Public IPv4 address...', end='')
         self.myIpInfo = IpInfo(common.get_current_ip())
+        self.logger.print('done.')
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.time_interval_manager = TimeIntervalManager()
         self.duration_manager = DurationManager(duration_seconds=getattr(args, 'duration', None))
-        self.logger = Console(width=MIN_SCREEN_WIDTH)
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
         self.dry_run = getattr(args, 'dry_run', False)
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
@@ -101,18 +104,26 @@ class Context(metaclass=common.Singleton):
         if self.proxy_manager.proxy_list_initial_len:
             self.sock_manager.socket_timeout *= 2
 
-        if args and getattr(args, 'targets', None):
+        if args and getattr(args, 'targets_list', None):
+            targets_file: str = getattr(args, 'targets_list', None)
+            message = f'Downloading targets from {targets_file}' if targets_file.startswith('http') else 'Reading targets from file...'
+            self.logger.print(message)
+            input_targets = common.read_file_lines(targets_file)
+            self.logger.print(f'Loaded list with {len(input_targets)} targets.')
+        else:
+            #  args and getattr(args, 'targets', None):
             input_targets = getattr(args, 'targets', [])
-            for target_uri in input_targets:
-                target = Target(
-                    target_uri=target_uri,
-                    attack_method=attack_method,
-                    # TODO move http_method to target_uri to allow each target have its own method
-                    http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
-                    min_random_packet_len=getattr(args, 'min_random_packet_len', None),
-                    max_random_packet_len=getattr(args, 'max_random_packet_len', None),
-                )
-                self.targets_manager.add_target(target)
+
+        for target_uri in input_targets:
+            target = Target(
+                target_uri=target_uri,
+                attack_method=attack_method,
+                # TODO move http_method to target_uri to allow each target have its own method
+                http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
+                min_random_packet_len=getattr(args, 'min_random_packet_len', None),
+                max_random_packet_len=getattr(args, 'max_random_packet_len', None),
+            )
+            self.targets_manager.add_target(target)
 
         arg_threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
         if arg_threads_count == 'auto':
