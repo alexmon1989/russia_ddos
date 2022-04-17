@@ -127,7 +127,7 @@ def connect_host(target: Target, _ctx: Context, proxy: Proxy = None):
                 udp_socket.sendto(send_bytes, target.hostip_port_tuple())
                 udp_socket.recvfrom(100)
         else:
-            raise e 
+            raise e
     finally:
         target.stats.connect.set_state_is_connected()
 
@@ -267,7 +267,7 @@ def main():
     guc = GithubUpdatesChecker()
     _ctx.latest_version = guc.fetch_lastest_version()
 
-    _ctx.logger.rule('[bold]Starting DRipper')
+    _ctx.logger.rule('[bold]Check connection with targets')
     for target in _ctx.targets_manager.targets[:]:
         # Proxies should be validated during the runtime
         retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
@@ -275,6 +275,11 @@ def main():
         if not connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt):
             _ctx.targets_manager.delete_target(target)
     _ctx.logger.rule()
+
+    if len(_ctx.targets_manager.targets) == 0:
+        _ctx.logger.log('All targets looks dead. Unable to connect to targets.\nPlease select another targets to run DRipper')
+        exit(1)
+
     _ctx.validate()
 
     # Start Threads
