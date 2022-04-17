@@ -8,9 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### Added
 - Attack duration param (in seconds). After this duration script will stop its execution.
+- User guide and setup guide
+- Threads count autoscaling. `-t` argument (same as `--threads-count`) now supports **auto**. The auto-scaling method is the default.
+- Check minimal required python version
+- Attack duration controller. `-d` argument (same as `--duration`) set the attack duration in seconds. After this duration script will stop its execution.
+
+### Changed
+- Random bytes optimization (performance improvement)
+- Changed CLI arguments for package size management
 
 ### Fixed
 - Fixed command parameter generator to help users with incorrect command line parameters or errors with parameters
+- Test UDP connection for UDP scheme if TCP did not work
 
 
 ## [v2.5.0](https://github.com/alexmon1989/russia_ddos/compare/2.4.0...2.5.0)
