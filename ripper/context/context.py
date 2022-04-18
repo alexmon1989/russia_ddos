@@ -3,7 +3,6 @@ import time
 from rich.console import Console
 
 from _version import __version__
-from ripper.duration_manager import DurationManager
 
 from ripper.github_updates_checker import Version
 from ripper import common

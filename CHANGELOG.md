@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.5.0...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.6.0...HEAD)
+
+
+## [v2.6.0](https://github.com/alexmon1989/russia_ddos/compare/2.5.0...2.6.0)
 
 ### Added
 - Attack duration param (in seconds). After this duration script will stop its execution.
