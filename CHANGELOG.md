@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Threads count autoscaling. `-t` argument (same as `--threads-count`) now supports **auto**. The auto-scaling method is the default.
 - Check minimal required python version
 - Attack duration controller. `-d` argument (same as `--duration`) set the attack duration in seconds. After this duration script will stop its execution.
+- Targets list support. `--targets-list` argument allows you to use list with targets. List with targets can be path to file or hyperlink.
 
 ### Changed
 - Random bytes optimization (performance improvement)
