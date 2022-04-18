@@ -270,7 +270,7 @@ def main():
     go_home(_ctx)
 
     guc = GithubUpdatesChecker()
-    _ctx.latest_version = guc.fetch_lastest_version()
+    _ctx.latest_version = guc.fetch_latest_version()
 
     _ctx.logger.rule('[bold]Check connection with targets')
     for target in _ctx.targets_manager.targets[:]:
