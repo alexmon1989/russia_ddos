@@ -1,5 +1,4 @@
-import os
-import json
+import re
 import urllib.request
 import threading
 
@@ -53,41 +52,18 @@ class GithubUpdatesChecker:
         self._repo = repo
 
     def get_request_url(self):
-        return f'https://api.github.com/repos/{self._owner}/{self._repo}/git/refs/tags'
+        return f'https://raw.githubusercontent.com/{self._owner}/{self._repo}/main/_version.py'
 
-    def fetch_tags_data(self):
-        url = self.get_request_url()
+    def fetch_latest_version(self) -> Version:
         try:
-            request = urllib.request.Request(url=url, headers=self._get_headers())
-            raw = urllib.request.urlopen(request).read().decode('utf8')
-            data = json.loads(raw)
+            request = urllib.request.Request(url=self.get_request_url())
+            raw: str = urllib.request.urlopen(request).read().decode('utf8')
+            ver = re.search(r"(\d+\.\d+\.\d+)", raw).group(0)
+            self.latest_version = Version(ver)
         except:
-            data = []
-        return data
-
-    def _get_headers(self):
-        if os.getenv("GITHUB_TOKEN", False):
-            return {'Authorization': f'Bearer {os.getenv("GITHUB_TOKEN")}'}
-        else:
-            return {}
-
-    def _ref_to_tag_name(self, ref: str):
-        return ''.join(ref.split('/')[2:])
-
-    def fetch_tag_names(self) -> list[str]:
-        tags_data = self.fetch_tags_data()
-        return [self._ref_to_tag_name(data['ref']) for data in tags_data]
-
-    def fetch_versions(self) -> list[Version]:
-        tag_names = self.fetch_tag_names()
-        return [Version(vs) for vs in filter(lambda tag_name: Version.validate(tag_name), tag_names)]
-
-    def fetch_lastest_version(self) -> Version:
-        versions = self.fetch_versions()
-        if not versions or len(versions) < 1:
             return None
-        self.latest_version = versions[-1]
+
         return self.latest_version
 
     def demon_update_latest_version(self):
-        threading.Thread(target=self.fetch_lastest_version).start()
+        threading.Thread(target=self.fetch_latest_version).start()

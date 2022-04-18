@@ -22,7 +22,7 @@ class TargetsManagerPacketsStats:
     total_sent_bytes: int = 0
     avg_sent_per_second: int = 0
     avg_sent_bytes_per_second: int = 0
-    
+
     def __init__(self, targets: list[Target]) -> None:
         duration_seconds = None
         for target in targets:
@@ -33,7 +33,7 @@ class TargetsManagerPacketsStats:
         if duration_seconds:
             self.avg_sent_per_second = self.total_sent / duration_seconds
             self.avg_sent_bytes_per_second = self.total_sent / duration_seconds
-    
+
     def __ge__(self, other: 'TargetsManagerPacketsStats'):
         return self.avg_sent_per_second > other.avg_sent_per_second \
             and self.avg_sent_bytes_per_second > other.avg_sent_bytes_per_second
@@ -59,7 +59,7 @@ class AutomaticThreadsDistribution:
         self._targets_manager = targets_manager
         self._interval_delay_seconds = interval_delay_seconds
         self._stop_event = Event()
-    
+
     def scale_up(self):
         threads_count = self._targets_manager.threads_count
         new_threads_count = threads_count + self._targets_manager.targets_count()
@@ -72,7 +72,7 @@ class AutomaticThreadsDistribution:
             time.sleep(self._interval_delay_seconds)
             current_packet_stats = TargetsManagerPacketsStats(targets=self._targets_manager.targets)
             if self._packet_stats:
-                if self._packet_stats < current_packet_stats and cpu_percent() < MAX_AUTOSCALE_CPU_PERCENTAGE:
+                if self._packet_stats < current_packet_stats and cpu_percent(5) < MAX_AUTOSCALE_CPU_PERCENTAGE:
                     self._failed_tests_cnt = 0
                     self.scale_up()
                 else:
@@ -80,7 +80,7 @@ class AutomaticThreadsDistribution:
                     if self._failed_tests_cnt >= MAX_FAILED_FAILED_AUTOSCALE_TESTS:
                         self.stop()
             self._packet_stats = current_packet_stats
-    
+
     def start(self):
         events_journal.info(f'Start automatic threads distribution')
         Thread(target=self.__runner__).start()
@@ -116,15 +116,15 @@ class TargetsManager:
     @property
     def targets(self):
         return self._targets[:]
-    
+
     @property
     def threads_count(self):
         return self._threads_count
-    
+
     @property
     def threads_distribution(self):
         return self._threads_distribution
-    
+
     def set_threads_count(self, threads_count: int):
         # We can't have fewer threads than targets
         self._threads_count = max(threads_count, len(self._targets))

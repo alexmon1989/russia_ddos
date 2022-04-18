@@ -24,6 +24,9 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-s', '--targets',
                       dest='targets', action='append',
                       help='Attack target in {scheme}://{hostname}[:{port}][{path}] format. Multiple targets allowed.')
+    parser.add_option('--targets-list',
+                      dest='targets_list', type='str',
+                      help='File (fs or http/https) with targets in {scheme}://{hostname}[:{port}][{path}] line format.')
     parser.add_option('-m', '--method',
                       dest='attack_method', type='str',
                       help=f'Attack method: {", ".join(attack_method_labels)}')

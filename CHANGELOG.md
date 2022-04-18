@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.5.0...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.6.0...HEAD)
+
+
+## [v2.6.0](https://github.com/alexmon1989/russia_ddos/compare/2.5.0...2.6.0)
 
 ### Added
 - Attack duration param (in seconds). After this duration script will stop its execution.
@@ -12,10 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Threads count autoscaling. `-t` argument (same as `--threads-count`) now supports **auto**. The auto-scaling method is the default.
 - Check minimal required python version
 - Attack duration controller. `-d` argument (same as `--duration`) set the attack duration in seconds. After this duration script will stop its execution.
+- Targets list support. `--targets-list` argument allows you to use list with targets. List with targets can be path to file or hyperlink.
 
 ### Changed
 - Random bytes optimization (performance improvement)
 - Changed CLI arguments for package size management
+- Improved speed for new version check
+- Improved text messages for better user experience
 
 ### Fixed
 - Fixed command parameter generator to help users with incorrect command line parameters or errors with parameters

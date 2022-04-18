@@ -127,7 +127,7 @@ def connect_host(target: Target, _ctx: Context, proxy: Proxy = None):
                 udp_socket.sendto(send_bytes, target.hostip_port_tuple())
                 udp_socket.recvfrom(100)
         else:
-            raise e 
+            raise e
     finally:
         target.stats.connect.set_state_is_connected()
 
@@ -165,8 +165,8 @@ def generate_valid_commands(uri):
         tcp_uri += f' -s tcp:{hostname[1]}{port}'
         http_uri += f' -s http:{hostname[1]}{port}'
 
-    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN}{tcp_uri}'
-    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN}{udp_uri}'
+    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} {tcp_uri}'
+    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} {udp_uri}'
     http_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -e {ARGS_DEFAULT_HTTP_ATTACK_METHOD}{http_uri}'
 
     res = ''
@@ -189,15 +189,17 @@ def generate_valid_commands(uri):
 
 def validate_input(args) -> bool:
     """Validates input params."""
-    for target_uri in args.targets:
-        if not Target.validate_format(target_uri):
-            common.print_panel(
-                f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}\n'
-                f'Target should be in next format: ' + '{scheme}://{hostname}[:{port}][{path}]\n\n' +
-                f'Possible target format may be:\n'
-                f'[yellow]tcp://{target_uri}, udp://{target_uri}, http://{target_uri}, https://{target_uri}[/]'
-            )
-            return False
+    # Do not validate targets if reads targets from file or remote location
+    if args.targets_list is None:
+        for target_uri in args.targets:
+            if not Target.validate_format(target_uri):
+                common.print_panel(
+                    f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}\n'
+                    f'Target should be in next format: ' + '{scheme}://{hostname}[:{port}][{path}]\n\n' +
+                    f'Possible target format may be:\n'
+                    f'[yellow]tcp://{target_uri}, udp://{target_uri}, http://{target_uri}, https://{target_uri}[/]'
+                )
+                return False
 
     if args.threads_count != 'auto' and (not str(args.threads_count).isdigit() or int(args.threads_count) < 1):
         common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
@@ -230,14 +232,14 @@ def validate_input(args) -> bool:
 
 def render_statistics(_ctx: Context) -> None:
     """Show DRipper runtime statistics."""
-    console = Console()
+    console = Console(width=MIN_SCREEN_WIDTH)
 
     update_available = ''
     if _ctx.latest_version is not None and _ctx.current_version < _ctx.latest_version:
         update_available = f'\n[u green reverse link={GITHUB_URL}/releases] Newer version {_ctx.latest_version.version} is available! [/]'
 
-    logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE, width=MIN_SCREEN_WIDTH)
-    console.print(logo, justify='center', width=MIN_SCREEN_WIDTH)
+    logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE)
+    console.print(logo, justify='center')
 
     with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
         live.start()
@@ -251,6 +253,9 @@ def render_statistics(_ctx: Context) -> None:
 
 def main():
     """The main function to run the script from the command line."""
+    console = Console(width=MIN_SCREEN_WIDTH)
+    console.rule(f'[bold]Starting DRipper {VERSION}')
+
     args = arg_parser.create_parser().parse_args()
 
     if len(sys.argv) < 2 or not validate_input(args[0]):
@@ -264,10 +269,12 @@ def main():
     _ctx = Context(args[0])
     go_home(_ctx)
 
+    _ctx.logger.log('Check for DRipper Updates...')
     guc = GithubUpdatesChecker()
-    _ctx.latest_version = guc.fetch_lastest_version()
+    _ctx.latest_version = guc.fetch_latest_version()
+    _ctx.logger.log(f'Latest version is: {_ctx.latest_version.version}')
 
-    _ctx.logger.rule('[bold]Starting DRipper')
+    _ctx.logger.rule('[bold]Check connection with targets')
     for target in _ctx.targets_manager.targets[:]:
         # Proxies should be validated during the runtime
         retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
@@ -275,6 +282,11 @@ def main():
         if not connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt):
             _ctx.targets_manager.delete_target(target)
     _ctx.logger.rule()
+
+    if len(_ctx.targets_manager.targets) == 0:
+        _ctx.logger.log('All targets looks dead. Unable to connect to targets.\nPlease select another targets to run DRipper')
+        exit(1)
+
     _ctx.validate()
 
     # Start Threads
