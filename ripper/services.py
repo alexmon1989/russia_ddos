@@ -165,8 +165,8 @@ def generate_valid_commands(uri):
         tcp_uri += f' -s tcp:{hostname[1]}{port}'
         http_uri += f' -s http:{hostname[1]}{port}'
 
-    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN}{tcp_uri}'
-    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -r {ARGS_DEFAULT_RND_PACKET_LEN} -l {ARGS_DEFAULT_MAX_RND_PACKET_LEN}{udp_uri}'
+    tcp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} {tcp_uri}'
+    udp_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} {udp_uri}'
     http_attack = f'-t {ARGS_DEFAULT_THREADS_COUNT} -e {ARGS_DEFAULT_HTTP_ATTACK_METHOD}{http_uri}'
 
     res = ''
@@ -269,8 +269,10 @@ def main():
     _ctx = Context(args[0])
     go_home(_ctx)
 
+    _ctx.logger.log('Check for DRipper Updates...')
     guc = GithubUpdatesChecker()
     _ctx.latest_version = guc.fetch_latest_version()
+    _ctx.logger.log(f'Latest version is: {_ctx.latest_version.version}')
 
     _ctx.logger.rule('[bold]Check connection with targets')
     for target in _ctx.targets_manager.targets[:]:

@@ -73,9 +73,11 @@ class Context(metaclass=common.Singleton):
         self.logger = Console(width=MIN_SCREEN_WIDTH)
 
         self.targets_manager = TargetsManager(_ctx=self)
-        self.logger.print('Getting your current Public IPv4 address...', end='')
+
+        self.logger.log('Getting your current Public IPv4 address...')
         self.myIpInfo = IpInfo(common.get_current_ip())
-        self.logger.print('done.')
+        self.logger.log(f'Your start Public IPv4 is: {self.myIpInfo.ip_masked}')
+
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
@@ -106,15 +108,17 @@ class Context(metaclass=common.Singleton):
 
         if args and getattr(args, 'targets_list', None):
             targets_file: str = getattr(args, 'targets_list', None)
-            message = f'Downloading targets from {targets_file}' if targets_file.startswith('http') else 'Reading targets from file...'
-            self.logger.print(message)
+            message = f'Downloading targets from {targets_file}...' if targets_file.startswith('http') else 'Reading targets from file...'
+            self.logger.log(message)
             input_targets = common.read_file_lines(targets_file)
-            self.logger.print(f'Loaded list with {len(input_targets)} targets.')
+            self.logger.log(f'Loaded list with {len(input_targets)} targets')
         else:
             #  args and getattr(args, 'targets', None):
             input_targets = getattr(args, 'targets', [])
 
         for target_uri in input_targets:
+            if target_uri.__contains__('#'):
+                continue
             target = Target(
                 target_uri=target_uri,
                 attack_method=attack_method,

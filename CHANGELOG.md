@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Changed
 - Random bytes optimization (performance improvement)
 - Changed CLI arguments for package size management
+- Improved speed for new version check
+- Improved text messages for better user experience
 
 ### Fixed
 - Fixed command parameter generator to help users with incorrect command line parameters or errors with parameters
