@@ -267,7 +267,7 @@ def main():
     events_journal.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
 
     _ctx = Context(args[0])
-    go_home(_ctx)
+    # go_home(_ctx)
 
     _ctx.logger.log('Check for DRipper Updates...')
     guc = GithubUpdatesChecker()

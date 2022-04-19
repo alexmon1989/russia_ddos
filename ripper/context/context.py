@@ -118,6 +118,7 @@ class Context(metaclass=common.Singleton):
         for target_uri in input_targets:
             if target_uri.__contains__('#'):
                 continue
+            self.logger.log(f'Configuring attack for {target_uri}')
             target = Target(
                 target_uri=target_uri,
                 attack_method=attack_method,

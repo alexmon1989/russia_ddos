@@ -74,7 +74,7 @@ class Target:
             return 'udp-flood'
         return None
 
-    def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD, 
+    def __init__(self, target_uri: str, attack_method: str = None, http_method: str = ARGS_DEFAULT_HTTP_ATTACK_METHOD,
                  min_random_packet_len: int = None, max_random_packet_len: int = None):
         self.attack_threads = []
         self.http_method = http_method
@@ -91,7 +91,8 @@ class Target:
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
         self.host_ip = common.get_ipv4(self.host)
-        self.country = common.get_country_by_ipv4(self.host_ip)
+        # self.country = common.get_country_by_ipv4(self.host_ip)
+        self.country = GEOIP_NOT_DEFINED
         self.is_cloud_flare_protection = common.detect_cloudflare(target_uri)
         self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
