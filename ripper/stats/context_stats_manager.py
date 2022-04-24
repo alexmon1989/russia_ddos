@@ -16,6 +16,10 @@ Context = 'Context'
 events_journal = EventsJournal()
 
 
+class NoMoreTargets(Exception):
+    pass
+
+
 class ContextStatsManager:
     _ctx: Context = None
     """Context we are working with."""
@@ -36,8 +40,10 @@ class ContextStatsManager:
         Pagination happens automatically.
         Method calculates current index of target to display based on script execution duration.
         """
-        duration = self.time_interval_manager.execution_duration.total_seconds()
         cnt = self._ctx.targets_manager.targets_count()
+        if cnt == 0:
+            raise NoMoreTargets()
+        duration = self.time_interval_manager.execution_duration.total_seconds()
         change_interval = TARGET_STATS_AUTO_PAGINATION_INTERVAL_SECONDS
         return floor((duration/change_interval) % cnt)
 

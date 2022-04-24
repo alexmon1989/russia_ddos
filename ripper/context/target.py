@@ -57,6 +57,9 @@ class Target:
     stats: TargetStatsManager = None
     """All the statistics collected separately by protocols and operations."""
 
+    is_active: bool = True
+    """Defines if target is active and valid. In case if it is not - it will eventually be removed from the targets collection"""
+
     @staticmethod
     def validate_format(target_uri: str) -> bool:
         try:

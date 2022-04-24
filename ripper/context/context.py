@@ -81,7 +81,6 @@ class Context(metaclass=common.Singleton):
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.time_interval_manager = TimeIntervalManager()
-        self.duration_manager = DurationManager(duration_seconds=getattr(args, 'duration', None))
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
         self.dry_run = getattr(args, 'dry_run', False)
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
@@ -137,21 +136,27 @@ class Context(metaclass=common.Singleton):
             self.targets_manager.set_threads_count(threads_count)
 
         self.stats = ContextStatsManager(_ctx=self)
+        self.duration_manager = DurationManager(
+            duration_seconds=getattr(args, 'duration', None),
+            _ctx=self,
+        )
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
         if self.targets_manager.targets_count() < 1:
             self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
-            exit(1)
+            return False
 
         try:
             for target in self.targets_manager.targets:
                 target.validate()
         except Exception as e:
             self.logger.log(str(e))
-            exit(1)
+            return False
 
         if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
             self.logger.log(
                 'Cannot get your public IPv4 address. Check your VPN connection.')
-            exit(1)
+            return False
+        
+        return True

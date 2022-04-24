@@ -66,7 +66,8 @@ class Attack(Thread):
 
         if self._ctx.dry_run:
             runner()
-            exit(0)
-
-        while not self.stop_event.is_set():
-            runner()
+            self.target.is_active = False
+            self.stop()
+        else:
+            while not self.stop_event.is_set():
+                runner()

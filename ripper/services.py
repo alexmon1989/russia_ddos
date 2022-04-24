@@ -3,6 +3,8 @@ import signal
 import sys
 import threading
 import time
+from optparse import Values
+from typing import AnyStr
 from base64 import b64decode
 from rich import box
 from rich.console import Console
@@ -241,33 +243,29 @@ def render_statistics(_ctx: Context) -> None:
     logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE)
     console.print(logo, justify='center')
 
-    with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
-        live.start()
-        while True:
-            refresh_context_details(_ctx)
-            live.update(_ctx.stats.build_stats())
-            # time.sleep(0.2)
-            if _ctx.dry_run:
-                break
+    try:
+        with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
+            live.start()
+            while True:
+                refresh_context_details(_ctx)
+                live.update(_ctx.stats.build_stats())
+                # time.sleep(0.2)
+                if _ctx.dry_run:
+                    break
+    except Exception as e:
+        events_journal.exception(e)
+        console.print(e)
 
 
-def main():
-    """The main function to run the script from the command line."""
-    console = Console(width=MIN_SCREEN_WIDTH)
-    console.rule(f'[bold]Starting DRipper {VERSION}')
-
-    args = arg_parser.create_parser().parse_args()
-
-    if len(sys.argv) < 2 or not validate_input(args[0]):
-        exit("\nRun 'dripper -h' for help.")
-
+def start(args: Values):
     # Init Events Log
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
-    events_journal.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
-    events_journal.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
+    events_journal.set_log_size(getattr(args, 'log_size', DEFAULT_LOG_SIZE))
+    events_journal.set_max_event_level(
+        getattr(args, 'event_level', DEFAULT_LOG_LEVEL))
 
-    _ctx = Context(args[0])
-    # go_home(_ctx)
+    _ctx = Context(args)
+    go_home(_ctx)
 
     _ctx.logger.log('Check for DRipper Updates...')
     guc = GithubUpdatesChecker()
@@ -284,16 +282,30 @@ def main():
     _ctx.logger.rule()
 
     if len(_ctx.targets_manager.targets) == 0:
-        _ctx.logger.log('All targets looks dead. Unable to connect to targets.\nPlease select another targets to run DRipper')
-        exit(1)
+        _ctx.logger.log(
+            'All targets looks dead. Unable to connect to targets.\nPlease select another targets to run DRipper')
+        return None
 
-    _ctx.validate()
+    if not _ctx.validate():
+        return None
 
     # Start Threads
     time.sleep(.5)
     _ctx.targets_manager.allocate_attacks()
     _ctx.duration_manager.start_countdown()
+    return _ctx
 
+
+def main():
+    """The main function to run the script from the command line."""
+    console = Console(width=MIN_SCREEN_WIDTH)
+    console.rule(f'[bold]Starting DRipper {VERSION}')
+    args = arg_parser.create_parser().parse_args()
+    if len(sys.argv) < 2 and not validate_input(args[0]):
+        exit("\nRun 'dripper -h' for help.")
+    _ctx = start(args[0])
+    if _ctx is None:
+        exit(1)
     render_statistics(_ctx)
 
 
