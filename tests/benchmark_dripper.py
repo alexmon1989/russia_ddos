@@ -1,16 +1,17 @@
 import pytest
 import time
+import json
 import docker
 import urllib.request
-from collections import namedtuple
+
 from docker import DockerClient
 
-from ripper.services import start
+from ripper.services import start_dripper
 from ripper.constants import *
+from ripper.arg_parser import Args
 
-Args = namedtuple(
-    'Args', 'targets targets_list http_method attack_method threads_count dry_run min_random_packet_len max_random_packet_len proxy_list socket_timeout proxy_type health_check duration log_size event_level')
 DockerContainer = 'DockerContainer'
+
 
 class DescribeBenchmark:
     image: str = 'oknyga/ddos-attack-benchmarker:latest'
@@ -28,29 +29,24 @@ class DescribeBenchmark:
             detach=True,
             ports={'80/tcp': 8000, '8053/udp': 8053, '8080/tcp': 8080},
         )
-        time.sleep(5)
-        urllib.request.urlopen('http://localhost:8000/start?type=http&port=8080').read()
+        time.sleep(2)
         yield
         self.container.stop()
 
     def it_http_flood_benchmark(self):
-        start(Args(
+        urllib.request.urlopen('http://localhost:8000/start?type=http&port=8080').read()
+        start_dripper(Args(
             targets=['http://localhost:8080'],
-            targets_list=None,
-            min_random_packet_len=None,
-            max_random_packet_len=None,
-            proxy_list=None,
-            proxy_type=ARGS_DEFAULT_PROXY_TYPE,
-            health_check=ARGS_DEFAULT_HEALTH_CHECK,
-            socket_timeout=ARGS_DEFAULT_SOCK_TIMEOUT,
-            dry_run=None,
-            log_size=DEFAULT_LOG_SIZE,
-            event_level=DEFAULT_LOG_LEVEL,
-            attack_method='http-flood',
-            http_method='GET',
             threads_count=1,
-            duration=5,
+            duration=10,
         ))
-        print(urllib.request.urlopen('http://localhost:8000/stop').read())
-        print('123')
-        assert False
+        stats = json.loads(urllib.request.urlopen('http://localhost:8000/stop').read())
+        assert stats['code'] == 200
+        assert stats['data']['type'] == 'http'
+        assert stats['data']['duration']['seconds'] >= 10
+        # On 2.3 GHz Quad-Core Intel Core i7 2022-04-24 >= 45066
+        # I expect any CPU to perfrom at least 10 times slower
+        assert stats['data']['requests']['total']['count'] > 45066 / 10
+        assert stats['data']['requests']['total']['bytes'] > 227360183818 / 10
+        assert stats['data']['requests']['average']['perSecond']['count'] > 4091 / 10
+        assert stats['data']['requests']['average']['perSecond']['bytes'] > 20642834920 / 10

@@ -3,14 +3,13 @@ import gzip
 import http.client
 import re
 import socket
-import string
 import random
 import os
 import subprocess
 import json
 import urllib.request
 
-from rich import box
+import rich.box
 from rich.console import Console
 from rich.panel import Panel
 
@@ -188,7 +187,7 @@ def get_cpu_load() -> str:
 def print_panel(message: str, style: str = 'bold white on red') -> None:
     """Output message in the colorful box."""
     console.print(
-        Panel(message, box=box.ROUNDED),
+        Panel(message, box=rich.box.ROUNDED),
         width=MIN_SCREEN_WIDTH,
         style=style)
 

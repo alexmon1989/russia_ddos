@@ -4,8 +4,8 @@ from rich.console import Console
 
 from _version import __version__
 
+import ripper.common
 from ripper.github_updates_checker import Version
-from ripper import common
 from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
@@ -21,7 +21,7 @@ from ripper.context.target import Target
 events_journal = EventsJournal()
 
 
-class Context(metaclass=common.Singleton):
+class Context(metaclass=ripper.common.Singleton):
     """Class (Singleton) for passing a context to a parallel processes."""
 
     targets_manager: TargetsManager = None
@@ -74,7 +74,7 @@ class Context(metaclass=common.Singleton):
         self.targets_manager = TargetsManager(_ctx=self)
 
         self.logger.log('Getting your current Public IPv4 address...')
-        self.myIpInfo = IpInfo(common.get_current_ip())
+        self.myIpInfo = IpInfo(ripper.common.get_current_ip())
         self.logger.log(f'Your start Public IPv4 is: {self.myIpInfo.ip_masked}')
 
         self.headers_provider = HeadersProvider()
@@ -108,7 +108,7 @@ class Context(metaclass=common.Singleton):
             targets_file: str = getattr(args, 'targets_list', None)
             message = f'Downloading targets from {targets_file}...' if targets_file.startswith('http') else 'Reading targets from file...'
             self.logger.log(message)
-            input_targets = common.read_file_lines(targets_file)
+            input_targets = ripper.common.read_file_lines(targets_file)
             self.logger.log(f'Loaded list with {len(input_targets)} targets')
         else:
             #  args and getattr(args, 'targets', None):
@@ -154,7 +154,7 @@ class Context(metaclass=common.Singleton):
             self.logger.log(str(e))
             return False
 
-        if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
+        if self.myIpInfo.start_ip is None or not ripper.common.is_ipv4(self.myIpInfo.start_ip):
             self.logger.log(
                 'Cannot get your public IPv4 address. Check your VPN connection.')
             return False

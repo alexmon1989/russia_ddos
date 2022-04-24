@@ -2,8 +2,8 @@ import time
 from typing import Tuple
 from urllib.parse import urlparse
 
+import ripper.common
 from ripper.health_check_manager import HealthCheckManager
-from ripper import common
 from ripper.constants import *
 from ripper.stats.target_stats_manager import TargetStatsManager
 from ripper.time_interval_manager import TimeIntervalManager
@@ -93,10 +93,10 @@ class Target:
         self.http_path = path if not query else f'{path}?{query}'
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
-        self.host_ip = common.get_ipv4(self.host)
-        # self.country = common.get_country_by_ipv4(self.host_ip)
+        self.host_ip = ripper.common.get_ipv4(self.host)
+        # self.country = ripper.common.get_country_by_ipv4(self.host_ip)
         self.country = GEOIP_NOT_DEFINED
-        self.is_cloud_flare_protection = common.detect_cloudflare(target_uri)
+        self.is_cloud_flare_protection = ripper.common.detect_cloudflare(target_uri)
         self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
 
@@ -117,7 +117,7 @@ class Target:
 
     def validate(self):
         """Validates target."""
-        if self.host_ip is None or not common.is_ipv4(self.host_ip):
+        if self.host_ip is None or not ripper.common.is_ipv4(self.host_ip):
             raise Exception(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
         # XXX Should we call validate attack here as well?
         return True

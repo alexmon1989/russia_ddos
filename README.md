@@ -198,6 +198,13 @@ pytest
 pytest --cov-report=html:./htmlcov
 ```
 
+## Benchmark
+
+#### Run
+```bash
+pytest -c pytest.benchmark.ini
+```
+
 # License
 
 This project is distributed under the MIT License, see [LICENSE](./LICENSE) for more information.

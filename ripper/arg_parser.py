@@ -1,22 +1,9 @@
+from collections import namedtuple
 import sys
 from optparse import OptionParser, IndentedHelpFormatter
 
 from ripper.constants import *
 from ripper.actions.attack import attack_method_labels
-
-
-def create_parser() -> OptionParser:
-    """Initialize parser with options."""
-    formatter = IndentedHelpFormatter(
-        indent_increment=2,
-        max_help_position=56,
-        width=120,
-        short_first=1
-    )
-    parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}', formatter=formatter)
-    parser_add_options(parser)
-
-    return parser
 
 
 def parser_add_options(parser: OptionParser) -> None:
@@ -67,6 +54,38 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-d', '--duration',
                       dest='duration', type='int',
                       help='Attack duration in seconds. After this duration script will stop it\'s execution.')
+
+
+def create_parser() -> OptionParser:
+    """Initialize parser with options."""
+    formatter = IndentedHelpFormatter(
+        indent_increment=2,
+        max_help_position=56,
+        width=120,
+        short_first=1
+    )
+    parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}', formatter=formatter)
+    parser_add_options(parser)
+
+    return parser
+
+
+def Args(**args):
+    values = locals()['args']
+    arguments = {}
+    parser = create_parser()
+    for option in parser.option_list:
+        if option.dest:
+            if (isinstance(option.default, tuple) and option.default[0] == 'NO'):
+                arguments[option.dest] = None
+            else:
+                arguments[option.dest] = option.default
+    ArgsClass = namedtuple('Args', ' '.join(arguments.keys()))
+    for key, value in values.items():
+        arguments[key] = value
+    print(arguments)
+    return ArgsClass(**arguments)
+
 
 def print_usage():
     """Wrapper for Logo with help."""

@@ -13,7 +13,8 @@ from rich.live import Live
 
 from _version import __version__
 from ripper.github_updates_checker import GithubUpdatesChecker
-from ripper import common, arg_parser
+import ripper.common
+import ripper.arg_parser
 from ripper.actions.attack import attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context, Target
@@ -62,7 +63,7 @@ def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules."""
     home_code = b64decode('dWE=').decode('utf-8')
     for target in _ctx.targets_manager.targets:
-        if target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(target.host_ip) in home_code.upper():
+        if target.host.endswith('.' + home_code.lower()) or ripper.common.get_country_by_ipv4(target.host_ip) in home_code.upper():
             target.host_ip = target.host = 'localhost'
             target.host += '*'
 
@@ -83,13 +84,13 @@ def refresh_context_details(_ctx: Context) -> None:
 
         if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
             threading.Thread(
-                name='upd-country', target=common.get_country_by_ipv4,
+                name='upd-country', target=ripper.common.get_country_by_ipv4,
                 args=[_ctx.myIpInfo.current_ip], daemon=True).start()
 
         for target in _ctx.targets_manager.targets:
             if target.country == GEOIP_NOT_DEFINED:
                 threading.Thread(
-                    name='upd-country', target=common.get_country_by_ipv4,
+                    name='upd-country', target=ripper.common.get_country_by_ipv4,
                     args=[target.host_ip], daemon=True).start()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
@@ -195,7 +196,7 @@ def validate_input(args) -> bool:
     if args.targets_list is None:
         for target_uri in args.targets:
             if not Target.validate_format(target_uri):
-                common.print_panel(
+                ripper.common.print_panel(
                     f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}\n'
                     f'Target should be in next format: ' + '{scheme}://{hostname}[:{port}][{path}]\n\n' +
                     f'Possible target format may be:\n'
@@ -204,26 +205,26 @@ def validate_input(args) -> bool:
                 return False
 
     if args.threads_count != 'auto' and (not str(args.threads_count).isdigit() or int(args.threads_count) < 1):
-        common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
+        ripper.common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
         generate_valid_commands(args.targets)
         return False
 
     if args.attack_method is not None and args.attack_method.lower() not in attack_method_labels:
-        common.print_panel(
+        ripper.common.print_panel(
             f'Wrong attack type. Check param [yellow]-m (--method) {args.attack_method}[/]\n'
             f'Possible options: {", ".join(attack_method_labels)}')
         generate_valid_commands(args.targets)
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
-        common.print_panel(
+        ripper.common.print_panel(
             f'Wrong HTTP method type. Check param [yellow]-e (--http-method) {args.http_method}[/]\n'
             f'Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         generate_valid_commands(args.targets)
         return False
 
     if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
-        common.print_panel(
+        ripper.common.print_panel(
             f'Wrong Proxy type. Check param [yellow]-k (--proxy-type) {args.proxy_type}[/]\n'
             f'Possible options: http, socks5, socks4.')
         generate_valid_commands(args.targets)
@@ -257,7 +258,12 @@ def render_statistics(_ctx: Context) -> None:
         console.print(e)
 
 
-def start(args: Values):
+def start_dripper(args: Values, is_loop_process: bool = True):
+    """
+    :param is_loop_process: If True then wait loop will be executed
+    for the period while attack has at least one valid target.
+    :return: Context or None
+    """
     # Init Events Log
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
     events_journal.set_log_size(getattr(args, 'log_size', DEFAULT_LOG_SIZE))
@@ -293,6 +299,10 @@ def start(args: Values):
     time.sleep(.5)
     _ctx.targets_manager.allocate_attacks()
     _ctx.duration_manager.start_countdown()
+
+    while _ctx.targets_manager.targets_count():
+        time.sleep(.5)
+
     return _ctx
 
 
@@ -300,10 +310,10 @@ def main():
     """The main function to run the script from the command line."""
     console = Console(width=MIN_SCREEN_WIDTH)
     console.rule(f'[bold]Starting DRipper {VERSION}')
-    args = arg_parser.create_parser().parse_args()
+    args = ripper.arg_parser.create_parser().parse_args()
     if len(sys.argv) < 2 and not validate_input(args[0]):
         exit("\nRun 'dripper -h' for help.")
-    _ctx = start(args[0])
+    _ctx = start_dripper(args[0])
     if _ctx is None:
         exit(1)
     render_statistics(_ctx)

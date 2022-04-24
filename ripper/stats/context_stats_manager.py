@@ -3,10 +3,10 @@ from math import floor
 from rich.table import Table
 from rich import box
 
+import ripper.common
 from ripper.context.target import Target
 from ripper.stats.utils import Row, badge_error, badge_warn
 from rich.console import Group
-from ripper import common
 from ripper.constants import *
 from ripper.time_interval_manager import TimeIntervalManager
 from ripper.context.events_journal import EventsJournal
@@ -66,7 +66,7 @@ class ContextStatsManager:
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Start Time, Duration',      f'{common.format_dt(self._ctx.time_interval_manager.start_time)}  ({str(self.duration).split(".", 2)[0]})'),
+            Row('Start Time, Duration',      f'{ripper.common.format_dt(self._ctx.time_interval_manager.start_time)}  ({str(self.duration).split(".", 2)[0]})'),
             Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.targets_manager.threads_count}', visible=self._ctx.targets_manager.targets_count() > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
