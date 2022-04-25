@@ -1,4 +1,3 @@
-import pytest
 import time
 import datetime
 import docker
@@ -6,7 +5,7 @@ import urllib.request
 
 from docker import DockerClient
 
-from ripper.services import start_dripper
+from ripper.services import dripper
 from ripper.constants import *
 from ripper.arg_parser import Args
 
@@ -31,10 +30,23 @@ urllib.request.urlopen(
     'http://localhost:8000/start?type=http&port=8080').read()
 
 print(datetime.datetime.now())
-start_dripper(Args(
+dripper(Args(
     targets=['http://localhost:8080'],
     threads_count=1,
-    duration=10,
+    duration=5,
+))
+print(datetime.datetime.now())
+print(urllib.request.urlopen('http://localhost:8000/stop').read())
+#####
+
+urllib.request.urlopen(
+    'http://localhost:8000/start?type=tcp&port=8080').read()
+
+print(datetime.datetime.now())
+dripper(Args(
+    targets=['tcp://localhost:8080'],
+    threads_count=1,
+    duration=5,
 ))
 print(datetime.datetime.now())
 print(urllib.request.urlopen('http://localhost:8000/stop').read())

@@ -83,7 +83,6 @@ def Args(**args):
     ArgsClass = namedtuple('Args', ' '.join(arguments.keys()))
     for key, value in values.items():
         arguments[key] = value
-    print(arguments)
     return ArgsClass(**arguments)
 
 

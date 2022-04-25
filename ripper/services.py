@@ -258,7 +258,7 @@ def render_statistics(_ctx: Context) -> None:
         console.print(e)
 
 
-def start_dripper(args: Values, is_loop_process: bool = True):
+def dripper(args: Values, is_loop_process: bool = True):
     """
     :param is_loop_process: If True then wait loop will be executed
     for the period while attack has at least one valid target.
@@ -300,9 +300,9 @@ def start_dripper(args: Values, is_loop_process: bool = True):
     _ctx.targets_manager.allocate_attacks()
     _ctx.duration_manager.start_countdown()
 
-    while _ctx.targets_manager.targets_count():
-        time.sleep(.5)
-
+    if is_loop_process:
+        while _ctx.targets_manager.targets_count():
+            time.sleep(.5)
     return _ctx
 
 
@@ -313,7 +313,7 @@ def main():
     args = ripper.arg_parser.create_parser().parse_args()
     if len(sys.argv) < 2 and not validate_input(args[0]):
         exit("\nRun 'dripper -h' for help.")
-    _ctx = start_dripper(args[0])
+    _ctx = dripper(args[0], is_loop_process=False)
     if _ctx is None:
         exit(1)
     render_statistics(_ctx)

@@ -21,7 +21,7 @@ from ripper.context.target import Target
 events_journal = EventsJournal()
 
 
-class Context(metaclass=ripper.common.Singleton):
+class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
     targets_manager: TargetsManager = None
@@ -81,6 +81,7 @@ class Context(metaclass=ripper.common.Singleton):
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.time_interval_manager = TimeIntervalManager()
+        self.time_interval_manager.reset_start_time()
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
         self.dry_run = getattr(args, 'dry_run', False)
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
