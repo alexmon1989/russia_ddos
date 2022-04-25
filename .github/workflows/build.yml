@@ -55,7 +55,7 @@ jobs:
         run: python3 -m pytest tests/ -v
 
       - name: Run Benchmark
-        run: python3 -m pytest -c pytest.benchmark.ini
+        run: python3 -m pytest tests/ -c pytest.benchmark.ini
 
       - name: Set up QEMU
         if: runner.os == 'Linux'

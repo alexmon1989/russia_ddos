@@ -48,6 +48,21 @@ class DescribeBenchmark:
         yield
         self.container.stop()
     
+    def format_args(self, args: Values):
+        return (
+                f'Attack Method: {args.attack_method}\n'
+                f'Threads Count: {args.threads_count}\n'
+                #f'Min Random Packet Length (bytes): {args.min_random_packet_len}\n'
+                #f'Max Random Packet Length (bytes): {args.max_random_packet_len}\n'
+                f'Duration (seconds): {args.duration}'
+               )
+    
+    def print_results(self, args: Values):
+        print('---------INFO---------')
+        print(self.format_args(args))
+        print('---------DATA---------')
+        print(str(urllib.request.urlopen(f'{self.http_control_api_url}/stats?view=text').read().decode()).replace('\\n', '\n'))
+    
     def stop_and_validate(self, args: Values, expected_data: dict[str, Any], down_scale_factor: int = 10):
         actual = json.loads(urllib.request.urlopen(f'{self.http_control_api_url}/stop').read())
         assert actual['code'] == 200
@@ -58,14 +73,13 @@ class DescribeBenchmark:
         assert actual_data['requests']['total']['bytes'] > expected_data['requests']['total']['bytes'] / down_scale_factor
         assert actual_data['requests']['average']['perSecond']['count'] > expected_data['requests']['average']['perSecond']['count'] / down_scale_factor
         assert actual_data['requests']['average']['perSecond']['bytes'] > expected_data['requests']['average']['perSecond']['bytes'] / down_scale_factor
-        print(args)
-        print(str(urllib.request.urlopen(f'{self.http_control_api_url}/stats?view=text').read().decode()).replace('\\n', '\n'))
+        self.print_results(args)
 
     # Testset was prepared at 2022-04-24 on 2.3 GHz Quad-Core Intel Core i7
     # It is hard to imagine any CPU to perfrom more than 10 times slower
     @pytest.mark.parametrize('args, expected_data', [
         # Dripper takes ~7s to validate connection and boot
-        (Args(threads_count=1, attack_method='http-flood', duration=5),{'type': 'http', 'duration': {'seconds': 12.15}, 'requests': {'average': {'perSecond': {'count': 5182.484155074492, 'bytes': 39362223335.33624}}, 'total': {'count': 62962, 'bytes': 478211651301}}}),
+        (Args(threads_count=1, attack_method='http-flood', duration=5, health_check=0), {'type': 'http', 'duration': {'seconds': 12.15}, 'requests': {'average': {'perSecond': {'count': 5182.484155074492, 'bytes': 39362223335.33624}}, 'total': {'count': 62962, 'bytes': 478211651301}}}),
     ])
     def it_http_flood_benchmark(self, args, expected_data):
         urllib.request.urlopen(f'{self.http_control_api_url}/start?type=http&port={self.tcp_benchmark_port}').read()
@@ -77,7 +91,7 @@ class DescribeBenchmark:
         )
 
     @pytest.mark.parametrize('args, expected_data', [
-        (Args(threads_count=1, attack_method='tcp-flood', duration=5), {"type": "tcp", "duration": {"seconds": 9.45}, "requests": {"average": {"perSecond": {"count": 82.84837583324516, "bytes": 128909.3217648926}}, "total": {"count": 783, "bytes": 1218322}}}),
+        (Args(threads_count=1, attack_method='tcp-flood', duration=5, health_check=0), {'type': 'tcp', 'duration': {'seconds': 9.45}, 'requests': {'average': {'perSecond': {'count': 82.84837583324516, 'bytes': 128909.3217648926}}, 'total': {'count': 783, 'bytes': 1218322}}}),
     ])
     def it_tcp_flood_benchmark(self, args, expected_data):
         urllib.request.urlopen(f'{self.http_control_api_url}/start?type=tcp&port={self.tcp_benchmark_port}').read()
@@ -89,7 +103,7 @@ class DescribeBenchmark:
         )
 
     @pytest.mark.parametrize('args, expected_data', [
-        (Args(threads_count=1, attack_method='udp-flood', duration=5), {"type": "udp", "duration": {"seconds": 5.55}, "requests": {"average": {"perSecond": {"count": 465.4303204897371, "bytes": 238128.37594526465}}, "total": {"count": 2585, "bytes": 1322565}}}),
+        (Args(threads_count=1, attack_method='udp-flood', duration=5, health_check=0), {'type': 'udp', 'duration': {'seconds': 5.55}, 'requests': {'average': {'perSecond': {'count': 465.4303204897371, 'bytes': 238128.37594526465}}, 'total': {'count': 2585, 'bytes': 1322565}}}),
     ])
     def it_udp_flood_benchmark(self, args, expected_data):
         urllib.request.urlopen(f'{self.http_control_api_url}/start?type=udp&port={self.udp_benchmark_port}').read()
