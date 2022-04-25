@@ -54,6 +54,9 @@ jobs:
       - name: Run Tests with coverage
         run: python3 -m pytest tests/ -v
 
+      - name: Run Benchmark
+        run: python3 -m pytest -c pytest.benchmark.ini
+
       - name: Set up QEMU
         if: runner.os == 'Linux'
         uses: docker/setup-qemu-action@v1

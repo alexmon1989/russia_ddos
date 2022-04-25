@@ -58,6 +58,8 @@ class DescribeBenchmark:
         assert actual_data['requests']['total']['bytes'] > expected_data['requests']['total']['bytes'] / down_scale_factor
         assert actual_data['requests']['average']['perSecond']['count'] > expected_data['requests']['average']['perSecond']['count'] / down_scale_factor
         assert actual_data['requests']['average']['perSecond']['bytes'] > expected_data['requests']['average']['perSecond']['bytes'] / down_scale_factor
+        print(args)
+        print(str(urllib.request.urlopen(f'{self.http_control_api_url}/stats?view=text').read().decode()).replace('\\n', '\n'))
 
     # Testset was prepared at 2022-04-24 on 2.3 GHz Quad-Core Intel Core i7
     # It is hard to imagine any CPU to perfrom more than 10 times slower
