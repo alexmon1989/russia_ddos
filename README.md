@@ -52,7 +52,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
                         ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
                         ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
                         ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-                                                                    v2.5.0
+                                                                    v2.6.1
 
                   It is the end user's responsibility to obey all applicable laws.
                   It is just like a server testing script and Your IP is visible.
