@@ -65,6 +65,7 @@ class DescribeBenchmark:
     
     def stop_and_validate(self, args: Values, expected_data: dict[str, Any], down_scale_factor: int = 10):
         actual = json.loads(urllib.request.urlopen(f'{self.http_control_api_url}/stop').read())
+        self.print_results(args)
         assert actual['code'] == 200
         actual_data = actual['data']
         assert actual_data['type'] == expected_data['type']
@@ -73,13 +74,13 @@ class DescribeBenchmark:
         assert actual_data['requests']['total']['bytes'] > expected_data['requests']['total']['bytes'] / down_scale_factor
         assert actual_data['requests']['average']['perSecond']['count'] > expected_data['requests']['average']['perSecond']['count'] / down_scale_factor
         assert actual_data['requests']['average']['perSecond']['bytes'] > expected_data['requests']['average']['perSecond']['bytes'] / down_scale_factor
-        self.print_results(args)
 
     # Testset was prepared at 2022-04-24 on 2.3 GHz Quad-Core Intel Core i7
     # It is hard to imagine any CPU to perfrom more than 10 times slower
     @pytest.mark.parametrize('args, expected_data', [
         # Dripper takes ~7s to validate connection and boot
-        (Args(threads_count=1, verbose=False, attack_method='http-flood', duration=5, health_check=0), {'type': 'http', 'duration': {'seconds': 12.15}, 'requests': {'average': {'perSecond': {'count': 5182.484155074492, 'bytes': 39362223335.33624}}, 'total': {'count': 62962, 'bytes': 478211651301}}}),
+        # (Args(threads_count=1, verbose=False, attack_method='http-flood', duration=5, health_check=0), {'type': 'http', 'duration': {'seconds': 12.15}, 'requests': {'average': {'perSecond': {'count': 5182.484155074492, 'bytes': 39362223335.33624}}, 'total': {'count': 62962, 'bytes': 478211651301}}}),
+        (Args(threads_count=100, verbose=False, attack_method='http-flood', duration=10, health_check=0), {'type': 'http', 'duration': {'seconds': 12.15}, 'requests': {'average': {'perSecond': {'count': 51820.484155074492, 'bytes': 393622233350.33624}}, 'total': {'count': 629620, 'bytes': 4782116513010}}}),
     ])
     def it_http_flood_benchmark(self, args, expected_data):
         urllib.request.urlopen(f'{self.http_control_api_url}/start?type=http&port={self.tcp_benchmark_port}').read()
@@ -90,26 +91,28 @@ class DescribeBenchmark:
             expected_data=expected_data,
         )
 
-    @pytest.mark.parametrize('args, expected_data', [
-        (Args(threads_count=1, verbose=False, attack_method='tcp-flood', duration=5, health_check=0), {'type': 'tcp', 'duration': {'seconds': 9.45}, 'requests': {'average': {'perSecond': {'count': 82.84837583324516, 'bytes': 128909.3217648926}}, 'total': {'count': 783, 'bytes': 1218322}}}),
-    ])
-    def it_tcp_flood_benchmark(self, args, expected_data):
-        urllib.request.urlopen(f'{self.http_control_api_url}/start?type=tcp&port={self.tcp_benchmark_port}').read()
-        args_targeted = args._replace(targets=[f'tcp://localhost:{self.tcp_benchmark_port}'])
-        dripper(args_targeted)
-        self.stop_and_validate(
-            args=args_targeted,
-            expected_data=expected_data,
-        )
+    # @pytest.mark.parametrize('args, expected_data', [
+    #     (Args(threads_count=1, verbose=False, attack_method='tcp-flood', duration=5, health_check=0), {'type': 'tcp', 'duration': {'seconds': 9.45}, 'requests': {'average': {'perSecond': {'count': 82.84837583324516, 'bytes': 128909.3217648926}}, 'total': {'count': 783, 'bytes': 1218322}}}),
+    #     (Args(threads_count=10, verbose=False, attack_method='tcp-flood', duration=5, health_check=0), {'type': 'tcp', 'duration': {'seconds': 9.45}, 'requests': {'average': {'perSecond': {'count': 820.84837583324516, 'bytes': 1289090.3217648926}}, 'total': {'count': 7830, 'bytes': 1218322}}}),
+    # ])
+    # def it_tcp_flood_benchmark(self, args, expected_data):
+    #     urllib.request.urlopen(f'{self.http_control_api_url}/start?type=tcp&port={self.tcp_benchmark_port}').read()
+    #     args_targeted = args._replace(targets=[f'tcp://localhost:{self.tcp_benchmark_port}'])
+    #     dripper(args_targeted)
+    #     self.stop_and_validate(
+    #         args=args_targeted,
+    #         expected_data=expected_data,
+    #     )
 
-    @pytest.mark.parametrize('args, expected_data', [
-        (Args(threads_count=1, verbose=False, attack_method='udp-flood', duration=5, health_check=0), {'type': 'udp', 'duration': {'seconds': 5.55}, 'requests': {'average': {'perSecond': {'count': 465.4303204897371, 'bytes': 238128.37594526465}}, 'total': {'count': 2585, 'bytes': 1322565}}}),
-    ])
-    def it_udp_flood_benchmark(self, args, expected_data):
-        urllib.request.urlopen(f'{self.http_control_api_url}/start?type=udp&port={self.udp_benchmark_port}').read()
-        args_targeted = args._replace(targets=[f'udp://localhost:{self.udp_benchmark_port}'])
-        dripper(args_targeted)
-        self.stop_and_validate(
-            args=args_targeted,
-            expected_data=expected_data,
-        )
+    # @pytest.mark.parametrize('args, expected_data', [
+    #     (Args(threads_count=1, verbose=False, attack_method='udp-flood', duration=5, health_check=0), {'type': 'udp', 'duration': {'seconds': 5.55}, 'requests': {'average': {'perSecond': {'count': 465.4303204897371, 'bytes': 238128.37594526465}}, 'total': {'count': 2585, 'bytes': 1322565}}}),
+    #     (Args(threads_count=10, verbose=False, attack_method='udp-flood', duration=5, health_check=0), {'type': 'udp', 'duration': {'seconds': 5.55}, 'requests': {'average': {'perSecond': {'count': 4650.4303204897371, 'bytes': 2381280.37594526465}}, 'total': {'count': 25850, 'bytes': 13225650}}}),
+    # ])
+    # def it_udp_flood_benchmark(self, args, expected_data):
+    #     urllib.request.urlopen(f'{self.http_control_api_url}/start?type=udp&port={self.udp_benchmark_port}').read()
+    #     args_targeted = args._replace(targets=[f'udp://localhost:{self.udp_benchmark_port}'])
+    #     dripper(args_targeted)
+    #     self.stop_and_validate(
+    #         args=args_targeted,
+    #         expected_data=expected_data,
+    #     )
