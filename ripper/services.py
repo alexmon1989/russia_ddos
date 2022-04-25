@@ -54,9 +54,9 @@ def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.time_interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
         events_journal.info(f'Checking my public IP address (period: {check_period_sec} sec)')
-        _ctx.myIpInfo.current_ip = get_current_ip()
-    if _ctx.myIpInfo.start_ip is None:
-        _ctx.myIpInfo.start_ip = _ctx.myIpInfo.current_ip
+        _ctx.my_ip_info.current_ip = get_current_ip()
+    if _ctx.my_ip_info.start_ip is None:
+        _ctx.my_ip_info.start_ip = _ctx.my_ip_info.current_ip
 
 
 def go_home(_ctx: Context) -> None:
@@ -82,10 +82,10 @@ def refresh_context_details(_ctx: Context) -> None:
                     name='check-host', target=update_host_statuses,
                     args=[target], daemon=True).start()
 
-        if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
+        if _ctx.my_ip_info.country == GEOIP_NOT_DEFINED:
             threading.Thread(
                 name='upd-country', target=ripper.common.get_country_by_ipv4,
-                args=[_ctx.myIpInfo.current_ip], daemon=True).start()
+                args=[_ctx.my_ip_info.current_ip], daemon=True).start()
 
         for target in _ctx.targets_manager.targets:
             if target.country == GEOIP_NOT_DEFINED:
@@ -94,7 +94,7 @@ def refresh_context_details(_ctx: Context) -> None:
                     args=[target.host_ip], daemon=True).start()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
-    if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.my_ip_info.is_ip_changed():
         events_journal.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
 
     for target in _ctx.targets_manager.targets[:]:
@@ -308,12 +308,15 @@ def dripper(args: Values, is_loop_process: bool = True):
 
 def main():
     """The main function to run the script from the command line."""
-    console = Console(width=MIN_SCREEN_WIDTH)
-    console.rule(f'[bold]Starting DRipper {VERSION}')
-    args = ripper.arg_parser.create_parser().parse_args()
+    args = ripper.arg_parser.create_parser().parse_args()    
     if len(sys.argv) < 2 and not validate_input(args[0]):
         exit("\nRun 'dripper -h' for help.")
-    _ctx = dripper(args[0], is_loop_process=False)
+    dry_run = getattr(args, 'dry_run', False)
+    print('dry_run', dry_run)
+    exit(1)
+    console = Console(width=MIN_SCREEN_WIDTH, quiet=is_quiet)
+    console.rule(f'[bold]Starting DRipper {VERSION}')
+    _ctx = dripper(args[0], is_loop_process=is_quiet)
     if _ctx is None:
         exit(1)
     render_statistics(_ctx)

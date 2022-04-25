@@ -62,12 +62,12 @@ class ContextStatsManager:
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
 
         your_ip_disclaimer = f'{badge_warn(MSG_DONT_USE_VPN_WITH_PROXY)}' if is_proxy_list else ''
-        your_ip_was_changed = f'{badge_error(MSG_YOUR_IP_WAS_CHANGED)} {badge_warn(MSG_CHECK_VPN_CONNECTION)}[/]' if self._ctx.myIpInfo.is_ip_changed() else ''
+        your_ip_was_changed = f'{badge_error(MSG_YOUR_IP_WAS_CHANGED)} {badge_warn(MSG_CHECK_VPN_CONNECTION)}[/]' if self._ctx.my_ip_info.is_ip_changed() else ''
 
         full_stats: list[Row] = [
             #   Description                  Status
             Row('Start Time, Duration',      f'{ripper.common.format_dt(self._ctx.time_interval_manager.start_time)}  ({str(self.duration).split(".", 2)[0]})'),
-            Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
+            Row('Your Country, Public IP',   f'[green]{self._ctx.my_ip_info.country:4}[/] [cyan]{self._ctx.my_ip_info.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.targets_manager.threads_count}', visible=self._ctx.targets_manager.targets_count() > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),

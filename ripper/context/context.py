@@ -37,7 +37,7 @@ class Context:
     # ==== Statistics ====
     latest_version: Version = None
     current_version: Version = None
-    myIpInfo: IpInfo = None
+    my_ip_info: IpInfo = None
     """All the info about IP addresses and GeoIP information."""
 
     # ==========================================================================
@@ -59,6 +59,9 @@ class Context:
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
 
+    is_verbose: bool = True
+    """Do not print messages to stdout"""
+
     @staticmethod
     def _getattr(obj, name: str, default):
         value = getattr(obj, name, default)
@@ -68,14 +71,14 @@ class Context:
     def __init__(self, args):
         self.current_version = Version(__version__)
         attack_method = getattr(args, 'attack_method', None)
-
-        self.logger = Console(width=MIN_SCREEN_WIDTH)
+        self.is_verbose = getattr(args, 'verbose', True)
+        self.logger = Console(width=MIN_SCREEN_WIDTH, quiet=not self.is_verbose)
 
         self.targets_manager = TargetsManager(_ctx=self)
 
         self.logger.log('Getting your current Public IPv4 address...')
-        self.myIpInfo = IpInfo(ripper.common.get_current_ip())
-        self.logger.log(f'Your start Public IPv4 is: {self.myIpInfo.ip_masked}')
+        self.my_ip_info = IpInfo(ripper.common.get_current_ip())
+        self.logger.log(f'Your start Public IPv4 is: {self.my_ip_info.ip_masked}')
 
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
@@ -155,7 +158,7 @@ class Context:
             self.logger.log(str(e))
             return False
 
-        if self.myIpInfo.start_ip is None or not ripper.common.is_ipv4(self.myIpInfo.start_ip):
+        if self.my_ip_info.start_ip is None or not ripper.common.is_ipv4(self.my_ip_info.start_ip):
             self.logger.log(
                 'Cannot get your public IPv4 address. Check your VPN connection.')
             return False
