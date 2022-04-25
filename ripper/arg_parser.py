@@ -1,4 +1,5 @@
 from collections import namedtuple
+from email.policy import default
 import sys
 from optparse import OptionParser, IndentedHelpFormatter
 
@@ -55,7 +56,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='duration', type='int',
                       help='Attack duration in seconds. After this duration script will stop it\'s execution.')
     parser.add_option('-q', '--quiet',
-                      dest='verbose', action='store_false',
+                      dest='verbose', action='store_false', default=True,
                       help='Do not print messages to stdout')
 
 

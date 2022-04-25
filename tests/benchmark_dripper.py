@@ -58,7 +58,7 @@ class DescribeBenchmark:
                )
     
     def print_results(self, args: Values):
-        print('---------INFO---------')
+        print('\n---------INFO---------')
         print(self.format_args(args))
         print('---------DATA---------')
         print(str(urllib.request.urlopen(f'{self.http_control_api_url}/stats?view=text').read().decode()).replace('\\n', '\n'))
@@ -79,7 +79,7 @@ class DescribeBenchmark:
     # It is hard to imagine any CPU to perfrom more than 10 times slower
     @pytest.mark.parametrize('args, expected_data', [
         # Dripper takes ~7s to validate connection and boot
-        (Args(threads_count=1, attack_method='http-flood', duration=5, health_check=0), {'type': 'http', 'duration': {'seconds': 12.15}, 'requests': {'average': {'perSecond': {'count': 5182.484155074492, 'bytes': 39362223335.33624}}, 'total': {'count': 62962, 'bytes': 478211651301}}}),
+        (Args(threads_count=1, verbose=False, attack_method='http-flood', duration=5, health_check=0), {'type': 'http', 'duration': {'seconds': 12.15}, 'requests': {'average': {'perSecond': {'count': 5182.484155074492, 'bytes': 39362223335.33624}}, 'total': {'count': 62962, 'bytes': 478211651301}}}),
     ])
     def it_http_flood_benchmark(self, args, expected_data):
         urllib.request.urlopen(f'{self.http_control_api_url}/start?type=http&port={self.tcp_benchmark_port}').read()
@@ -91,7 +91,7 @@ class DescribeBenchmark:
         )
 
     @pytest.mark.parametrize('args, expected_data', [
-        (Args(threads_count=1, attack_method='tcp-flood', duration=5, health_check=0), {'type': 'tcp', 'duration': {'seconds': 9.45}, 'requests': {'average': {'perSecond': {'count': 82.84837583324516, 'bytes': 128909.3217648926}}, 'total': {'count': 783, 'bytes': 1218322}}}),
+        (Args(threads_count=1, verbose=False, attack_method='tcp-flood', duration=5, health_check=0), {'type': 'tcp', 'duration': {'seconds': 9.45}, 'requests': {'average': {'perSecond': {'count': 82.84837583324516, 'bytes': 128909.3217648926}}, 'total': {'count': 783, 'bytes': 1218322}}}),
     ])
     def it_tcp_flood_benchmark(self, args, expected_data):
         urllib.request.urlopen(f'{self.http_control_api_url}/start?type=tcp&port={self.tcp_benchmark_port}').read()
@@ -103,7 +103,7 @@ class DescribeBenchmark:
         )
 
     @pytest.mark.parametrize('args, expected_data', [
-        (Args(threads_count=1, attack_method='udp-flood', duration=5, health_check=0), {'type': 'udp', 'duration': {'seconds': 5.55}, 'requests': {'average': {'perSecond': {'count': 465.4303204897371, 'bytes': 238128.37594526465}}, 'total': {'count': 2585, 'bytes': 1322565}}}),
+        (Args(threads_count=1, verbose=False, attack_method='udp-flood', duration=5, health_check=0), {'type': 'udp', 'duration': {'seconds': 5.55}, 'requests': {'average': {'perSecond': {'count': 465.4303204897371, 'bytes': 238128.37594526465}}, 'total': {'count': 2585, 'bytes': 1322565}}}),
     ])
     def it_udp_flood_benchmark(self, args, expected_data):
         urllib.request.urlopen(f'{self.http_control_api_url}/start?type=udp&port={self.udp_benchmark_port}').read()

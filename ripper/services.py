@@ -310,14 +310,12 @@ def main():
     """The main function to run the script from the command line."""
     args = ripper.arg_parser.create_parser().parse_args()    
     if len(sys.argv) < 2 and not validate_input(args[0]):
-        exit("\nRun 'dripper -h' for help.")
-    dry_run = getattr(args, 'dry_run', False)
-    print('dry_run', dry_run)
-    exit(1)
-    console = Console(width=MIN_SCREEN_WIDTH, quiet=is_quiet)
+        exit('\nRun \'dripper - h\' for help.')
+    is_verbose = getattr(args[0], 'verbose', True)
+    console = Console(width=MIN_SCREEN_WIDTH, quiet=not is_verbose)
     console.rule(f'[bold]Starting DRipper {VERSION}')
-    _ctx = dripper(args[0], is_loop_process=is_quiet)
-    if _ctx is None:
+    _ctx = dripper(args[0], is_loop_process=not is_verbose)
+    if _ctx is None or not is_verbose:
         exit(1)
     render_statistics(_ctx)
 

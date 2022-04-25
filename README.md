@@ -132,7 +132,8 @@ Options:
   --log-level=EVENT_LEVEL                               Log level for events board. Supported levels: info, warn, error,
                                                         none.
   -d DURATION_SECONDS, --duration=DURATION_SECONDS      Attack duration in seconds. After this duration script will 
-                                                        stop its execution.                                                   
+                                                        stop its execution.
+  -q, --quiet                                           Do not print messages to stdout.
 
 Example: dripper -t 100 -m tcp-flood -s tcp://192.168.0.1:80
 ```
