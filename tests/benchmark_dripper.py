@@ -1,4 +1,5 @@
 import pytest
+import threading
 import os
 import time
 import json
@@ -20,7 +21,11 @@ class DescribeBenchmark:
     @pytest.fixture(scope='class', autouse=True)
     def start_benchmarking_service(self):
         print('')
-        os.system(f'ddbenchmarker -p {self.http_control_api_port} -d')
+        threading.Thread(
+            name='ddbenchmarker',
+            target=lambda: os.system(f'ddbenchmarker -p {self.http_control_api_port}'),
+            daemon=True
+        ).start()
         time.sleep(2)
         urllib.request.urlopen(f'{self.http_control_api_url}/stop').read()
         time.sleep(2)
