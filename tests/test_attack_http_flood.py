@@ -1,11 +1,9 @@
 import pytest
-from collections import namedtuple
 
 from ripper.actions.http_flood import HttpFlood
 from ripper.context.context import Context
 from ripper.headers_provider import HeadersProvider
-
-Args = namedtuple('Args', 'targets http_method threads_count')
+from ripper.arg_parser import Args
 
 
 class DescribeHttpFloodAttackMethod:

@@ -1,13 +1,11 @@
 import pytest as pytest
-from collections import namedtuple
 from datetime import datetime
 
 from ripper.context.context import Context
 from ripper.health_check_manager import classify_host_status, count_host_statuses
 from ripper.constants import HOST_IN_PROGRESS_STATUS, HOST_FAILED_STATUS, HOST_SUCCESS_STATUS
 from ripper.headers_provider import HeadersProvider
-
-Args = namedtuple('Args', 'targets threads_count')
+from ripper.arg_parser import Args
 
 
 class DescribeHealthCheck:

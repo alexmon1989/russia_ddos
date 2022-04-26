@@ -1,11 +1,9 @@
-from datetime import datetime, timedelta
-from collections import namedtuple
-import time
 import pytest as pytest
+from datetime import datetime, timedelta
+import time
 
 from ripper.context.context import Context
-
-Args = namedtuple('Args', 'targets threads_count')
+from ripper.arg_parser import Args
 
 
 class DescribeContext:
