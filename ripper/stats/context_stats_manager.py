@@ -3,10 +3,10 @@ from math import floor
 from rich.table import Table
 from rich import box
 
+import ripper.common
 from ripper.context.target import Target
 from ripper.stats.utils import Row, badge_error, badge_warn
 from rich.console import Group
-from ripper import common
 from ripper.constants import *
 from ripper.time_interval_manager import TimeIntervalManager
 from ripper.context.events_journal import EventsJournal
@@ -14,6 +14,10 @@ from ripper.github_updates_checker import GithubUpdatesChecker
 
 Context = 'Context'
 events_journal = EventsJournal()
+
+
+class NoMoreTargets(Exception):
+    pass
 
 
 class ContextStatsManager:
@@ -36,8 +40,10 @@ class ContextStatsManager:
         Pagination happens automatically.
         Method calculates current index of target to display based on script execution duration.
         """
-        duration = self.time_interval_manager.execution_duration.total_seconds()
         cnt = self._ctx.targets_manager.targets_count()
+        if cnt == 0:
+            raise NoMoreTargets()
+        duration = self.time_interval_manager.execution_duration.total_seconds()
         change_interval = TARGET_STATS_AUTO_PAGINATION_INTERVAL_SECONDS
         return floor((duration/change_interval) % cnt)
 
@@ -56,12 +62,12 @@ class ContextStatsManager:
         is_proxy_list = bool(self._ctx.proxy_manager.proxy_list and len(self._ctx.proxy_manager.proxy_list))
 
         your_ip_disclaimer = f'{badge_warn(MSG_DONT_USE_VPN_WITH_PROXY)}' if is_proxy_list else ''
-        your_ip_was_changed = f'{badge_error(MSG_YOUR_IP_WAS_CHANGED)} {badge_warn(MSG_CHECK_VPN_CONNECTION)}[/]' if self._ctx.myIpInfo.is_ip_changed() else ''
+        your_ip_was_changed = f'{badge_error(MSG_YOUR_IP_WAS_CHANGED)} {badge_warn(MSG_CHECK_VPN_CONNECTION)}[/]' if self._ctx.my_ip_info.is_ip_changed() else ''
 
         full_stats: list[Row] = [
             #   Description                  Status
-            Row('Start Time, Duration',      f'{common.format_dt(self._ctx.time_interval_manager.start_time)}  ({str(self.duration).split(".", 2)[0]})'),
-            Row('Your Country, Public IP',   f'[green]{self._ctx.myIpInfo.country:4}[/] [cyan]{self._ctx.myIpInfo.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
+            Row('Start Time, Duration',      f'{ripper.common.format_dt(self._ctx.time_interval_manager.start_time)}  ({str(self.duration).split(".", 2)[0]})'),
+            Row('Your Country, Public IP',   f'[green]{self._ctx.my_ip_info.country:4}[/] [cyan]{self._ctx.my_ip_info.ip_masked:20}[/] {your_ip_disclaimer}{your_ip_was_changed}'),
             Row('Total Threads',             f'{self._ctx.targets_manager.threads_count}', visible=self._ctx.targets_manager.targets_count() > 1),
             Row('Proxies Count',             f'[cyan]{len(self._ctx.proxy_manager.proxy_list)} | {self._ctx.proxy_manager.proxy_list_initial_len}', visible=is_proxy_list),
             Row('Proxies Type',              f'[cyan]{self._ctx.proxy_manager.proxy_type.value}', visible=is_proxy_list),

@@ -4,8 +4,8 @@ from rich.console import Console
 
 from _version import __version__
 
+import ripper.common
 from ripper.github_updates_checker import Version
-from ripper import common
 from ripper.constants import *
 from ripper.proxy_manager import ProxyManager
 from ripper.socket_manager import SocketManager
@@ -21,7 +21,7 @@ from ripper.context.target import Target
 events_journal = EventsJournal()
 
 
-class Context(metaclass=common.Singleton):
+class Context:
     """Class (Singleton) for passing a context to a parallel processes."""
 
     targets_manager: TargetsManager = None
@@ -37,7 +37,7 @@ class Context(metaclass=common.Singleton):
     # ==== Statistics ====
     latest_version: Version = None
     current_version: Version = None
-    myIpInfo: IpInfo = None
+    my_ip_info: IpInfo = None
     """All the info about IP addresses and GeoIP information."""
 
     # ==========================================================================
@@ -59,6 +59,9 @@ class Context(metaclass=common.Singleton):
     is_health_check: bool
     """Controls health check availability. Turn on: 1, turn off: 0."""
 
+    is_verbose: bool = True
+    """Do not print messages to stdout"""
+
     @staticmethod
     def _getattr(obj, name: str, default):
         value = getattr(obj, name, default)
@@ -68,20 +71,20 @@ class Context(metaclass=common.Singleton):
     def __init__(self, args):
         self.current_version = Version(__version__)
         attack_method = getattr(args, 'attack_method', None)
-
-        self.logger = Console(width=MIN_SCREEN_WIDTH)
+        self.is_verbose = getattr(args, 'verbose', True)
+        self.logger = Console(width=MIN_SCREEN_WIDTH, quiet=not self.is_verbose)
 
         self.targets_manager = TargetsManager(_ctx=self)
 
         self.logger.log('Getting your current Public IPv4 address...')
-        self.myIpInfo = IpInfo(common.get_current_ip())
-        self.logger.log(f'Your start Public IPv4 is: {self.myIpInfo.ip_masked}')
+        self.my_ip_info = IpInfo(ripper.common.get_current_ip())
+        self.logger.log(f'Your start Public IPv4 is: {self.my_ip_info.ip_masked}')
 
         self.headers_provider = HeadersProvider()
         self.sock_manager = SocketManager()
         self.proxy_manager = ProxyManager()
         self.time_interval_manager = TimeIntervalManager()
-        self.duration_manager = DurationManager(duration_seconds=getattr(args, 'duration', None))
+        self.time_interval_manager.reset_start_time()
         self.is_health_check = bool(getattr(args, 'health_check', ARGS_DEFAULT_HEALTH_CHECK))
         self.dry_run = getattr(args, 'dry_run', False)
         self.sock_manager.socket_timeout = self._getattr(args, 'socket_timeout', ARGS_DEFAULT_SOCK_TIMEOUT)
@@ -109,7 +112,7 @@ class Context(metaclass=common.Singleton):
             targets_file: str = getattr(args, 'targets_list', None)
             message = f'Downloading targets from {targets_file}...' if targets_file.startswith('http') else 'Reading targets from file...'
             self.logger.log(message)
-            input_targets = common.read_file_lines(targets_file)
+            input_targets = ripper.common.read_file_lines(targets_file)
             self.logger.log(f'Loaded list with {len(input_targets)} targets')
         else:
             #  args and getattr(args, 'targets', None):
@@ -141,12 +144,16 @@ class Context(metaclass=common.Singleton):
             self.targets_manager.set_threads_count(threads_count)
 
         self.stats = ContextStatsManager(_ctx=self)
+        self.duration_manager = DurationManager(
+            duration_seconds=getattr(args, 'duration', None),
+            _ctx=self,
+        )
 
     def validate(self):
         """Validates context before Run script. Order is matter!"""
         if self.targets_manager.targets_count() < 1:
             self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
-            exit(1)
+            return False
 
         # try:
         #     for target in self.targets_manager.targets:
@@ -155,7 +162,9 @@ class Context(metaclass=common.Singleton):
         #     self.logger.log(str(e))
         #     exit(1)
 
-        if self.myIpInfo.start_ip is None or not common.is_ipv4(self.myIpInfo.start_ip):
+        if self.my_ip_info.start_ip is None or not ripper.common.is_ipv4(self.my_ip_info.start_ip):
             self.logger.log(
                 'Cannot get your public IPv4 address. Check your VPN connection.')
-            exit(1)
+            return False
+        
+        return True

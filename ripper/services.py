@@ -3,6 +3,8 @@ import signal
 import sys
 import threading
 import time
+from optparse import Values
+from typing import AnyStr
 from base64 import b64decode
 from rich import box
 from rich.console import Console
@@ -11,7 +13,8 @@ from rich.live import Live
 
 from _version import __version__
 from ripper.github_updates_checker import GithubUpdatesChecker
-from ripper import common, arg_parser
+import ripper.common
+import ripper.arg_parser
 from ripper.actions.attack import attack_method_labels
 from ripper.constants import *
 from ripper.context.context import Context, Target
@@ -51,16 +54,16 @@ def update_current_ip(_ctx: Context, check_period_sec: int = 0) -> None:
     """Updates current IPv4 address."""
     if _ctx.time_interval_manager.check_timer_elapsed(check_period_sec, 'update_current_ip'):
         events_journal.info(f'Checking my public IP address (period: {check_period_sec} sec)')
-        _ctx.myIpInfo.current_ip = get_current_ip()
-    if _ctx.myIpInfo.start_ip is None:
-        _ctx.myIpInfo.start_ip = _ctx.myIpInfo.current_ip
+        _ctx.my_ip_info.current_ip = get_current_ip()
+    if _ctx.my_ip_info.start_ip is None:
+        _ctx.my_ip_info.start_ip = _ctx.my_ip_info.current_ip
 
 
 def go_home(_ctx: Context) -> None:
     """Modifies host to match the rules."""
     home_code = b64decode('dWE=').decode('utf-8')
     for target in _ctx.targets_manager.targets:
-        if target.host.endswith('.' + home_code.lower()) or common.get_country_by_ipv4(target.host_ip) in home_code.upper():
+        if target.host.endswith('.' + home_code.lower()) or ripper.common.get_country_by_ipv4(target.host_ip) in home_code.upper():
             target.host_ip = target.host = 'localhost'
             target.host += '*'
 
@@ -79,19 +82,19 @@ def refresh_context_details(_ctx: Context) -> None:
                     name='check-host', target=update_host_statuses,
                     args=[target], daemon=True).start()
 
-        if _ctx.myIpInfo.country == GEOIP_NOT_DEFINED:
+        if _ctx.my_ip_info.country == GEOIP_NOT_DEFINED:
             threading.Thread(
-                name='upd-country', target=common.get_country_by_ipv4,
-                args=[_ctx.myIpInfo.current_ip], daemon=True).start()
+                name='upd-country', target=ripper.common.get_country_by_ipv4,
+                args=[_ctx.my_ip_info.current_ip], daemon=True).start()
 
         for target in _ctx.targets_manager.targets:
             if target.country == GEOIP_NOT_DEFINED:
                 threading.Thread(
-                    name='upd-country', target=common.get_country_by_ipv4,
+                    name='upd-country', target=ripper.common.get_country_by_ipv4,
                     args=[target.host_ip], daemon=True).start()
 
     # Check for my IPv4 wasn't changed (if no proxylist only)
-    if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.myIpInfo.is_ip_changed():
+    if _ctx.proxy_manager.proxy_list_initial_len == 0 and _ctx.my_ip_info.is_ip_changed():
         events_journal.error(YOUR_IP_WAS_CHANGED_ERR_MSG)
 
     for target in _ctx.targets_manager.targets[:]:
@@ -193,7 +196,7 @@ def validate_input(args) -> bool:
     if args.targets_list is None:
         for target_uri in args.targets:
             if not Target.validate_format(target_uri):
-                common.print_panel(
+                ripper.common.print_panel(
                     f'Wrong target format in [yellow]{target_uri}[/]. Check param -s (--targets) {args.targets}\n'
                     f'Target should be in next format: ' + '{scheme}://{hostname}[:{port}][{path}]\n\n' +
                     f'Possible target format may be:\n'
@@ -202,26 +205,26 @@ def validate_input(args) -> bool:
                 return False
 
     if args.threads_count != 'auto' and (not str(args.threads_count).isdigit() or int(args.threads_count) < 1):
-        common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
+        ripper.common.print_panel(f'Wrong threads count. Check param [yellow]-t (--threads) {args.threads_count}[/]')
         generate_valid_commands(args.targets)
         return False
 
     if args.attack_method is not None and args.attack_method.lower() not in attack_method_labels:
-        common.print_panel(
+        ripper.common.print_panel(
             f'Wrong attack type. Check param [yellow]-m (--method) {args.attack_method}[/]\n'
             f'Possible options: {", ".join(attack_method_labels)}')
         generate_valid_commands(args.targets)
         return False
 
     if args.http_method and args.http_method.lower() not in ('get', 'post', 'head', 'put', 'delete', 'trace', 'connect', 'options', 'patch'):
-        common.print_panel(
+        ripper.common.print_panel(
             f'Wrong HTTP method type. Check param [yellow]-e (--http-method) {args.http_method}[/]\n'
             f'Possible options: get, post, head, put, delete, trace, connect, options, patch.')
         generate_valid_commands(args.targets)
         return False
 
     if args.proxy_type and args.proxy_type.lower() not in ('http', 'socks5', 'socks4'):
-        common.print_panel(
+        ripper.common.print_panel(
             f'Wrong Proxy type. Check param [yellow]-k (--proxy-type) {args.proxy_type}[/]\n'
             f'Possible options: http, socks5, socks4.')
         generate_valid_commands(args.targets)
@@ -241,33 +244,34 @@ def render_statistics(_ctx: Context) -> None:
     logo = Panel(LOGO_COLOR + update_available, box=box.SIMPLE)
     console.print(logo, justify='center')
 
-    with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
-        live.start()
-        while True:
-            refresh_context_details(_ctx)
-            live.update(_ctx.stats.build_stats())
-            # time.sleep(0.2)
-            if _ctx.dry_run:
-                break
+    try:
+        with Live(_ctx.stats.build_stats(), vertical_overflow='visible', refresh_per_second=2) as live:
+            live.start()
+            while True:
+                refresh_context_details(_ctx)
+                live.update(_ctx.stats.build_stats())
+                # time.sleep(0.2)
+                if _ctx.dry_run:
+                    break
+    except Exception as e:
+        events_journal.exception(e)
+        console.print(e)
 
 
-def main():
-    """The main function to run the script from the command line."""
-    console = Console(width=MIN_SCREEN_WIDTH)
-    console.rule(f'[bold]Starting DRipper {VERSION}')
-
-    args = arg_parser.create_parser().parse_args()
-
-    if len(sys.argv) < 2 or not validate_input(args[0]):
-        exit("\nRun 'dripper -h' for help.")
-
+def dripper(args: Values, is_loop_process: bool = True):
+    """
+    :param is_loop_process: If True then wait loop will be executed
+    for the period while attack has at least one valid target.
+    :return: Context or None
+    """
     # Init Events Log
     # TODO events journal should not be a singleton as it depends on args. Move it under the context!
-    events_journal.set_log_size(getattr(args[0], 'log_size', DEFAULT_LOG_SIZE))
-    events_journal.set_max_event_level(getattr(args[0], 'event_level', DEFAULT_LOG_LEVEL))
+    events_journal.set_log_size(getattr(args, 'log_size', DEFAULT_LOG_SIZE))
+    events_journal.set_max_event_level(
+        getattr(args, 'event_level', DEFAULT_LOG_LEVEL))
 
-    _ctx = Context(args[0])
-    # go_home(_ctx)
+    _ctx = Context(args)
+    go_home(_ctx)
 
     _ctx.logger.log('Check for DRipper Updates...')
     guc = GithubUpdatesChecker()
@@ -284,16 +288,35 @@ def main():
     # _ctx.logger.rule()
 
     if len(_ctx.targets_manager.targets) == 0:
-        _ctx.logger.log('All targets looks dead. Unable to connect to targets.\nPlease select another targets to run DRipper')
-        exit(1)
+        _ctx.logger.log(
+            'All targets looks dead. Unable to connect to targets.\nPlease select another targets to run DRipper')
+        return None
 
-    _ctx.validate()
+    if not _ctx.validate():
+        return None
 
     # Start Threads
     time.sleep(.5)
     _ctx.targets_manager.allocate_attacks()
     _ctx.duration_manager.start_countdown()
 
+    if is_loop_process:
+        while _ctx.targets_manager.targets_count():
+            time.sleep(.5)
+    return _ctx
+
+
+def main():
+    """The main function to run the script from the command line."""
+    args = ripper.arg_parser.create_parser().parse_args()    
+    if len(sys.argv) < 2 and not validate_input(args[0]):
+        exit('\nRun \'dripper - h\' for help.')
+    is_verbose = getattr(args[0], 'verbose', True)
+    console = Console(width=MIN_SCREEN_WIDTH, quiet=not is_verbose)
+    console.rule(f'[bold]Starting DRipper {VERSION}')
+    _ctx = dripper(args[0], is_loop_process=not is_verbose)
+    if _ctx is None or not is_verbose:
+        exit(1)
     render_statistics(_ctx)
 
 

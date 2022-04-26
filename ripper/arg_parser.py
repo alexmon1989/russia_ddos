@@ -1,22 +1,10 @@
+from collections import namedtuple
+from email.policy import default
 import sys
 from optparse import OptionParser, IndentedHelpFormatter
 
 from ripper.constants import *
 from ripper.actions.attack import attack_method_labels
-
-
-def create_parser() -> OptionParser:
-    """Initialize parser with options."""
-    formatter = IndentedHelpFormatter(
-        indent_increment=2,
-        max_help_position=56,
-        width=120,
-        short_first=1
-    )
-    parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}', formatter=formatter)
-    parser_add_options(parser)
-
-    return parser
 
 
 def parser_add_options(parser: OptionParser) -> None:
@@ -56,7 +44,7 @@ def parser_add_options(parser: OptionParser) -> None:
                       dest='socket_timeout', type='int', default=ARGS_DEFAULT_SOCK_TIMEOUT,
                       help=f'Timeout for socket connection is seconds. Default (seconds): {ARGS_DEFAULT_SOCK_TIMEOUT} without proxy, {2*ARGS_DEFAULT_SOCK_TIMEOUT} with proxy')
     parser.add_option('--dry-run',
-                      dest='dry_run', action="store_true",
+                      dest='dry_run', action='store_true',
                       help='Print formatted output without full script running.')
     parser.add_option('--log-size',
                       dest='log_size', type='int', default=DEFAULT_LOG_SIZE,
@@ -67,6 +55,40 @@ def parser_add_options(parser: OptionParser) -> None:
     parser.add_option('-d', '--duration',
                       dest='duration', type='int',
                       help='Attack duration in seconds. After this duration script will stop it\'s execution.')
+    parser.add_option('-q', '--quiet',
+                      dest='verbose', action='store_false', default=True,
+                      help='Do not print messages to stdout')
+
+
+def create_parser() -> OptionParser:
+    """Initialize parser with options."""
+    formatter = IndentedHelpFormatter(
+        indent_increment=2,
+        max_help_position=56,
+        width=120,
+        short_first=1
+    )
+    parser = OptionParser(usage=USAGE, epilog=EPILOG, version=f'%prog {VERSION}', formatter=formatter)
+    parser_add_options(parser)
+
+    return parser
+
+
+def Args(**args):
+    values = locals()['args']
+    arguments = {}
+    parser = create_parser()
+    for option in parser.option_list:
+        if option.dest:
+            if (isinstance(option.default, tuple) and option.default[0] == 'NO'):
+                arguments[option.dest] = None
+            else:
+                arguments[option.dest] = option.default
+    ArgsClass = namedtuple('Args', ' '.join(arguments.keys()))
+    for key, value in values.items():
+        arguments[key] = value
+    return ArgsClass(**arguments)
+
 
 def print_usage():
     """Wrapper for Logo with help."""

@@ -1,10 +1,8 @@
 import pytest
-from collections import namedtuple
 
 from ripper.actions.tcp_flood import TcpFlood
 from ripper.context.context import Context
-
-Args = namedtuple('Args', 'targets threads_count')
+from ripper.arg_parser import Args
 
 
 class DescribeTcpFloodAttackMethod:

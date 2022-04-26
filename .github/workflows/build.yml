@@ -33,6 +33,14 @@ jobs:
         with:
           python-version: 3.x
 
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Setup DDBenchmarker
+        run: npm i -g ddbenchmarker
+
       - name: Set environment variables
         shell: bash
         run: |
@@ -53,6 +61,9 @@ jobs:
 
       - name: Run Tests with coverage
         run: python3 -m pytest tests/ -v
+
+      - name: Run Benchmark
+        run: python3 -m pytest tests/ -c pytest.benchmark.ini
 
       - name: Set up QEMU
         if: runner.os == 'Linux'

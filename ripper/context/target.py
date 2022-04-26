@@ -2,8 +2,8 @@ import time
 from typing import Tuple
 from urllib.parse import urlparse
 
+import ripper.common
 from ripper.health_check_manager import HealthCheckManager
-from ripper import common
 from ripper.constants import *
 from ripper.stats.target_stats_manager import TargetStatsManager
 from ripper.time_interval_manager import TimeIntervalManager
@@ -57,6 +57,9 @@ class Target:
     stats: TargetStatsManager = None
     """All the statistics collected separately by protocols and operations."""
 
+    is_active: bool = True
+    """Defines if target is active and valid. In case if it is not - it will eventually be removed from the targets collection"""
+
     @staticmethod
     def validate_format(target_uri: str) -> bool:
         try:
@@ -105,11 +108,11 @@ class Target:
         self.min_random_packet_len = max(self.min_random_packet_len, 0)
         self.max_random_packet_len = max(self.max_random_packet_len, self.min_random_packet_len)
 
-    def init(self):
+    def collect_info(self):
         """Initialize target: get IPv4, country code and make initial checks."""
-        self.host_ip = common.get_ipv4(self.host)
-        self.country = common.get_country_by_ipv4(self.host_ip)
-        self.is_cloud_flare_protection = common.detect_cloudflare(self.uri)
+        self.host_ip = ripper.common.get_ipv4(self.host)
+        self.country = ripper.common.get_country_by_ipv4(self.host_ip)
+        self.is_cloud_flare_protection = ripper.common.detect_cloudflare(self.uri)
 
     def add_attack_thread(self, attack: Attack):
         self.attack_threads.append(attack)
@@ -119,7 +122,7 @@ class Target:
 
     def validate(self):
         """Validates target."""
-        if self.host_ip is None or not common.is_ipv4(self.host_ip):
+        if self.host_ip is None or not ripper.common.is_ipv4(self.host_ip):
             raise Exception(f'Cannot get IPv4 for HOST: {self.host}. Could not connect to the target HOST.')
         # XXX Should we call validate attack here as well?
         return True

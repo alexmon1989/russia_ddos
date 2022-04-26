@@ -62,12 +62,13 @@ class Attack(Thread):
         self.stop_event.set()
 
     def run(self):
-        self.target.init()
+        self.target.collect_info()
         runner = attack_method_factory(_ctx=self._ctx, target=self.target)
 
         if self._ctx.dry_run:
             runner()
-            exit(0)
-
-        while not self.stop_event.is_set():
-            runner()
+            self.target.is_active = False
+            self.stop()
+        else:
+            while not self.stop_event.is_set():
+                runner()

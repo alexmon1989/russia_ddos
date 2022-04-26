@@ -14,6 +14,9 @@ class TimeIntervalManager(metaclass=Singleton):
       self._start_time = datetime.now()
       self._timer_bucket = defaultdict(dict[str, datetime])
     
+    def reset_start_time(self):
+        self._start_time = datetime.now()
+    
     @property
     def start_time(self) -> datetime:
         return self._start_time

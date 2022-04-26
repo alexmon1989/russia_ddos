@@ -119,7 +119,7 @@ class EventsJournal(metaclass=Singleton):
                 target=target,
             ))
 
-    def exception(self, ex, target: Target = None):
+    def exception(self, ex: Exception, target: Target = None):
         self._push_event(Event(
             level=EventLevel.error,
             message=f'{type(ex).__name__}: {ex.__str__()[:128]}',

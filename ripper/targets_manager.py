@@ -142,6 +142,8 @@ class TargetsManager:
         self._threads_count = max(self._threads_count, len(self._targets))
 
     def delete_target(self, target: Target, is_stop_attack: bool = True, is_allocate_attacks: bool = True):
+        events_journal.info(f'Delete target', target)
+        events_journal.info(f'Stop attack', target) if is_stop_attack else 0
         if is_stop_attack:
             target.stop_attack_threads()
         self._lock.acquire()
@@ -153,11 +155,30 @@ class TargetsManager:
         self._lock.release()
         if is_allocate_attacks:
             self.allocate_attacks()
+    
+    def delete_all_targets(self):
+        for target in self.targets:
+            self.delete_target(
+                target=target,
+                is_stop_attack=True,
+                is_allocate_attacks=False,
+            )
+    
+    def remove_inactive_targets(self):
+        for target in self._targets:
+            if not target.is_active:
+                self.delete_target(
+                    target=target,
+                    is_stop_attack=True,
+                    # Critical to prevent endless recursion
+                    is_allocate_attacks=False,
+                )
 
     def allocate_attacks(self):
         free_threads_count = self.free_threads_count
         if free_threads_count < 1:
             return
+        self.remove_inactive_targets()
         self._lock.acquire()
         targets_cnt = len(self._targets)
         if targets_cnt < 1:

@@ -52,7 +52,7 @@ This script support HTTP/TCP/UDP flood attack. We recommend using this script fo
                         ██║  ██║██╔══██╗██║██╔═══╝ ██╔═══╝ ██╔══╝  ██╔══██╗
                         ██████╔╝██║  ██║██║██║     ██║     ███████╗██║  ██║
                         ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝  ╚═╝
-                                                                    v2.5.0
+                                                                    v2.6.1
 
                   It is the end user's responsibility to obey all applicable laws.
                   It is just like a server testing script and Your IP is visible.
@@ -132,7 +132,8 @@ Options:
   --log-level=EVENT_LEVEL                               Log level for events board. Supported levels: info, warn, error,
                                                         none.
   -d DURATION_SECONDS, --duration=DURATION_SECONDS      Attack duration in seconds. After this duration script will 
-                                                        stop its execution.                                                   
+                                                        stop its execution.
+  -q, --quiet                                           Do not print messages to stdout.
 
 Example: dripper -t 100 -m tcp-flood -s tcp://192.168.0.1:80
 ```
@@ -196,6 +197,24 @@ pytest
 
 # with code coverage report:
 pytest --cov-report=html:./htmlcov
+```
+
+## Benchmark
+
+#### Prepare
+- Install [Node.js](https://nodejs.org/en/download/)
+- Install [ddbenchmarker](https://github.com/knyga/ddos-attack-benchmarker)
+```bash
+npm i -g ddbenchmarker
+```
+- Install test requirements (same as in unit testing)
+```bash
+pip install -r requirements.test.txt
+```
+
+#### Run
+```bash
+pytest -c pytest.benchmark.ini
 ```
 
 # License
