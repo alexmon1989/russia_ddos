@@ -4,7 +4,22 @@ All notable changes to this project will be documented in this file.
 The format based on [Keep a Changelog](https://keepachangelog.com)
 and this project adheres to [Semantic Versioning](https://semver.org).
 
-## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.6.1...HEAD)
+## [Unreleased](https://github.com/alexmon1989/russia_ddos/compare/2.6.3...HEAD)
+
+
+## [v2.6.3](https://github.com/alexmon1989/russia_ddos/compare/2.6.2...2.6.3)
+
+## Changed
+- Moved initial checks to attacks to speedup script start
+
+### Fixed
+- Fixed error with Request lib import
+
+
+## [v2.6.2](https://github.com/alexmon1989/russia_ddos/compare/2.6.1...2.6.2)
+
+### Fixed
+- Fixed error with encoding for external resources (targets list)
 
 
 ## [v2.6.1](https://github.com/alexmon1989/russia_ddos/compare/2.6.0...2.6.1)

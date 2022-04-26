@@ -10,6 +10,7 @@ import json
 import urllib.request
 
 import rich.box
+import requests
 from rich.console import Console
 from rich.panel import Panel
 
@@ -39,7 +40,7 @@ def read_file_lines_fs(filename: str) -> list[str]:
 
 def read_file_lines_http(url: str) -> list[str]:
     """Read string from http"""
-    data = urllib.request.urlopen(url).read().decode('utf8')
+    data = requests.get(url, timeout=30).text
     return data.splitlines()
 
 

@@ -62,6 +62,7 @@ class Attack(Thread):
         self.stop_event.set()
 
     def run(self):
+        self.target.collect_info()
         runner = attack_method_factory(_ctx=self._ctx, target=self.target)
 
         if self._ctx.dry_run:

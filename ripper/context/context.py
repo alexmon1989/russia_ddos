@@ -118,19 +118,23 @@ class Context:
             #  args and getattr(args, 'targets', None):
             input_targets = getattr(args, 'targets', [])
 
+        _http_method = getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper()
+        _min_random_packet_len = getattr(args, 'min_random_packet_len', None)
+        _max_random_packet_len = getattr(args, 'max_random_packet_len', None)
         for target_uri in input_targets:
-            if target_uri.__contains__('#'):
+            if target_uri.__contains__('#') or not target_uri.__contains__('://'):
                 continue
-            self.logger.log(f'Configuring attack for {target_uri}')
-            target = Target(
-                target_uri=target_uri,
-                attack_method=attack_method,
-                # TODO move http_method to target_uri to allow each target have its own method
-                http_method=getattr(args, 'http_method', ARGS_DEFAULT_HTTP_ATTACK_METHOD).upper(),
-                min_random_packet_len=getattr(args, 'min_random_packet_len', None),
-                max_random_packet_len=getattr(args, 'max_random_packet_len', None),
-            )
-            self.targets_manager.add_target(target)
+            with self.logger.status('Configure attacks...') as status:
+                status.update(f'   Configuring attack for [cyan]{target_uri}[/]', spinner='aesthetic')
+                target = Target(
+                    target_uri=target_uri,
+                    attack_method=attack_method,
+                    # TODO move http_method to target_uri to allow each target have its own method
+                    http_method=_http_method,
+                    min_random_packet_len=_min_random_packet_len,
+                    max_random_packet_len=_max_random_packet_len,
+                )
+                self.targets_manager.add_target(target)
 
         arg_threads_count = getattr(args, 'threads_count', ARGS_DEFAULT_THREADS_COUNT)
         if arg_threads_count == 'auto':
@@ -151,12 +155,12 @@ class Context:
             self.logger.log(NO_MORE_TARGETS_LEFT_ERR_MSG)
             return False
 
-        try:
-            for target in self.targets_manager.targets:
-                target.validate()
-        except Exception as e:
-            self.logger.log(str(e))
-            return False
+        # try:
+        #     for target in self.targets_manager.targets:
+        #         target.validate()
+        # except Exception as e:
+        #     self.logger.log(str(e))
+        #     exit(1)
 
         if self.my_ip_info.start_ip is None or not ripper.common.is_ipv4(self.my_ip_info.start_ip):
             self.logger.log(

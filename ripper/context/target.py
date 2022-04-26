@@ -83,6 +83,9 @@ class Target:
         self.http_method = http_method
         self.time_interval_manager = TimeIntervalManager()
 
+        self.host_ip = DEFAULT_CURRENT_IP_VALUE
+        self.country = GEOIP_NOT_DEFINED
+
         parts = urlparse(target_uri)
         self.scheme = parts.scheme
         # TODO rename host to hostname
@@ -93,10 +96,6 @@ class Target:
         self.http_path = path if not query else f'{path}?{query}'
         self.attack_method = attack_method if attack_method else self.guess_attack_method()
 
-        self.host_ip = ripper.common.get_ipv4(self.host)
-        # self.country = ripper.common.get_country_by_ipv4(self.host_ip)
-        self.country = GEOIP_NOT_DEFINED
-        self.is_cloud_flare_protection = ripper.common.detect_cloudflare(target_uri)
         self.health_check_manager = HealthCheckManager(target=self)
         self.stats = TargetStatsManager(target=self)
 
@@ -109,11 +108,17 @@ class Target:
         self.min_random_packet_len = max(self.min_random_packet_len, 0)
         self.max_random_packet_len = max(self.max_random_packet_len, self.min_random_packet_len)
 
+    def collect_info(self):
+        """Initialize target: get IPv4, country code and make initial checks."""
+        self.host_ip = ripper.common.get_ipv4(self.host)
+        self.country = ripper.common.get_country_by_ipv4(self.host_ip)
+        self.is_cloud_flare_protection = ripper.common.detect_cloudflare(self.uri)
+
     def add_attack_thread(self, attack: Attack):
         self.attack_threads.append(attack)
 
     def hostip_port_tuple(self) -> Tuple[str, int]:
-        return (self.host_ip, self.port)
+        return self.host_ip, self.port
 
     def validate(self):
         """Validates target."""
