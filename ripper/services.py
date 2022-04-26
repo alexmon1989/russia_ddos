@@ -274,14 +274,14 @@ def main():
     _ctx.latest_version = guc.fetch_latest_version()
     _ctx.logger.log(f'Latest version is: {_ctx.latest_version.version}')
 
-    _ctx.logger.rule('[bold]Check connection with targets')
-    for target in _ctx.targets_manager.targets[:]:
-        # Proxies should be validated during the runtime
-        retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
-        # TODO Make it concurrent for each target
-        if not connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt):
-            _ctx.targets_manager.delete_target(target)
-    _ctx.logger.rule()
+    # _ctx.logger.rule('[bold]Check connection with targets')
+    # for target in _ctx.targets_manager.targets[:]:
+    #     # Proxies should be validated during the runtime
+    #     retry_cnt = 1 if _ctx.proxy_manager.proxy_list_initial_len > 0 or target.attack_method == 'udp' else 3
+    #     # TODO Make it concurrent for each target
+    #     if not connect_host_loop(_ctx=_ctx, target=target, retry_cnt=retry_cnt):
+    #         _ctx.targets_manager.delete_target(target)
+    # _ctx.logger.rule()
 
     if len(_ctx.targets_manager.targets) == 0:
         _ctx.logger.log('All targets looks dead. Unable to connect to targets.\nPlease select another targets to run DRipper')

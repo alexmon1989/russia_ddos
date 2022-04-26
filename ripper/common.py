@@ -3,13 +3,13 @@ import gzip
 import http.client
 import re
 import socket
-import string
 import random
 import os
 import subprocess
 import json
 import urllib.request
 
+import requests
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
@@ -40,7 +40,7 @@ def read_file_lines_fs(filename: str) -> list[str]:
 
 def read_file_lines_http(url: str) -> list[str]:
     """Read string from http"""
-    data = data = requests.get(url, timeout=30).text
+    data = requests.get(url, timeout=30).text
     return data.splitlines()
 
 
