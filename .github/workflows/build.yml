@@ -38,6 +38,9 @@ jobs:
         with:
           node-version: '14'
 
+      - name: Setup DDBenchmarker
+        run: npm i -g ddbenchmarker
+
       - name: Set environment variables
         shell: bash
         run: |

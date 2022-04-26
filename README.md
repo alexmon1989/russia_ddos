@@ -201,6 +201,17 @@ pytest --cov-report=html:./htmlcov
 
 ## Benchmark
 
+#### Prepare
+- Install [Node.js](https://nodejs.org/en/download/)
+- Install [ddbenchmarker](https://github.com/knyga/ddos-attack-benchmarker)
+```bash
+npm i -g ddbenchmarker
+```
+- Install test requirements (same as in unit testing)
+```bash
+pip install -r requirements.test.txt
+```
+
 #### Run
 ```bash
 pytest -c pytest.benchmark.ini

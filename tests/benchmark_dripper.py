@@ -17,13 +17,13 @@ class DescribeBenchmark:
     def http_control_api_url(self):
         return f'http://localhost:{self.http_control_api_port}'
 
-    # @pytest.fixture(scope='class', autouse=True)
-    # def start_benchmarking_service(self):
-    #     print('')
-    #     os.system(f'ddbenchmarker -p {self.http_control_api_port} &')
-    #     time.sleep(2)
-    #     urllib.request.urlopen(f'{self.http_control_api_url}/stop').read()
-    #     time.sleep(2)
+    @pytest.fixture(scope='class', autouse=True)
+    def start_benchmarking_service(self):
+        print('')
+        os.system(f'ddbenchmarker -p {self.http_control_api_port} &')
+        time.sleep(2)
+        urllib.request.urlopen(f'{self.http_control_api_url}/stop').read()
+        time.sleep(2)
 
     # XXX Running benchmarking tool in the Docker has performance limitations
     # import docker
